@@ -109,6 +109,12 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
              */
             "afterLoadProcessor",
             /**
+             * 关闭弹出的提交界面以后执行。
+             * @event MWF.xApplication.process.Xform.Form#closeProcessor
+             * @see {@link https://www.yuque.com/o2oa/ixsnyt/hm5uft#i0zTS|组件事件说明}
+             */
+            "closeProcessor",
+            /**
              * 重置处理人前触发。
              * @event MWF.xApplication.process.Xform.Form#beforeReset
              * @see {@link https://www.yuque.com/o2oa/ixsnyt/hm5uft#i0zTS|组件事件说明}
@@ -2117,56 +2123,59 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                 this.businessData.task.routeName = routeName;
                 this.businessData.task.opinion = opinion || "";
 
-                var mediaIds = [];
-                if (medias && medias.length) {
-                    medias.each(function (file, i) {
-                        var formData = new FormData();
-                        formData.append("file", file);
-                        formData.append("site", "$mediaOpinion");
-                        var fileName = "mediaOpinion_"+i+"_"+new Date().getTime();
-                        if( file.type && file.type.contains("/") ) {
-                            file.name = fileName + "." + file.type.split("/")[1];
-                        }else{
-                            file.name = fileName + ".unknow";
-                        }
-                        this.workAction.uploadAttachment(this.businessData.work.id, formData, file, function (json) {
-                            mediaIds.push(json.data.id);
-                        }.bind(this), null, false);
-                    }.bind(this));
-                }
-                if (mediaIds.length) this.businessData.task.mediaOpinion = mediaIds.join(",");
-
-                if (appendTaskIdentityList && appendTaskIdentityList.length) {
-                    var list = [];
-                    appendTaskIdentityList.each(function (identity) {
-                        if (typeOf(identity) === "object") {
-                            list.push(identity.distinguishedName || identity.unique || identity.id)
-                        } else {
-                            list.push(identity);
-                        }
-                    }.bind(this));
-                    this.businessData.task.appendTaskIdentityList = list;
-                }
-
-                this.businessData.task.ignoreEmpowerIdentityList = ignoreEmpowerIdentityList;
-
-                this.fireEvent("afterSave");
-                if (this.app && this.app.fireEvent) this.app.fireEvent("afterSave");
-
-                // var promiseList = [];
-                // if (this.documenteditorList && this.documenteditorList.length) {
-                //     var promiseList = [];
-                //     this.documenteditorList.each(function (module) {
-                //         promiseList.push(module.checkSaveNewHistroy());
-                //     });
+                // var mediaIds = [];
+                // if (medias && medias.length) {
+                //     medias.each(function (file, i) {
+                //         var formData = new FormData();
+                //         var fileName = "mediaOpinion_"+i+"_"+new Date().getTime();
+                //         if( file.type && file.type.contains("/") ) {
+                //             file.name = fileName + "." + file.type.split("/")[1];
+                //         }else{
+                //             file.name = fileName + ".unknow";
+                //         }
+                //
+                //         formData.append("file", file, file.name);
+                //         formData.append("site", "$mediaOpinion");
+                //
+                //
+                //         this.workAction.uploadAttachment(this.businessData.work.id, formData, file, function (json) {
+                //             mediaIds.push(json.data.id);
+                //         }.bind(this), null, false);
+                //     }.bind(this));
                 // }
-                // Promise.all(promiseList).then(function(){
+                // if (mediaIds.length) this.businessData.task.mediaOpinion = mediaIds.join(",");
+
+                this.saveMedias(medias).then(function(){
+                    if (appendTaskIdentityList && appendTaskIdentityList.length) {
+                        var list = [];
+                        appendTaskIdentityList.each(function (identity) {
+                            if (typeOf(identity) === "object") {
+                                list.push(identity.distinguishedName || identity.unique || identity.id)
+                            } else {
+                                list.push(identity);
+                            }
+                        }.bind(this));
+                        this.businessData.task.appendTaskIdentityList = list;
+                    }
+
+                    this.businessData.task.ignoreEmpowerIdentityList = ignoreEmpowerIdentityList;
+
+                    this.fireEvent("afterSave");
+                    if (this.app && this.app.fireEvent) this.app.fireEvent("afterSave");
+
+                    // var promiseList = [];
+                    // if (this.documenteditorList && this.documenteditorList.length) {
+                    //     var promiseList = [];
+                    //     this.documenteditorList.each(function (module) {
+                    //         promiseList.push(module.checkSaveNewHistroy());
+                    //     });
+                    // }
+                    // Promise.all(promiseList).then(function(){
                     this.workAction.processTask(function (json) {
                         //if (processor) processor.destroy();
                         //if (processNode) processNode.destroy();
                         if (callback) callback(json);
 
-                        debugger;
                         this.taskList = json.data;
                         this.fireEvent("afterProcess", {routeName: routeName, opinion: opinion});
                         if (this.app && this.app.fireEvent) this.app.fireEvent("afterProcess");
@@ -2179,12 +2188,58 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
 
                         //window.setTimeout(function(){this.app.close();}.bind(this), 2000);
                     }.bind(this), null, this.businessData.task.id, this.businessData.task);
-                // }.bind(this), function(){});
+                    // }.bind(this), function(){});
+
+                }.bind(this));
+
 
             }.bind(this), null, true, data, true);
 
         }.bind(this));
     },
+
+    saveMedias: function(medias){
+        return new Promise(function(resolve){
+            var mediaIds = [];
+
+            if (medias && medias.length) {
+                var mPs = [];
+                medias.each(function (file, i) {
+                    var formData = new FormData();
+                    var fileName = "mediaOpinion_"+i+"_"+new Date().getTime();
+                    if( file.type && file.type.contains("/") ) {
+                        file.name = fileName + "." + file.type.split("/")[1];
+                    }else{
+                        file.name = fileName + ".unknow";
+                    }
+
+                    formData.append("file", file, file.name);
+                    formData.append("site", "$mediaOpinion");
+
+                    mPs.push(this.uploadMedia(formData, file).then(function(id){
+                        mediaIds.push(id);
+                    }));
+                }.bind(this));
+
+                Promise.all(mPs).then(function(){
+                    if (mediaIds.length) this.businessData.task.mediaOpinion = mediaIds.join(",");
+                    resolve();
+                }.bind(this));
+            }else{
+                resolve();
+            }
+        }.bind(this))
+    },
+    uploadMedia(formData, file){
+        return new Promise(function(resolve){
+            this.workAction.uploadAttachment(this.businessData.work.id, formData, file, function(json){
+                // mediaIds.push(json.data.id);
+                resolve(json.data.id);
+            }.bind(this))
+        }.bind(this));
+    },
+
+
     finishOnFlow: function(type, data, notCloseWindow){
         if (this.closeImmediatelyOnProcess && !notCloseWindow) {
             this.app.close();
@@ -2487,8 +2542,8 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
     flowWork_pc: function ( defaultRoute ) {
         var _self = this;
         //? 添加事件
-        this.fireEvent("beforeFlowWork");
-        if (this.app && this.app.fireEvent) this.app.fireEvent("beforeFlowWork");
+        this.fireEvent("beforeProcessWork");
+        if (this.app && this.app.fireEvent) this.app.fireEvent("beforeProcessWork");
 
         if (!this.formCustomValidation("", "")) {
             this.app.content.unmask();
@@ -2530,6 +2585,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
             this.flowDlg = o2.DL.open({
                 "title": this.app.lp.flowWork,
                 "style": this.json.dialogStyle || "user",
+                "zindex": 20001,
                 "isResize": false,
                 "content": flowNode,
                 "maskNode": this.app.content,
@@ -2580,8 +2636,8 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
             this.app.content.setStyle("height", document.body.getSize().y);
         }
 
-        this.fireEvent("beforeFlowWork");
-        if (this.app && this.app.fireEvent) this.app.fireEvent("beforeFlowWork");
+        this.fireEvent("beforeProcessWork");
+        if (this.app && this.app.fireEvent) this.app.fireEvent("beforeProcessWork");
 
         // if (this.json.mode != "Mobile") {
         //     this.app.content.mask({
@@ -2635,12 +2691,16 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
             },
             "onLoad": function () {
                 if (postLoadFun) postLoadFun(this);
+
+                _self.fireEvent("afterLoadProcessor", [this]);
+                if (_self.app && _self.app.fireEvent) _self.app.fireEvent("afterLoadProcessor", [this]);
             },
             "onCancel": function () {
-                this.destroy();
+                //this.destroy();
                 hanlderNode.destroy();
-                _self.app.content.unmask();
-                delete this;
+                //_self.app.content.unmask();
+                _self.fireEvent("closeProcessor", [this]);
+                if (_self.app && _self.app.fireEvent) _self.app.fireEvent("closeProcessor", [this]);
             },
             "opinionOptions": {
                 "opinion": op.opinion,
@@ -2652,6 +2712,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                 "defaultRoute": defaultRoute,
                 "isHandwriting": this.json.isHandwriting === "no" ? false : true,
                 "onSubmit": function (routeName, opinion, medias, appendTaskIdentityList, processorOrgList, callbackBeforeSave) {
+                    debugger;
                     if (!medias || !medias.length) {
                         medias = mds;
                     } else {
@@ -3058,6 +3119,8 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                         "type": "cancel",
                         "text": MWF.LP.process.button.cancel,
                         "action": function () {
+                            _self.fireEvent("closeProcessor", [this]);
+                            if (_self.app && _self.app.fireEvent) _self.app.fireEvent("closeProcessor", [this]);
                             this.processDlg.close();
                         }.bind(this)
                     }

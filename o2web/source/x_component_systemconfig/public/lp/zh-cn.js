@@ -371,10 +371,12 @@ o2.xApplication.systemconfig.LP = {
         "codeLogin": "启用短信验证码登录",
         "bindLogin": "启用扫描二维码登录",
         "faceLogin": "启用人脸识别登录",
-        "captchaLoginInfo": "启用后登陆时必须正确输入图片验证码",
-        "codeLoginInfo": "启用后允许通过短信验证码登录",
-        "bindLoginInfo": "启用后允许扫描二维码登录",
-        "faceLoginInfo": "启用后允许人脸识别登录，用户可到个人设置中设置人脸特征。启用后您必须创建一个SSO配置，名称为face，密钥为xplatform（这是一个试验性功能，您必须启用https）",
+        "twoFactorLogin": "启用双因素认证登录",
+        "captchaLoginInfo": "启用后登陆时必须正确输入图片验证码。",
+        "codeLoginInfo": "启用后允许通过短信验证码登录。",
+        "bindLoginInfo": "启用后允许扫描二维码登录。",
+        "faceLoginInfo": "启用后允许人脸识别登录，用户可到个人设置中设置人脸特征。启用后您必须创建一个SSO配置，名称为face，密钥为xplatform（这是一个试验性功能，您必须启用https）。",
+        "twoFactorLoginInfo": "启用后，用户输入账号密码后系统会发送短信验证码，用户再输入短信验证码登录。xadmin和三员管理员不发送短信，在短信验证码界面再次输入密码。双因素认证和短信验证码两种登录方式互斥。",
 
         "loginError": "登录错误处理",
         "loginErrorInfo": "用户登录时，如果连续多次输入错误密码，账号将被锁定。您可以在此处设置连续登录错误次数上限，及账号锁定的时长。",
@@ -1343,7 +1345,7 @@ o2.xApplication.systemconfig.LP = {
             "workUrlInfo": "企业微信消息打开工作的url地址，如：https://sample.o2oa.net/x_desktop/",
             "messageRedirectPortalInfo": "当企业微信消息处理完成后，可指定跳转到特定的门户页面",
 
-            "enableInfo": "O2OA支持以自建应用的方式集成到企业微信，同步企业微信的企业通讯录作为本地组织人员架构，并且可以将待办等通知直接推送到企业微信进行消息提醒。",
+            "enableInfo": "O2OA支持以自建应用的方式集成到企业微信，同步企业微信的企业通讯录作为本地组织人员架构，并且可以将待办等通知直接推送到企业微信进行消息提醒。(需要重启服务器)",
             "enableInfo2": "更多O2OA与企业微信的内容，请查看：<a href='https://www.o2oa.net/search.html?q=%E4%BC%81%E4%B8%9A%E5%BE%AE%E4%BF%A1' target='_blank'>企业微信</a>",
 
             "saveText": "保存企业微信配置",

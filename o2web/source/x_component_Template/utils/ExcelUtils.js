@@ -226,7 +226,7 @@ MWF.xApplication.Template.utils.ExcelUtils = new Class({
         var maxTitleLevel = 1;
         titleArray.each(function (title, i){
             var text = o2.typeOf(title) === 'object' ? title.text : title;
-            var texts = text.split('\\');
+            var texts = ( text || " " ).split('\\');
             maxTitleLevel = Math.max( maxTitleLevel, texts.length );
             titleDataParsed.push( texts );
         });
@@ -241,13 +241,17 @@ MWF.xApplication.Template.utils.ExcelUtils = new Class({
         }.bind(this);
 
         var setDataCellStyle = function(cell, index){
-            if( (dateIndexArray || []).contains( index ) ){
-                cell.numFmt = 'yyyy-mm-dd HH:MM:SS';
-            }
+            var isDate = (dateIndexArray || []).contains( index );
             var isNumber = ( numberIndexArray||[] ).contains( index );
             var style = this.options.columnContentStyle || {};
-            if( isNumber && style.alignment && style.alignment.wrapText ){
-                style.alignment.wrapText = false;
+            if( isDate ){
+                cell.numFmt = 'yyyy-mm-dd HH:MM:SS';
+            }else if( isNumber ){
+                if( style.alignment && style.alignment.wrapText ){
+                    style.alignment.wrapText = false;
+                }
+            }else{
+                cell.numFmt = '@';
             }
             Object.each(style || {}, function (value, key){
                 cell[key] = value;
@@ -278,7 +282,7 @@ MWF.xApplication.Template.utils.ExcelUtils = new Class({
                         starRowIndex = level+1+offsetRowIndex;
                         endColName = this.index2ColName(i-1+offsetColumnIndex);
                         endRowIndex = (lastTitles[level+1] ? level+1 : maxTitleLevel)+offsetRowIndex;
-                        if( startColName !== endColName || starRowIndex !== endRowIndex  ){
+                        if( (startColName !== endColName || starRowIndex !== endRowIndex) && (i===0 || titleDataParsed[i-1][leve]) ){
                             sheet.mergeCells(startColName+starRowIndex+':'+endColName+endRowIndex);
                         }
                     }

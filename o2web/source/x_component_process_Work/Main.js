@@ -48,7 +48,6 @@ MWF.xApplication.process.Work.Main = new Class({
         this.action = MWF.Actions.get("x_processplatform_assemble_surface");
 	},
     loadWorkApplication: function(callback, mask){
-	    debugger;
         var maskStyle = (Browser.name=="firefox") ? "work_firefox" : "desktop";
         //alert(maskStyle);
         if (mask) this.mask = new MWF.widget.Mask({"style": maskStyle, "loading": mask});
@@ -323,7 +322,8 @@ MWF.xApplication.process.Work.Main = new Class({
     },
     loadWorkByDraft: function(work, data){
         o2.Actions.invokeAsync([
-            {"action": this.action, "name": (layout.mobile) ? "getFormMobile": "getForm"}
+            //{"action": this.action, "name": (layout.mobile) ? "getFormMobile": "getForm"}
+            {"action": this.action, "name": (layout.mobile) ? "getFormV2Mobile": "getFormV2"}
         ], {"success": function(json_form){
             if (json_form){
                 var workData = {

@@ -11,7 +11,19 @@ Object.assign(o2.APP$Elinput.prototype, {
     isReadonly : function(){
         return !!(this.readonly || this.json.isReadonly || this.form.json.isReadonly || this.isSectionMergeRead() );
     },
-    reload: function(){},
+    reload: function(){
+        if (!this.vm) return;
+
+        var node = this.vm.$el;
+        this.vm.$destroy();
+        node.empty();
+
+        this.vm = null;
+
+        this.vueApp = null;
+
+        this._loadUserInterface();
+    },
     __setValue: function(value){
         this.moduleValueAG = null;
         this._setBusinessData(value);
@@ -91,7 +103,7 @@ Object.assign(o2.APP$Elinput.prototype, {
     getValue: function(){
         if (this.moduleValueAG) return this.moduleValueAG;
         var value = this._getBusinessData();
-        if (value || value===false){
+        if (value || value===false || value===0){
             return value;
         }else{
             value = this._computeValue();
