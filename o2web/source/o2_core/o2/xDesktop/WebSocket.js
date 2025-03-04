@@ -384,36 +384,38 @@ MWF.xDesktop.WebSocket = new Class({
         }
         // im_create 暂时不变
         if (data.type == "im_create") {
-            // 系统消息
-            var jsonBody = imBody.body;
-            var conversationId = imBody.conversationId;
-            var body = JSON.parse(jsonBody);
-            var msgBody = body.body; //默认text 文本消息
-            if (body.type && body.type == "emoji") { //表情 消息
-                msgBody = "["+MWF.LP.desktop.messsage.emoji+"]";
-            } else if (body.type == "process") {
-                msgBody = "["+MWF.LP.desktop.messsage.processWork+"]";
-            } else if (body.type == "cms") {
-                msgBody = "["+MWF.LP.desktop.messsage.cmsDoc+"]";
-            }
-            var content = "<font style='color: #333; font-weight: bold'>"+o2.txt(data.title)+"</font>: "+o2.txt(msgBody);
-            var msg = {
-                "subject": MWF.LP.desktop.messsage.customMessageTitle,
-                "content": content
-            };
-            var messageItem = layout.desktop.message.addMessage(msg);
-            var options = {"conversationId": conversationId};
-            messageItem.contentNode.addEvent("click", function(e){
-                layout.desktop.message.addUnread(-1);
-                layout.desktop.message.hide();
-                layout.desktop.openApplication(e, "IMV2", options);
-            }.bind(this));
+            // 系统消息提示
+            if (layout.desktop.message && data.person !== layout.session.user.distinguishedName) {
+                var jsonBody = imBody.body;
+                var conversationId = imBody.conversationId;
+                var body = JSON.parse(jsonBody);
+                var msgBody = body.body; //默认text 文本消息
+                if (body.type && body.type === "emoji") { //表情 消息
+                    msgBody = "["+MWF.LP.desktop.messsage.emoji+"]";
+                } else if (body.type === "process") {
+                    msgBody = "["+MWF.LP.desktop.messsage.processWork+"]";
+                } else if (body.type === "cms") {
+                    msgBody = "["+MWF.LP.desktop.messsage.cmsDoc+"]";
+                }
+                var content = "<font style='color: #333; font-weight: bold'>"+o2.txt(data.title)+"</font>: "+o2.txt(msgBody);
+                var msg = {
+                    "subject": MWF.LP.desktop.messsage.customMessageTitle,
+                    "content": content
+                };
+                var messageItem = layout.desktop.message.addMessage(msg);
+                var options = {"conversationId": conversationId};
+                messageItem.contentNode.addEvent("click", function(e){
+                    layout.desktop.message.addUnread(-1);
+                    layout.desktop.message.hide();
+                    layout.desktop.openApplication(e, "IMV2", options);
+                }.bind(this));
 
-            var tooltipItem = layout.desktop.message.addTooltip(msg);
-            tooltipItem.contentNode.addEvent("click", function(e){
-                layout.desktop.message.hide();
-                layout.desktop.openApplication(e, "IMV2", options);
-            }.bind(this));
+                var tooltipItem = layout.desktop.message.addTooltip(msg);
+                tooltipItem.contentNode.addEvent("click", function(e){
+                    layout.desktop.message.hide();
+                    layout.desktop.openApplication(e, "IMV2", options);
+                }.bind(this));
+            }
             // 执行im callback 刷新页面信息
             if (this.imListenerMap && this.imListenerMap["im_create"] && typeof this.imListenerMap["im_create"] == 'function') {
                 this.imListenerMap["im_create"](imBody);
@@ -498,30 +500,61 @@ MWF.xDesktop.WebSocket = new Class({
         var tooltipItem = layout.desktop.message.addTooltip(msg, ((data.body) ? data.body.createTime : ""));
         tooltipItem.contentNode.addEvent("click", function(e){
             layout.desktop.message.hide();
-            //应用市场中的云文件，门户cloudFile
-            o2.Actions.load("x_portal_assemble_surface").PortalAction.get("cloudFile", function () {
-                layout.desktop.openApplication(e, "portal.Portal", {
-                    portalId : "cloudFile"
+
+
+            if(layout.serviceAddressList["x_pan_assemble_control"]){
+                layout.desktop.openApplication(e, "Drive", null, {
+                    "status": {
+                        "tab": "share",
+                        "node": data.person
+                    }
                 });
-            }, function(){
+            }else{
+
+                //应用市场中的云文件，门户cloudFile
+                o2.Actions.load("x_portal_assemble_surface").PortalAction.get("cloudFile", function () {
+                    layout.desktop.openApplication(e, "portal.Portal", {
+                        portalId : "cloudFile"
+                    });
+                }, function(){
+                    layout.desktop.openApplication(e, "File", null, {
+                        "status": {
+                            "tab": "share",
+                            "node": data.person
+                        }
+                    });
+                })
+            }
+
+
+
+        });
+
+        messageItem.contentNode.addEvent("click", function(e){
+            layout.desktop.message.addUnread(-1);
+            layout.desktop.message.hide();
+
+
+            if(layout.serviceAddressList["x_pan_assemble_control"]){
+                layout.desktop.openApplication(e, "Drive", null, {
+                    "status": {
+                        "tab": "share",
+                        "node": data.person
+                    }
+                });
+                return false;
+            }else{
                 layout.desktop.openApplication(e, "File", null, {
                     "status": {
                         "tab": "share",
                         "node": data.person
                     }
                 });
-            })
-        });
 
-        messageItem.contentNode.addEvent("click", function(e){
-            layout.desktop.message.addUnread(-1);
-            layout.desktop.message.hide();
-            layout.desktop.openApplication(e, "File", null, {
-                "status": {
-                    "tab": "share",
-                    "node": data.person
-                }
-            });
+            }
+
+
+
         });
     },
     getMeeting: function(data, callback){

@@ -474,7 +474,8 @@ MWF.xApplication.process.Xform.AttachmentController = new Class({
             this.topNode.empty();
             this.editActionBoxNode = null;
             this.editActionsGroupNode = null;
-            this.topNode.setStyle("display", "");
+            // this.topNode.setStyle("display", "");
+            this.topNode.show();
             if (this.isHiddenTop) {
                 //this.container.setStyle("height", this.container.getSize().y + 45 );
                 //this.node.setStyle("height", this.node.getSize().y + 45 );
@@ -493,7 +494,7 @@ MWF.xApplication.process.Xform.AttachmentController = new Class({
             if (this.contentScrollNode) {
                 this.oldContentScrollNodeHeight = this.contentScrollNode.getStyle("min-height");
                 this.contentScrollNode.setStyle("min-height", this.node.getStyle("min-height"));
-                this.topNode.setStyle("display", "none");
+                this.topNode.hide();
             }
             this.isHiddenTop = true;
         }
@@ -607,7 +608,13 @@ MWF.xApplication.process.Xform.AttachmentController = new Class({
         var isShowRight = this.options.isSizeChange && !hiddenGroup.contains("view");
 
         if(this.minSeparateNode)this.minSeparateNode.setStyle( "display", isShowLeft && isShowRight ? "" : "none" );
-        if(this.minActionAreaNode )this.minActionAreaNode.setStyle( "display", isShowLeft || isShowRight ? "" : "none" );
+        if(this.minActionAreaNode ){
+            if (isShowLeft || isShowRight){
+                this.minActionAreaNode.show();
+            }else{
+                this.minActionAreaNode.hide();
+            }
+        }
     },
 
     checkAttachmentConfigAction: function () {
@@ -909,6 +916,8 @@ MWF.xApplication.process.Xform.AttachmentController = new Class({
             "style": this.module.form.json.dialogStyle || "user",
             "isResize": false,
             "content": node,
+            "container": this.module.form.app.content,
+            "maskNode": this.module.form.app.content,
             "buttonList": [
                 {
                     "type": "ok",
@@ -939,7 +948,7 @@ MWF.xApplication.process.Xform.AttachmentController = new Class({
 
         var lp = MWF.xApplication.process.Xform.LP;
         var css = this.module.form.css;
-        var node = new Element("div", { "styles": (layout.mobile ? css.attachmentPermissionNode_mobile : css.attachmentPermissionNode) }).inject(this.node);
+        var node = new Element("div.MWF_configAttachmentPower", { "styles": (layout.mobile ? css.attachmentPermissionNode_mobile : css.attachmentPermissionNode) }).inject(this.node);
         var attNames = new Element("div", { "styles": css.attachmentPermissionNamesNode }).inject(node);
         var attNamesTitle = new Element("div", { "styles": css.attachmentPermissionNamesTitleNode, "text": lp.attachmentPermissionInfo }).inject(attNames);
         var attNamesArea = new Element("div", { "styles": css.attachmentPermissionNamesAreaNode }).inject(attNames);
@@ -965,6 +974,8 @@ MWF.xApplication.process.Xform.AttachmentController = new Class({
             "style": this.module.form.json.dialogStyle || "user",
             "isResize": false,
             "content": node,
+            "container": this.module.form.app.content,
+            "maskNode": this.module.form.app.content,
             "buttonList": [
                 {
                     "type": "ok",
@@ -1341,8 +1352,10 @@ MWF.xApplication.process.Xform.AttachmentController = new Class({
                 "style": this.module.form.json.dialogStyle || "user",
                 "isResize": false,
                 "content": node,
-                "width": "auto",
-                "height": "auto",
+                "width": "720",
+                "height": "740",
+                "container": this.module.form.app.content,
+                "maskNode": this.module.form.app.content,
                 "buttonList": [
                     {
                         "type": "ok",
@@ -1617,15 +1630,27 @@ MWF.xApplication.process.Xform.Attachment = MWF.APPAttachment = new Class(
         }
         this.fieldModuleLoaded = true;
     },
-    /*
-     * @summary 重新加载附件。会触发queryLoadController、loadController和postLoadController事件。
+    /** @summary 重新加载附件。会触发queryLoadController、loadController和postLoadController事件。
+     * @memberof MWF.xApplication.process.Xform.Attachment
+     * @param refresh {Boolean} 是否重新从后台获取附件列表.
      * @example
      *  this.form.get("fieldId").reload(); //重新加载
+     * @example
+     *  this.form.get("fieldId").reload( true ); //重新从后台获取附件并重新加载
      */
-    reload: function(){
+    reload: function( refresh ){
         this.node.empty();
         if (this.form.businessData.work.startTime){
-            this.loadAttachmentController();
+            if( refresh ){
+                var job = (this.form.businessData.work || this.form.businessData.workCompleted ).job;
+                o2.Actions.load("x_processplatform_assemble_surface").AttachmentAction.
+                    listWithJob(job, function(json){
+                        this.form.businessData.attachmentList = json.data;
+                        this.loadAttachmentController();
+                }.bind(this));
+            }else{
+                this.loadAttachmentController();
+            }
         }
     },
     getFlagDefaultFalse: function( key ){
@@ -2907,7 +2932,6 @@ MWF.xApplication.process.Xform.AttachmenPreview = new Class({
             return;
         }
         var srv = layout.serviceAddressList["x_libreoffice_assemble_control"];
-        var protocol = window.location.protocol;
         var module;
         if(this.att.data.activity){
             module = "processPlatform";
@@ -2916,10 +2940,15 @@ MWF.xApplication.process.Xform.AttachmenPreview = new Class({
             module = "cms";
         }
 
-        var defaultPort = layout.config.app_protocol==='https' ? "443" : "80";
+        var defaultPort = layout.config.app_protocol === 'https' ? "443" : "80";
         var appPort = srv.port || window.location.port;
-        var url = protocol + "//" + (srv.host || window.location.hostname) + ":"  + ((!appPort || appPort.toString()===defaultPort) ? "" : ":"+appPort) +  srv.context + "/jaxrs/office/doc/to/pdf/"+ module +"/" + this.att.data.id;
-        window.open("../o2_lib/pdfjs/web/viewer.html?file=" + url);
+        var protocol = layout.config.app_protocol || window.location.protocol;
+        var hostname = srv.host || window.location.hostname;
+        var context = srv.context || '';
+
+        var url = protocol + "//" + hostname + (appPort && appPort.toString() !== defaultPort ? ":" + appPort : "") + context + "/jaxrs/office/doc/to/pdf/" + module + "/" + this.att.data.id;
+
+        window.open("../o2_lib/pdfjs/web/viewer.html?file=" + encodeURIComponent(url));
     },
     previewOfd : function(){
         this.app.getAttachmentUrl(this.att,  function (url) {
@@ -3019,7 +3048,7 @@ MWF.xApplication.process.Xform.AttachmentDg = MWF.APPAttachmentDg = new Class({
             "isDelete": this.getFlagDefaultFalse("isDelete"),
             "isReplace": this.getFlagDefaultFalse("isReplace"),
             "isDownload": this.getFlagDefaultFalse("isDownload"),
-            "isDownloadBatch": this.getFlagDefaultFalse("isDownloadBatch"),
+            "isDownloadBatch": "hidden", //this.getFlagDefaultFalse("isDownloadBatch"),
             "isPreviewAtt": this.getFlagDefaultFalse("isPreviewAtt"),
             "isEditAtt": this.getFlagDefaultFalse("isEditAtt"),
             "isSizeChange": this.getFlagDefaultFalse("isSizeChange"),
@@ -3058,7 +3087,7 @@ MWF.xApplication.process.Xform.AttachmentDg = MWF.APPAttachmentDg = new Class({
         if(this.json.ignoreSite) {
             ( this._getBusinessData() || [] ).each(function (att) {
                 var flag = this.form.businessData.attachmentList.some(function (attData) {
-                    return att.id === attData.id;
+                    return (att.businessId && att.businessId === attData.businessId) || att.id === attData.id;
                 }.bind(this));
                 if(flag)this.attachmentController.addAttachment(att);
             }.bind(this));
@@ -3077,6 +3106,7 @@ MWF.xApplication.process.Xform.AttachmentDg = MWF.APPAttachmentDg = new Class({
                         "control": d.data.control,
                         "name": d.data.name,
                         "id": d.data.id,
+                        "businessId": d.data.businessId,
                         "person": d.data.person,
                         "creatorUid": d.data.creatorUid,
                         "orderNumber": d.data.orderNumber,
@@ -3120,7 +3150,8 @@ MWF.xApplication.process.Xform.AttachmentDg = MWF.APPAttachmentDg = new Class({
                 data: {
                     attachmentId: attachment.data.id,
                     param: this.json.id,
-                    site: this.json.site || this.json.id
+                    site: this.json.site || this.json.id,
+                    businessId: attachment.data.businessId
                 }
             };
             window.o2android.postMessage(JSON.stringify(body));

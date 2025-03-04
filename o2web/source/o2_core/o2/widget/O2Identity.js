@@ -424,8 +424,10 @@ o2.widget.O2CMSApplication = new Class({
     Extends: o2.widget.O2Group,
     getPersonData: function(){
         if (!this.data.name){
-            o2.Actions.get("x_cms_assemble_control").getApplication((this.data.id || this.data.name), function(json){
+            o2.Actions.get("x_cms_assemble_control").getApplication(this.data.id || this.data.name, function(json){
                 this.data = json.data;
+                if(!this.data.name)this.data.name = this.data.appName;
+                if(!this.data.alias)this.data.alias = this.data.appAlias;
             }.bind(this), null, false);
             // this.action = new o2.xDesktop.Actions.RestActions("", "x_cms_assemble_control", "");
             // this.action.actions = {"getApplication": {"uri": "/jaxrs/application/{id}"}};
@@ -874,23 +876,35 @@ o2.widget.O2FormStyle = new Class({
     open : function (e) {
         if( typeOf(this.data)==="object" && this.data.id && this.data.appId && this.data.type === "script"){
             var appName;
-            if( this.data.appType === "cms" ){
-                appName = "cms.ScriptDesigner";
-            }else{
-                appName = "process.ScriptDesigner";
+            switch (this.data.appType){
+                case "service":
+                    appName = "service.ScriptDesigner";
+                    break;
+                case "cms":
+                    appName = "cms.ScriptDesigner";
+                    break;
+                default:
+                    appName = "process.ScriptDesigner";
             }
             var appId = appName + this.data.id;
             if (layout.desktop.apps[appId]){
                 layout.desktop.apps[appId].setCurrent();
             }else {
-                var options = {
-                    "id": this.data.id,
-                    "appId": appId,
-                    "application":{
-                        "name": this.data.appName || this.data.applicationName || "",
-                        "id": this.data.appId
-                    }
-                };
+                var options;
+                if( this.data.appType === 'service' ){
+                    options = {
+                        "id": this.data.id
+                    };
+                }else{
+                    options = {
+                        "id": this.data.id,
+                        "appId": appId,
+                        "application":{
+                            "name": this.data.appName || this.data.applicationName || "",
+                            "id": this.data.appId
+                        }
+                    };
+                }
                 layout.desktop.openApplication(e, appName, options);
             }
         }

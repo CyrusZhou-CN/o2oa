@@ -109,6 +109,7 @@ o2.widget.JavascriptEditor = new Class({
         // }
     },
     loadMonaco: function(callback){
+        this.editorLoading = true;
         MWF.require("MWF.xDesktop.shortcut");
         if (o2.editorData.javascriptEditor){
             this.theme = o2.editorData.javascriptEditor.monaco_theme;
@@ -127,10 +128,9 @@ o2.widget.JavascriptEditor = new Class({
             this.editorClass = o2.widget.monaco;
 
             this.editorClass.load(function(){
-
                 this.editor = monaco.editor.create(this.node, {
                     value: this.options.option.value,
-                    language: this.options.option.mode,
+                    language: this.options.option.mode || 'javascript',
                     theme: this.theme,
                     fontSize: this.fontSize,
                     lineNumbersMinChars: 3,
@@ -141,21 +141,39 @@ o2.widget.JavascriptEditor = new Class({
                 this.focus();
                 window.setTimeout(this.setMonacoLayout.bind(this), 500);
 
+                var _self = this;
+                this.editor.addAction({
+                    id: "save",
+                    label: "Save",
+                    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
+                    run: function (ed) {
+                        _self.fireEvent("save");
+                    },
+                });
 
-                this.editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_S, function(e){
-                    this.fireEvent("save");
-                }.bind(this));
+                this.editor.addAction({
+                    id: "format",
+                    label: "Format",
+                    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyMod.Alt | monaco.KeyCode.KeyI, monaco.KeyMod.CtrlCmd | monaco.KeyMod.Alt | monaco.KeyCode.KeyF],
+                    run: function (ed) {
+                        _self.format();
+                    },
+                });
 
-                this.editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Alt | monaco.KeyCode.KEY_I, function(e){
-                    this.format();
-                }.bind(this));
-                this.editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Alt | monaco.KeyCode.KEY_F, function(e){
-                    this.format();
-                }.bind(this));
+                // this.editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, function(e){
+                //     this.fireEvent("save");
+                // }.bind(this));
 
-                this.editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Alt | monaco.KeyCode.KEY_F, function(e){
-                    this.format();
-                }.bind(this));
+                // this.editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Alt | monaco.KeyCode.KeyI, function(e){
+                //     this.format();
+                // }.bind(this));
+                // this.editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Alt | monaco.KeyCode.KeyF, function(e){
+                //     this.format();
+                // }.bind(this));
+
+                // this.editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Alt | monaco.KeyCode.KeyF, function(e){
+                //     this.format();
+                // }.bind(this));
 
                 // this.editor.onKeyDown(function(e){
                 //     debugger;
@@ -185,7 +203,7 @@ o2.widget.JavascriptEditor = new Class({
                     this.monacoModel.o2Editor = this;
                     this.registerCompletion();
                 //}.bind(this));
-
+                this.editorLoading = false;
                 this.fireEvent("postLoad");
                 if (callback) callback();
 
@@ -194,8 +212,10 @@ o2.widget.JavascriptEditor = new Class({
     },
 
     loadAce: function(callback){
+        this.editorLoading = true;
+
         if (o2.editorData.javascriptEditor){
-            this.theme = o2.editorData.javascriptEditor.theme;
+            this.theme = o2.editorData.javascriptEditor.theme || "tomorrow";
             this.fontSize = o2.editorData.javascriptEditor.fontSize;
         }else{
             o2.editorData.javascriptEditor = {
@@ -274,6 +294,8 @@ o2.widget.JavascriptEditor = new Class({
                     this.registerCompletion();
                 //}.bind(this));
 
+                this.editorLoading = false;
+
                 this.fireEvent("postLoad");
                 if (callback) callback();
             }.bind(this));
@@ -346,7 +368,6 @@ o2.widget.JavascriptEditor = new Class({
                     /[a-zA-Z_0-9\$\-\u00A2-\uFFFF]/
                 ],
                 getCompletions: function(editor, session, pos, prefix, callback){
-                    debugger;
                     var codeRange = session.getWordRange(pos.row, 0);
                     codeRange.setEnd(pos.row, pos.column);
                     var x = session.getTextRange(codeRange);
@@ -393,23 +414,45 @@ o2.widget.JavascriptEditor = new Class({
                 this.setValue(value);
             }.bind(this));
         }else{
-            this.options.type = o2.editorData.javascriptEditor.editor;
-            if (this.options.type.toLowerCase()=="ace"){
-                this.loadAce(callback);
-            }
-            if (this.options.type.toLowerCase()=="monaco"){
-                this.loadMonaco(callback);
-            }
-            if (this.options.type.toLowerCase()=="codeMirror"){
-                this.loadCodeMirror(callback);
-            }
+            this.options.type = type;
+            // if (this.options.type.toLowerCase()=="ace"){
+            //     this.loadAce(callback);
+            // }
+            // if (this.options.type.toLowerCase()=="monaco"){
+            //     this.loadMonaco(callback);
+            // }
+            // if (this.options.type.toLowerCase()=="codeMirror"){
+            //     this.loadCodeMirror(callback);
+            // }
         }
     },
+
+    reload: function(){
+        this.getEditorTheme(function(json){
+            var type = this.options.forceType || o2.editorData.javascriptEditor.editor || "monaco";
+            if (type !== this.options.type){
+                if (!this.editorLoading){
+                    var value = this.getValue();
+                    this.destroyEditor();
+                    this.load(function(){
+                        this.setValue(value);
+                    }.bind(this));
+                }
+            }
+        }.bind(this));
+    },
+
     destroyEditor: function(){
         if (this.editor){
             switch (this.options.type.toLowerCase()) {
                 case "ace": this.editor.destroy(); this.node.empty(); break;
-                case "monaco": this.editor.dispose(); break;
+                case "monaco":
+                    if (this.monacoCurrentModel) {
+                        this.monacoCurrentModel.dispose();
+                        this.monacoCurrentModel = null;
+                    }
+                    this.editor.dispose();
+                    break;
             }
         }
     },
@@ -417,6 +460,34 @@ o2.widget.JavascriptEditor = new Class({
 	    this.fireEvent("destroy");
 	    this.destroyEditor();
 	    o2.release(this);
+    },
+    setMode: function(mode){
+        if (mode !== this.options.option.mode){
+            this.options.option.mode = mode;
+            if (this.editor){
+                switch (this.options.type.toLowerCase()) {
+                    case "ace":
+                        if ( this.currentLanguage !== this.options.option.mode){
+                            this.editor.session.setMode("ace/mode/"+this.options.option.mode);
+                        }
+                        break;
+                    case "monaco":
+                        window.setTimeout(function(){
+                            if (!this.monacoCurrentModel || this.monacoCurrentModel.getLanguageId() !== this.options.option.mode) {
+                                var value = this.getValue();
+                                if (this.monacoCurrentModel) {
+                                    this.monacoCurrentModel.dispose();
+                                    this.monacoCurrentModel = null;
+                                }
+                                this.monacoCurrentModel = monaco.editor.createModel(value, this.options.option.mode);
+                                this.currentLanguage = this.options.option.mode;
+                                this.editor.setModel(this.monacoCurrentModel);
+                            }
+                        }.bind(this), 10)
+                        break;
+                }
+            }
+        }
     },
     setTheme: function(theme){
         if (this.editor){
@@ -577,19 +648,19 @@ o2.widget.JavascriptEditor = new Class({
         var mode = this.options.option.mode.toString().toLowerCase();
         if (mode==="javascript"){
             o2.load("JSBeautifier", function(){
-                this.editor.setValue(js_beautify(editor.getValue()));
+                this.editor.setValue(js_beautify(this.editor.getValue()));
             }.bind(this));
         }else if (mode==="html"){
             o2.load("JSBeautifier_html", function(){
-                this.editor.setValue(html_beautify(editor.getValue()));
+                this.editor.setValue(html_beautify(this.editor.getValue()));
             }.bind(this));
         }else if (mode==="css"){
             o2.load("JSBeautifier_css", function(){
-                this.editor.setValue(css_beautify(editor.getValue()));
+                this.editor.setValue(css_beautify(this.editor.getValue()));
             }.bind(this));
         }else{
             o2.load("JSBeautifier", function(){
-                this.editor.setValue(js_beautify(editor.getValue()));
+                this.editor.setValue(js_beautify(this.editor.getValue()));
             }.bind(this));
         }
     },
@@ -599,8 +670,8 @@ o2.widget.JavascriptEditor = new Class({
     format: function(){
         if (this.editor){
             switch (this.options.type.toLowerCase()) {
-                case "ace": this.formatAce();
-                case "monaco": this.formatMonaco();
+                case "ace": this.formatAce(); break;
+                case "monaco": this.formatMonaco(); break;
             }
         }
     },

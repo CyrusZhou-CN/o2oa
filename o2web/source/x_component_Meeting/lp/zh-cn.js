@@ -98,6 +98,10 @@ MWF.xApplication.Meeting.LP = {
     "mail": "邮箱",
     "meetingSubject": "会议标题",
     "meetingDescription": "会议描述",
+
+    "externalPerson": "外部参会人员",
+
+
     "meetingAttachment": "会议材料",
     "meetingDetail" : "会议详情",
     "editAddress" : "编辑地址",
@@ -127,6 +131,7 @@ MWF.xApplication.Meeting.LP = {
     "meeting_input_person_error": "邀请参会人员不能为空！",
     "meeting_input_date_error": "会议开始时间不能早于现在！",
     "meeting_input_time_error": "会议结束时间不能早于开始时间！",
+    "meeting_input_hostPerson_error": "主持人不能为空！",
 
 
     //"meeting_input_subject_error": "请填写完整会议标题！",
@@ -215,6 +220,7 @@ MWF.xApplication.Meeting.LP = {
         "capacity": "容纳人数",
         "auditor": "会议室审核人",
         "available": "会议室状态",
+        "orderNumber" : "排序号",
         "roomNumber": "会议室门牌",
         "phone": "分机号",
 
@@ -231,6 +237,7 @@ MWF.xApplication.Meeting.LP = {
         "myMeeting" :"我收到的邀请",
         "wait": "未开始",
         "processing": "进行中",
+        "apply": "申请中",
         "completed": "已结束",
         "reject": "已拒绝",
         "room": "会议室"

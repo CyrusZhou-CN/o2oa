@@ -18,7 +18,7 @@ import com.x.base.core.project.tools.ListTools;
 
 public class QiyeweixinFactory {
 
-	private static Logger logger = LoggerFactory.getLogger(QiyeweixinFactory.class);
+	private static final Logger logger = LoggerFactory.getLogger(QiyeweixinFactory.class);
 
 	private String accessToken;
 
@@ -33,6 +33,8 @@ public class QiyeweixinFactory {
 			users.addAll(this.users(o));
 		}
 		users = ListTools.trim(users, true, true);
+		logger.info("qi ye wei xin sync org num:{}, user num:{}", orgs.size(), users.size());
+		logger.info("qw打印一个用户信息:{}", users.get(0).toString());
 	}
 
 	public List<User> getUsers() {
@@ -82,10 +84,9 @@ public class QiyeweixinFactory {
 			if (userId.length() < 11) { // 用户名太短的情况
 				userId = String.format("%11s", userId).replace(" ","0");
 			}
-			if (userId.length() > 11) { // 用户名超长的情况
-				userId = userId.substring(userId.length() - 11); // 截取最后的11位
+			if (userId.length() > 32) { // 用户名超长的情况
+				userId = userId.substring(userId.length() - 32);
 			}
-			logger.debug("这里是补全11位，{}.", userId);
 			user.setMobile(userId);
 		}
 	}

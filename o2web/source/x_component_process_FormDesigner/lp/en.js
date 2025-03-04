@@ -356,7 +356,18 @@ MWF.xApplication.process.FormDesigner.LP={
 		"relatedLink": "Related Link",
 		"associatedDocument": "Associated Document",
 		"security": "Security Label",
-		"securityInfo": "Only one \"classification identification\" field is allowed"
+		"securityInfo": "Only one \"classification identification\" field is allowed",
+		"group_O2OA": "O2OA component",
+		"oo_input": "Input box",
+		"oo_button": "Button",
+		"oo_radioGroup": "Single Choice",
+		"oo_checkGroup": "check",
+		"oo_select": "Drop down box",
+		"oo_textarea": "Multi line text",
+		"oo_calendar": "calendar",
+		"oo_datetime": "Date box",
+		"oo_org": "personnel",
+		"codeedit": "Script editor "
 	},
 	"propertyTemplate": {
 		"base": "Base",
@@ -383,6 +394,8 @@ MWF.xApplication.process.FormDesigner.LP={
 		"preloadScript": "PreloadScript",
 		"script": "Script",
 		"dict": "Dictonary",
+		"useCache": "Use cache",
+		"useCacheNote": "In order to speed up, the data dictionary will be cached when it is first opened, and the modified data dictionary will be retrieved only after refreshing the webpage. If you choose otherwise, it will be retrieved from the server every time.",
 		"dictName": "Dictonary Name",
 		"dictPath": "Data Path",
 		"valueKey": "Value attribute name",
@@ -1371,6 +1384,9 @@ MWF.xApplication.process.FormDesigner.LP={
 			"logoImg": "left logo（172x40）",
 			"logoUrl": "logo link"
 		},
+		"foxit": {
+			"api": "API"
+		},
 		"smartbi": {
 			"select": "select",
 			"displayToolbar": "toolbar",
@@ -1468,7 +1484,21 @@ MWF.xApplication.process.FormDesigner.LP={
 		"checkOtherFlow": "Verify other circulation methods",
 		"checkOtherFlowNote": "When adding, resetting, or returning, execute the verification script. Obtain the flow method (add as: addTask, reset as: reset, return as: goBack) through this. form. opinion, and other parameters of the flow through this. form. flowData",
 		"forceClearCustomViewStyle": "Clear custom styles when switching",
-		"forceClearCustomStyle": "Clear custom styles when switching"
+		"forceClearCustomStyle": "Clear custom styles when switching",
+		"showMode": "pattern",
+		"defaultView": "Initial View",
+		"dayView": "day",
+		"monthView": "month",
+		"yearView": "year",
+		"secondEnable": "Select seconds",
+		"weekBegin": "Starting every week",
+		"valueFormat": "Binding value formatting",
+		"readModeEvents": "Does the reading mode respond to mouse events",
+		"required": "Required",
+		"logTaskFormat": "To Do Format",
+		"scriptMode": "Script type",
+		"scriptEditor": "Script editor ",
+		"lineNumber": "set number "
 	},
 	"smartbi": {
 		"nosetup": "please install SmartBI APP first",
@@ -1551,7 +1581,12 @@ MWF.xApplication.process.FormDesigner.LP={
 		"clearNoDomModule": "Clear component configurations that are not in the HTML tree",
 		"autoSave": "AutoSave",
 		"brush": "brush",
-		"viewAllVersion": "View all form versions"
-	}
+		"viewAllVersion": "View all form versions",
+		"add": "newly build",
+		"gotoApp": "Open the current application",
+		"copyProperty": "Copy component properties"
+	},
+	"selectCopyModule": "Please select the component whose properties need to be copied",
+	"selectCopyModuleNotice": "Please select the component first!"
 }
 MWF.xApplication.process.FormDesigner["lp."+o2.language] = MWF.xApplication.process.FormDesigner.LP

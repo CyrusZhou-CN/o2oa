@@ -13,6 +13,7 @@ import com.x.base.core.project.http.EffectivePerson;
 import com.x.base.core.project.jaxrs.WoId;
 import com.x.base.core.project.logger.Logger;
 import com.x.base.core.project.logger.LoggerFactory;
+import com.x.base.core.project.tools.DateTools;
 import com.x.base.core.project.tools.ListTools;
 import com.x.meeting.assemble.control.Business;
 import com.x.meeting.assemble.control.MessageFactory;
@@ -20,6 +21,8 @@ import com.x.meeting.assemble.control.service.HstService;
 import com.x.meeting.core.entity.*;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.Date;
 
 class ActionCreate extends BaseAction {
 
@@ -76,9 +79,13 @@ class ActionCreate extends BaseAction {
 				if (room.getAvailable() == false) {
 					throw new ExceptionRoomNotAvailable(room.getName());
 				}
-				meeting.setAuditor(room.getAuditor());
+				if(StringUtils.isNotBlank(room.getAuditor())) {
+					meeting.setAuditor(room.getAuditor());
+				}
 				meeting.setRoom(room.getId());
-				if (!business.room().checkIdle(meeting.getRoom(), meeting.getStartTime(), meeting.getCompletedTime(), "")) {
+				Date startTime = DateTools.addSeconds(meeting.getStartTime(),1);
+				Date completedTime = DateTools.addSeconds(meeting.getCompletedTime(),-1);
+				if (!business.room().checkIdle(meeting.getRoom(), startTime, completedTime, "")) {
 					throw new ExceptionRoomNotAvailable(room.getName());
 				}
 			}
@@ -87,7 +94,7 @@ class ActionCreate extends BaseAction {
 
 			meeting.setAcceptPersonList(this.convertToPerson(business, meeting.getAcceptPersonList()));
 			meeting.setRejectPersonList(this.convertToPerson(business, meeting.getRejectPersonList()));
-			meeting.getInvitePersonList().remove(meeting.getApplicant());
+//			meeting.getInvitePersonList().remove(meeting.getApplicant());
 
 			business.estimateConfirmStatus(meeting);
 			emc.beginTransaction(Meeting.class);

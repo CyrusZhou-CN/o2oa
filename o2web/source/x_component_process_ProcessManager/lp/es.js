@@ -151,8 +151,8 @@ MWF.xApplication.process.ProcessManager.LP={
 		"setUsableUnit": "Establecer unidades utilizables",
 		"setAppUsableIdentity": "Establecer identidades utilizables para la aplicación",
 		"setAppUsableUnit": "Establecer unidades utilizables para la aplicación",
-		"maintenanceIdentity": "Mantenimiento del flujo de trabajo",
-		"setMaintainer": "Establecer mantenimiento del flujo de trabajo"
+		"maintenanceIdentity": "Mantenedor de instancia de proceso",
+		"setMaintainer": "Establecer mantenedor de instancia de proceso"
 	},
 	"createSelectTemplate": "Crear: Seleccionar plantilla",
 	"templateCategory": "Categoría de plantillas:",
@@ -178,6 +178,12 @@ MWF.xApplication.process.ProcessManager.LP={
 	"elementForm": "Plantilla de componente Element",
 	"fileForm": "Plantilla de formulario de documento público",
 	"submitPcForm": "Plantilla de formulario de envío personalizado (PC)",
-	"submitMobileForm": "Plantilla de formulario de envío personalizado (móvil)"
+	"submitMobileForm": "Plantilla de formulario de envío personalizado (móvil)",
+	"sorkKeyNote": "- ordenar -",
+	"createTime": "Tiempo de creación",
+	"updateTime": "Tiempo de actualización",
+	"asc": "Orden positivo",
+	"desc": "Orden inverso",
+	"searchPlacholder": "Introduzca nombre / alias / búsqueda de Id"
 }
 MWF.xApplication.process.ProcessManager["lp."+o2.language] = MWF.xApplication.process.ProcessManager.LP

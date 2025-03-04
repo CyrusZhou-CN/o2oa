@@ -356,7 +356,18 @@ MWF.xApplication.cms.FormDesigner.LP={
 		"relatedLink": "Related Link",
 		"associatedDocument": "Associated Document",
 		"security": "Security Label",
-		"securityInfo": "Only one \"classification identification\" field is allowed"
+		"securityInfo": "Only one \"classification identification\" field is allowed",
+		"group_O2OA": "O2OA component",
+		"oo_input": "Input box",
+		"oo_button": "Button",
+		"oo_radioGroup": "Single Choice",
+		"oo_checkGroup": "check",
+		"oo_select": "Drop down box",
+		"oo_textarea": "Multi line text",
+		"oo_calendar": "calendar",
+		"oo_datetime": "Date box",
+		"oo_org": "personnel",
+		"codeedit": "Script editor "
 	},
 	"propertyTemplate": {
 		"base": "Base",
@@ -1467,7 +1478,26 @@ MWF.xApplication.cms.FormDesigner.LP={
 		"checkOtherFlow": "Verify other circulation methods",
 		"checkOtherFlowNote": "When adding, resetting, or returning, execute the verification script. Obtain the flow method (add as: addTask, reset as: reset, return as: goBack) through this. form. opinion, and other parameters of the flow through this. form. flowData",
 		"allowDownloadBatch": "Allow batch downloads",
-		"forceClearCustomStyle": "Clear custom styles when switching"
+		"forceClearCustomStyle": "Clear custom styles when switching",
+		"valueFormat": "Binding value formatting",
+		"logTaskFormat": "To Do Format",
+		"showMode": "pattern",
+		"defaultView": "Initial View",
+		"dayView": "day",
+		"monthView": "month",
+		"yearView": "year",
+		"secondEnable": "Select seconds",
+		"weekBegin": "Starting every week",
+		"required": "Required",
+		"readModeEvents": "Does the reading mode respond to mouse events",
+		"useCache": "Using cache",
+		"useCacheNote": "Yes, the data dictionary will be cached when first opened, and the webpage needs to be refreshed to retrieve the modified data dictionary. Select otherwise to retrieve from the server every time.",
+		"foxit": {
+			"api": "API"
+		},
+		"scriptMode": "Script type",
+		"scriptEditor": "Script editor ",
+		"lineNumber": "set number "
 	},
 	"smartbi": {
 		"nosetup": "please install SmartBI APP first",
@@ -1549,7 +1579,10 @@ MWF.xApplication.cms.FormDesigner.LP={
 		"clearNoDomModule": "Clear component configurations that are not in the HTML tree",
 		"autoSave": "AutoSave",
 		"brush": "brush",
-		"viewAllVersion": "View all form versions"
+		"viewAllVersion": "View all form versions",
+		"add": "newly build",
+		"gotoApp": "Open the current application",
+		"copyProperty": "Copy component properties"
 	},
 	"formType": {
 		"empty": "Empty form",
@@ -1571,6 +1604,8 @@ MWF.xApplication.cms.FormDesigner.LP={
 		"section": "section",
 		"greenFlat": "Green flat",
 		"lightBlue": "Light blue style"
-	}
+	},
+	"selectCopyModule": "Please select the component whose properties need to be copied",
+	"selectCopyModuleNotice": "Please select the component first!"
 }
 MWF.xApplication.cms.FormDesigner["lp."+o2.language] = MWF.xApplication.cms.FormDesigner.LP

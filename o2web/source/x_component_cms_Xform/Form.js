@@ -242,6 +242,8 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
 
                 var cssClass = "";
                 if (this.json.css && this.json.css.code) cssClass = this.loadCss();
+                if (this.json.cssUrl) this.container.loadCss(this.json.cssUrl);
+                if (this.json.cssLink) this.container.loadCss(this.json.cssLink);
 
                 this.container.set("html", this.html);
                 this.node = this.container.getFirst();
@@ -260,7 +262,7 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
 
                     this.loadContent(callback);
                 }
-
+        
             }.bind(this));
         },
         loadLanguage: function(callback){
@@ -347,6 +349,28 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                 if (callback) callback(true);
             }
 
+        },
+        loadExtendStyle: function (callback) {
+            if (!this.json.styleConfig || !this.json.styleConfig.extendFile) {
+                if (callback) callback();
+                return;
+            }
+            var stylesUrl = "../x_component_cms_FormDesigner/Module/Form/skin/" + this.json.styleConfig.extendFile;
+            MWF.getJSON(stylesUrl, {
+                    "onSuccess": function (responseJSON) {
+                        if (responseJSON && responseJSON.form) {
+                            this.json = Object.merge(this.json, responseJSON.form);
+                        }
+                        if (callback) callback();
+                    }.bind(this),
+                    "onRequestFailure": function () {
+                        if (callback) callback();
+                    }.bind(this),
+                    "onError": function () {
+                        if (callback) callback();
+                    }.bind(this)
+                }
+            );
         },
         loadRelatedScript: function () {
             if (this.json.includeScripts && this.json.includeScripts.length) {

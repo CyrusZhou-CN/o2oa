@@ -16,11 +16,24 @@ MWF.xApplication.query.ViewDesigner.LP = {
     "saveViewNotice" : "请先保存视图！",
 
     "application" : "数据应用",
-    "newView" : "新视图",
+
     "newViewName" : "新视图名称",
     "copy" : "副本",
     "ok" : "确定",
     "cancel" : "取消",
+
+    "sorkKeyNote": "-排序-",
+    "createTime": "创建时间",
+    "updateTime": "更新时间",
+    "asc": "正序",
+    "desc": "倒序",
+    "searchPlacholder": "输入名称/别名/id搜索",
+    "searchAndSort": "排序和搜索",
+
+    "mustSelectFormStyle" : "必须选择一种样式",
+    "notValidJson" : "错误的json格式",
+    "mustSelectDict" : "请先选择数据字典",
+    "mustSelect": "请选择",
 
     "action": {
         "move": "移动",
@@ -175,6 +188,8 @@ MWF.xApplication.query.ViewDesigner.LP = {
         "asc":"升序",
         "desc":"降序",
         "orderToNumber":"转换成数字排序",
+        "switchOrder": "允许点击切换顺序",
+        "switchOrderByCurrent": "点击后只按当前列排序",
         "category":"分类",
         "hidden":"隐藏",
         "org":"组织对象",
@@ -364,6 +379,8 @@ MWF.xApplication.query.ViewDesigner.LP = {
         "saveAs": "另存为",
         "autoSave": "自动保存",
         "preview": "预览",
-        "help": "帮助"
+        "help": "帮助",
+        "add": "新建",
+        "gotoApp": "打开所在应用"
     }
 };

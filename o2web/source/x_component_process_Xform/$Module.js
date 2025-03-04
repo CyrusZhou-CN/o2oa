@@ -98,7 +98,7 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
         }
     },
     validation: function (routeName, opinion) {
-        if (!this.isReadonly()){
+        if (!this.isReadonly() && this.json.showMode!=="disabled"){
             if (this.getInputData){
                 this._setBusinessData(this.getInputData("change"));
             }
@@ -257,7 +257,7 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
         return null;
     },
     isReadonly : function(){
-        return !!(this.readonly || this.json.isReadonly || this.form.json.isReadonly || this.isSectionMergeRead());
+        return !!(this.readonly || this.json.isReadonly || this.form.json.isReadonly || this.json.showMode==="read" || this.isSectionMergeRead());
     },
     isAllSectionShow: function(){
         return this.json.showAllSection && this.json.section === "yes" && this.isSectionData();
@@ -469,7 +469,7 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
      * this.form.get("fieldId").show(); //显示组件
      */
     show: function(){
-        var dsp = this.node.retrieve("mwf_display", dsp);
+        var dsp = this.node.retrieve("mwf_display", "block");
         this.node.setStyle("display", dsp);
         if (this.iconNode) this.iconNode.setStyle("display", "block");
     },
@@ -978,6 +978,24 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
         }
 
         return this.form.all[path];
+    },
+    clearDefaultMargin: function (){
+        var marginStyle = this.node.getStyle('margin-right');
+        var paddingStyle = this.node.getStyle('padding-right');
+        if( marginStyle === '20px' || paddingStyle === '4px' ){
+            var map = {};
+            Object.each(this.json.recoveryStyles || {}, function(value, key){
+                var k = key.toLowerCase();
+                if( ['margin','margin-right','padding', 'padding-right'].contains(k) ){
+                    map[k] = value;
+                }
+            });
+            if( marginStyle === '20px' && map['margin'] !== '20px' && map['margin-right'] !== '20px') {
+                this.node.setStyle('margin-right', '0');
+            }
+            if( paddingStyle === '4px' && map['padding'] !== '4px' && map['padding-right'] !== '4px') {
+                this.node.setStyle('padding-right', '0');
+            }
+        }
     }
-
 });

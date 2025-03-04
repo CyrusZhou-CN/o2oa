@@ -7,10 +7,10 @@ MWF.xApplication.process.FormDesigner.Module.Attachment = MWF.FCAttachment = new
 		"style": "default",
 		"propertyPath": "../x_component_process_FormDesigner/Module/Attachment/attachment.html"
 	},
-	
+
 	initialize: function(form, options){
 		this.setOptions(options);
-		
+
 		this.path = "../x_component_process_FormDesigner/Module/Attachment/";
 		this.cssPath = "../x_component_process_FormDesigner/Module/Attachment/"+this.options.style+"/css.wcss";
 
@@ -44,6 +44,7 @@ MWF.xApplication.process.FormDesigner.Module.Attachment = MWF.FCAttachment = new
 		this.node = this.moveNode.clone(true, true);
 		this.node.setStyles(this.css.moduleNode);
 		this.node.set("id", this.json.id);
+		this.node.set("data-mwf-el-type", "MWFFormDesignerAttachment");
 		this.node.addEvent("selectstart", function(e){
 			e.preventDefault();
 		});
@@ -65,17 +66,18 @@ MWF.xApplication.process.FormDesigner.Module.Attachment = MWF.FCAttachment = new
 	},
 
 	_initModule: function(){
+		this.json.$inDatatable = this.parentContainer && ["datagrid$Data","datatable$Data"].contains(this.parentContainer.json.moduleName);
 		this.node.empty();
 		// if (this.parentContainer && this.parentContainer.json.moduleName == "datagrid$Data" && !this.json.size) this.json.size = "min";
 		// if (this.parentContainer && this.parentContainer.json.moduleName == "datagrid$Data" && !this.json.listStyle) this.json.listStyle = "sequence";
 		if(!this.json.size){
-			if(this.parentContainer && ["datagrid$Data","datatable$Data"].contains(this.parentContainer.json.moduleName)){
+			if( this.json.$inDatatable ){
 				this.json.size = "min";
 			}else{
 				this.json.size = "max";
 			}
 		}
-		if (this.parentContainer && ["datagrid$Data","datatable$Data"].contains(this.parentContainer.json.moduleName) && !this.json.listStyle) this.json.listStyle = "sequence";
+		if ( this.json.$inDatatable && !this.json.listStyle) this.json.listStyle = "sequence";
 		this.loadAttachmentController(this.json.editorProperties);
 
 		this.setPropertiesOrStyles("styles");
@@ -84,12 +86,13 @@ MWF.xApplication.process.FormDesigner.Module.Attachment = MWF.FCAttachment = new
         if (!this.form.isSubform) this._createIconAction();
 		this._setNodeEvent();
 
-		debugger;
-
 	},
     loadAttachmentController: function(){
+		this.node.set("data-mwf-el-type", "MWFFormDesignerAttachment");
         MWF.require("MWF.widget.AttachmentController", function(){
             this.attachmentController = new MWF.widget.ATTER(this.node, this, {
+				"style": this.json.style || "default",
+				"title": "Attachment",
 				"readonly": true,
 				"size": this.json.size,
 				"toolbarGroupHidden" : this.json.toolbarGroupHidden || [],

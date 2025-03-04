@@ -202,6 +202,9 @@ MWF.xApplication.process.FormDesigner.LP = {
     "clearNoDomModuleTitle" : "清除未在HTML树中的组件配置",
     "clearNoDomModuleContent" : "是否清除未在HTML树中的组件配置？清除后需要保存生效。",
 
+    "selectCopyModule": "请选择需要复制属性的组件",
+    "selectCopyModuleNotice": "请先选择组件！",
+
     "refreshDatatemplateImpExpTitle": "导入字段确认",
     "refreshDatatemplateImpExpContent": "本操作从数据模板的内部组件获取字段。如果执行本操作，之前配置的字段会被替换，是否继续？",
     "handWriting": "手写",
@@ -338,6 +341,7 @@ MWF.xApplication.process.FormDesigner.LP = {
         "iframe": "Iframe",
         "documenteditor": "公文编辑器",
         "htmledit": "HTML编辑器",
+        "codeedit": "脚本编辑器",
         "office": "Office控件(Ntko)",
         "yozoOffice" : "永中控件",
         "statementSelector": "选择查询视图",
@@ -350,6 +354,7 @@ MWF.xApplication.process.FormDesigner.LP = {
         "group_process": "流程组件",
         "group_filetext": "文件编辑组件",
         "group_function": "功能组件",
+        "group_O2OA": "O2OA组件",
         "group_element": "Element组件",
 
         "el_container": "布局容器",
@@ -374,6 +379,17 @@ MWF.xApplication.process.FormDesigner.LP = {
         "el_carousel": "幻灯片",
         "el-menu": "导航菜单",
         "el_common": "通用",
+
+        "oo_input": "输入框",
+        "oo_button": "按钮",
+        "oo_radioGroup": "单选",
+        "oo_checkGroup": "复选",
+        "oo_select": "下拉框",
+        "oo_textarea": "多行文本",
+        "oo_calendar": "日历",
+        "oo_datetime": "日期框",
+        "oo_org": "人员",
+
 
         "importer": "数据导入",
         "readLog": "阅读记录",
@@ -413,6 +429,8 @@ MWF.xApplication.process.FormDesigner.LP = {
         "preloadScript": "预加载脚本",
         "script": "脚本",
         "dict": "数据字典",
+        "useCache": "使用缓存",
+        "useCacheNote": "选是，在首次打开时会缓存数据字典，需刷新网页才会重新获取修改的数据字典。选否则每次从服务器获取。",
         "dictName": "字典名称",
         "dictPath": "数据路径",
         "valueKey": "值属性名",
@@ -628,6 +646,7 @@ MWF.xApplication.process.FormDesigner.LP = {
         "timeSelectType_slider" : "滑块",
         "timeSelectType_select" : "下拉",
         "format": "格式化",
+        "valueFormat": "绑定值格式化",
 
         "rateTexts": "极差, 失望, 一般, 满意, 惊喜",
         "allowHalf": "允许半选",
@@ -977,6 +996,7 @@ MWF.xApplication.process.FormDesigner.LP = {
         "validOnPcSide": "（pc端有效）",
         "handwrittenHeight": "手写意见高度",
         "logFormat": "格式",
+        "logTaskFormat": "待办格式",
         "logFormatScript": "格式脚本",
         "logHtmlScript": "html脚本",
         "currentPerson": "当前处理人",
@@ -1224,6 +1244,18 @@ MWF.xApplication.process.FormDesigner.LP = {
         "el_autofocus": "默认焦点",
         "el_isText": "显示文字",
         "el_iconPosition": "图标位置",
+
+        "showMode": "模式",
+        "defaultView": "初始视图",
+        "dayView": "日",
+        "monthView": "月",
+        "yearView": "年",
+        "secondEnable": "选择秒",
+        "weekBegin": "每周开始",
+        "required": "必填",
+
+        "readModeEvents": "阅读模式下是否响应鼠标事件",
+
 
         "layout": "布局",
         "layoutCode": "布局代码",
@@ -1480,6 +1512,9 @@ MWF.xApplication.process.FormDesigner.LP = {
         "weeks": {
             "arr": ["周一","周二","周三","周四","周五","周六","周日"]
         },
+        "foxit" : {
+            "api" : "API"
+        },
         "tabletWidth": "手写板宽度",
         "tabletHeight": "手写板高度",
         "tabletSizeNote": "仅PC端有效，移动端横向满屏",
@@ -1534,7 +1569,11 @@ MWF.xApplication.process.FormDesigner.LP = {
         "titleAddTo": "标题行添加",
         "firstLine": "首行",
         "lastLine": "末行",
-        "forceClearCustomStyle": "切换时清除自定义样式"
+        "forceClearCustomStyle": "切换时清除自定义样式",
+
+        "scriptMode": "脚本类型",
+        "scriptEditor": "脚本编辑器",
+        "lineNumber": "显示行号"
     },
     "smartbi":{
         "nosetup":"请先安装SmartBI应用",
@@ -1614,8 +1653,11 @@ MWF.xApplication.process.FormDesigner.LP = {
         "officeImplode": "从WORD导入（仅支持Word 97-2003文件 *.doc）",
         "help": "帮助",
         "clearNoDomModule": "清除未在HTML树中的组件配置",
+        "copyProperty": "拷贝组件属性",
         "autoSave": "自动保存",
         "brush": "格式刷",
-        "viewAllVersion": "查看所有表单版本"
+        "viewAllVersion": "查看所有表单版本",
+        "add": "新建",
+        "gotoApp": "打开所在应用"
     }
 };

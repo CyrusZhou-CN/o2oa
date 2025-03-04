@@ -78,6 +78,7 @@ MWF.xApplication.query.StatementDesigner.LP = Object.merge( MWF.xApplication.que
     "workInstance": "流程实例(Work)",
     "workCompletedInstance": "已完成流程实例(WorkCompleted)",
     "reviewInstance": "可阅读(Review)",
+    "recordInstance": "流转记录(Record)",
     "documentInstance": "内容管理文档(Document)",
     "cmsReviewInstance": "内容管理可阅读(com.x.cms.core.entity.Review)",
     "documentViewRecord": "内容管理阅读记录(DocumentViewRecord)",
@@ -90,6 +91,7 @@ MWF.xApplication.query.StatementDesigner.LP = Object.merge( MWF.xApplication.que
     "workInstanceSql":"流程实例(PP_C_WORK)",
     "workCompletedInstanceSql":"已完成流程实例(PP_C_WORKCOMPLETED)",
     "reviewInstanceSql":"可阅读(PP_C_REVIEW)",
+    "recordInstanceSql":"流转记录(PP_C_Record)",
     "documentInstanceSql":"内容管理文档(CMS_DOCUMENT)",
     "cmsReviewInstanceSql":"内容管理可阅读(CMS_REVIEW)",
     "documentViewRecordSql":"内容管理阅读记录(CMS_DOCUMENT_VIEWRECORD)",
@@ -156,7 +158,17 @@ MWF.xApplication.query.StatementDesigner.LP = Object.merge( MWF.xApplication.que
         "save": "保存",
         "autoSave": "自动保存",
         "preview": "预览",
-        "help": "帮助"
-    }
+        "help": "帮助",
+        "add": "新建",
+        "gotoApp": "打开所在应用"
+    },
+
+    "sorkKeyNote": "-排序-",
+    "createTime": "创建时间",
+    "updateTime": "更新时间",
+    "asc": "正序",
+    "desc": "倒序",
+    "searchPlacholder": "输入名称/别名/id搜索",
+    "searchAndSort": "排序和搜索"
 
 });

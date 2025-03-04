@@ -824,6 +824,57 @@ MWF.xScript.CMSEnvironment = function(ev){
             //     return v;
             // }
         },
+
+        listSupUnitWithLevel: function(name, level, async){
+            var v;
+            var supUnitList = this.listSupUnit( name, true, !!async);
+            var unitList = this.getUnit( name, false, !!async );
+
+            var cb = function(sups, units){
+                v = [].concat(
+                    sups,
+                    typeOf( units ) === "object" ? [units] : units
+                ).filter(function (u){
+                    return u.level === level;
+                });
+                if (async && o2.typeOf(async)==="function") return async(v);
+                return v;
+            };
+
+            if( typeof supUnitList.then === 'function' ){
+                return Promise.all([supUnitList, unitList]).then(function( result){
+                    return cb(result[0], result[1]);
+                });
+            }else{
+                return cb(supUnitList, unitList);
+            }
+        },
+
+        listSupUnitWithType: function(name, type, async){
+            var v;
+            var supUnitList = this.listSupUnit( name, true, !!async);
+            var unitList = this.getUnit( name, false, !!async );
+
+            var cb = function(sups, units){
+                v = [].concat(
+                    sups,
+                    typeOf( units ) === "object" ? [units] : units
+                ).filter(function (u){
+                    return (u.typeList || []).contains( type );
+                });
+                if (async && o2.typeOf(async)==="function") return async(v);
+                return v;
+            };
+
+            if( typeof supUnitList.then === 'function' ){
+                return Promise.all([supUnitList, unitList]).then(function( result){
+                    return cb(result[0], result[1]);
+                });
+            }else{
+                return cb(supUnitList, unitList);
+            }
+        },
+
         //根据个人身份获取组织
         //flag 数字    表示获取第几层的组织
         //     字符串  表示获取指定类型的组织
@@ -1644,10 +1695,74 @@ MWF.xScript.CMSEnvironment = function(ev){
     // }else{
     //     var includedScripts = window.includedScripts;
     // }
+    var _getScriptAction = function ( type ){
+        var scriptAction;
+        switch (type) {
+            case "portal" :
+                if (this.scriptActionPortal) {
+                    scriptAction = this.scriptActionPortal;
+                } else {
+                    MWF.require("MWF.xScript.Actions.PortalScriptActions", null, false);
+                    scriptAction = this.scriptActionPortal = new MWF.xScript.Actions.PortalScriptActions();
+                }
+                break;
+            case "process" :
+                if (this.scriptActionProcess) {
+                    scriptAction = this.scriptActionProcess;
+                } else {
+                    MWF.require("MWF.xScript.Actions.ScriptActions", null, false);
+                    scriptAction = this.scriptActionProcess = new MWF.xScript.Actions.ScriptActions();
+                }
+                break;
+            case "cms" :
+                if (this.scriptActionCMS) {
+                    scriptAction = this.scriptActionCMS;
+                } else {
+                    MWF.require("MWF.xScript.Actions.CMSScriptActions", null, false);
+                    scriptAction = this.scriptActionCMS = new MWF.xScript.Actions.CMSScriptActions();
+                }
+                break;
+            case "service" :
+                if (this.scriptActionService) {
+                    scriptAction = this.scriptActionService;
+                } else {
+                    MWF.require("MWF.xScript.Actions.ServiceScriptActions", null, false);
+                    scriptAction = this.scriptActionService = new MWF.xScript.Actions.ServiceScriptActions();
+                }
+                break;
+        }
+        return scriptAction;
+    }
+
+
+    //缓存名称、别名、id
+    var _parseScriptImportList = function (json, type){
+        var includedScripts = [];
+        var importedList = json.data.importedList || [];
+        importedList.each(function (flag) {
+            if (type === "portal") {
+                includedScripts.push(type + "-" + json.data.portal + "-" + flag);
+                if (json.data.portalName) includedScripts.push(type + "-" + json.data.portalName + "-" + flag);
+                if (json.data.portalAlias) includedScripts.push(type + "-" + json.data.portalAlias + "-" + flag);
+            } else if (type === "cms") {
+                includedScripts.push(type + "-" + json.data.appId + "-" + flag);
+                if (json.data.appName) includedScripts.push(type + "-" + json.data.appName + "-" + flag);
+                if (json.data.appAlias) includedScripts.push(type + "-" + json.data.appAlias + "-" + flag);
+            } else if (type === "process") {
+                includedScripts.push(type + "-" + json.data.application + "-" + flag);
+                if (json.data.appName) includedScripts.push(type + "-" + json.data.appName + "-" + flag);
+                if (json.data.appAlias) includedScripts.push(type + "-" + json.data.appAlias + "-" + flag);
+            }else if (type === "service") {
+                includedScripts.push(type + "-" + flag);
+            }
+        });
+        return includedScripts.concat(importedList);
+    }
+
     var includedScripts = [];
     var _includeSingle = function( optionsOrName , callback , async){
         var options = optionsOrName;
-        if( typeOf( options ) == "string" ){
+        if( typeOf( options ) === "string" ){
             options = { name : options };
         }
         var name = options.name;
@@ -1662,98 +1777,28 @@ MWF.xScript.CMSEnvironment = function(ev){
         if( type === "service" ){
             key = type + "-" + name;
         }
+
+        //js 加载过就不重新加载了
         if (includedScripts.indexOf( key )> -1){
             if (callback) callback.apply(this);
             return;
         }
-        //if (includedScripts.indexOf( name )> -1){
-        //    if (callback) callback.apply(this);
-        //    return;
-        //}
-        if( (options.enableAnonymous || options.anonymous) && type === "cms" ){
-            o2.Actions.load("x_cms_assemble_control").ScriptAnonymousAction.getWithAppWithName( application, name, function(json){
-                if (json.data){
-                    includedScripts.push( key );
-                    //名称、别名、id
-                    ( json.data.importedList || [] ).each( function ( flag ) {
-                        includedScripts.push( type + "-" + json.data.appId + "-" + flag );
-                        if( json.data.appName )includedScripts.push( type + "-" + json.data.appName + "-" + flag );
-                        if( json.data.appAlias )includedScripts.push( type + "-" + json.data.appAlias + "-" + flag );
-                    });
-                    includedScripts = includedScripts.concat(json.data.importedList || []);
-                    MWF.CMSMacro.exec(json.data.text, this);
-                    if (callback) callback.apply(this);
-                }else{
-                    if (callback) callback.apply(this);
-                }
-            }.bind(this), null, false);
-        }else{
-            var scriptAction;
-            switch ( type ){
-                case "portal" :
-                    if( this.scriptActionPortal ){
-                        scriptAction = this.scriptActionPortal;
-                    }else{
-                        MWF.require("MWF.xScript.Actions.PortalScriptActions", null, false);
-                        scriptAction = this.scriptActionPortal = new MWF.xScript.Actions.PortalScriptActions();
-                    }
-                    break;
-                case "process" :
-                    if( this.scriptActionProcess ){
-                        scriptAction = this.scriptActionProcess;
-                    }else{
-                        MWF.require("MWF.xScript.Actions.ScriptActions", null, false);
-                        scriptAction = this.scriptActionProcess = new MWF.xScript.Actions.ScriptActions();
-                    }
-                    break;
-                case "cms" :
-                    if( this.scriptActionCMS ){
-                        scriptAction = this.scriptActionCMS;
-                    }else{
-                        MWF.require("MWF.xScript.Actions.CMSScriptActions", null, false);
-                        scriptAction = this.scriptActionCMS = new MWF.xScript.Actions.CMSScriptActions();
-                    }
-                    break;
-                case "service" :
-                    if (this.scriptActionService) {
-                        scriptAction = this.scriptActionService;
-                    } else {
-                        MWF.require("MWF.xScript.Actions.ServiceScriptActions", null, false);
-                        scriptAction = this.scriptActionService = new MWF.xScript.Actions.ServiceScriptActions();
-                    }
-                    break;
+
+        var successCallback = function(json){
+            if (json.data){
+                includedScripts.push( key );
+                includedScripts = includedScripts.concat( _parseScriptImportList(json, type) );
+                MWF.CMSMacro.exec(json.data.text, this);
+                if (callback) callback.apply(this);
+            }else{
+                if (callback) callback.apply(this);
             }
+        }.bind(this);
 
-            var successCallback = function(json){
-                if (json.data){
-                    includedScripts.push( key );
-
-                    //名称、别名、id
-                    json.data.importedList.each( function ( flag ) {
-                        if( type === "portal" ){
-                            includedScripts.push( type + "-" + json.data.portal + "-" + flag );
-                            if( json.data.portalName )includedScripts.push( type + "-" + json.data.portalName + "-" + flag );
-                            if( json.data.portalAlias )includedScripts.push( type + "-" + json.data.portalAlias + "-" + flag );
-                        }else if( type === "cms" ){
-                            includedScripts.push( type + "-" + json.data.appId + "-" + flag );
-                            if( json.data.appName )includedScripts.push( type + "-" + json.data.appName + "-" + flag );
-                            if( json.data.appAlias )includedScripts.push( type + "-" + json.data.appAlias + "-" + flag );
-                        }else if( type === "process" ){
-                            includedScripts.push( type + "-" + json.data.application + "-" + flag );
-                            if( json.data.appName )includedScripts.push( type + "-" + json.data.appName + "-" + flag );
-                            if( json.data.appAlias )includedScripts.push( type + "-" + json.data.appAlias + "-" + flag );
-                        }else if (type === "service") {
-                            includedScripts.push(type + "-" + flag);
-                        }
-                    });
-                    includedScripts = includedScripts.concat(json.data.importedList);
-                    MWF.CMSMacro.exec(json.data.text, this);
-                    if (callback) callback.apply(this);
-                }else{
-                    if (callback) callback.apply(this);
-                }
-            }.bind(this);
-
+        if (( options.enableAnonymous || options.anonymous ) && type === "cms") {
+            o2.Actions.load("x_cms_assemble_control").ScriptAnonymousAction.getWithAppWithName(application, name, successCallback, null, !!async);
+        } else {
+            var scriptAction = _getScriptAction.call(this, type);
             if( type === "service" ){
                 scriptAction.getScriptByName(name, includedScripts, successCallback, null, !!async);
             }else{
@@ -1762,7 +1807,7 @@ MWF.xScript.CMSEnvironment = function(ev){
         }
     };
     this.include = function( optionsOrName , callback, async){
-        if (o2.typeOf(optionsOrName)=="array"){
+        if (o2.typeOf(optionsOrName)==="array"){
             if (!!async){
                 var count = optionsOrName.length;
                 var loaded = 0;
@@ -1782,6 +1827,61 @@ MWF.xScript.CMSEnvironment = function(ev){
         }else{
             _includeSingle.apply(this, [optionsOrName , callback, async])
         }
+    };
+
+
+    var includedSourceMap = {};
+    var _includeSource = function (optionsOrName, callback, async, fileType) {
+        var options = typeOf(optionsOrName) === "string" ? {name: optionsOrName} : optionsOrName;
+        var name = options.name;
+        var type = options.type === "service" ? options.type : ((options.type && options.application) ? options.type : "cms");
+        var application = options.application || _form.json.application;
+        var key = type === "service" ? (type + "-" + name) : (type + "-" + application + "-" + name);
+        var data, result;
+        if( includedSourceMap[key] ){
+            data = includedSourceMap[key];
+            if(callback)callback( data.text );
+            return !!async ? Promise.resolve( data.text ) : data.text;
+        }
+        var successCallback = function (json) {
+            if (json.data) {
+                var includeds = [key];
+                includeds = includeds.concat( _parseScriptImportList(json, type) );
+                includeds.each(function(k){
+                    includedSourceMap[k] = json.data;
+                })
+                result = json.data.text;
+                if( fileType === 'json' ){
+                    result = JSON.parse(result);
+                }
+                if (callback) callback.call(this, result);
+            } else {
+                result = '';
+                if (callback) callback.call(this, '');
+            }
+            return result;
+        }.bind(this);
+        var p;
+        if (( options.enableAnonymous || options.anonymous ) && type === "cms") {
+            p = o2.Actions.load("x_cms_assemble_control").ScriptAnonymousAction.getWithAppWithName(application, name, !!async ? null : successCallback, null, !!async);
+        } else {
+            var scriptAction = _getScriptAction.call(this, type);
+            if( type === "service" ){
+                p = scriptAction.getScriptByName(name, includedScripts, successCallback, !!async ? null : successCallback, null, !!async);
+            }else{
+                p = scriptAction.getScriptByName(application, name, includedScripts, !!async ? null : successCallback, null, !!async);
+            }
+        }
+        return !!async ? p.then( successCallback ) : result;
+    };
+    this.includeHtml = function (optionsOrName, callback, async){
+        return _includeSource.apply(this, [optionsOrName, callback, async!==false, 'html'])
+    };
+    this.includeJson = function (optionsOrName, callback, async){
+        return _includeSource.apply(this, [optionsOrName, callback, async!==false, 'json'])
+    };
+    this.includeCss = function (optionsOrName, callback, async){
+        return _includeSource.apply(this, [optionsOrName, callback, async!==false, 'css']);
     };
     //var includedScripts = [];
     //this.include = function(name, callback){
@@ -1807,6 +1907,20 @@ MWF.xScript.CMSEnvironment = function(ev){
         o[name] = {"value": fun, "configurable": over};
         MWF.defineProperties(this, o);
     }.bind(this);
+
+    this.exec = function(text, bind, arg=null, throwError=true){
+        const b = bind || globalThis;
+        const p = (arg) ? Object.values(arg) : [];
+        const k = (arg) ? Object.keys(arg).join(',') : '';
+        try {
+            return Function('return function('+k+'){' + text + '}')().apply(b, p);
+        }catch(e){
+            if (throwError) throw e;
+            console.error(e);
+            return '';
+        }
+    }
+
     //如果前端事件有异步调用，想要在异步调用结束后继续运行页面加载，
     //可在调用前执行 var resolve = this.wait();
     //在异步调用结束后 执行 resolve.cb()；
@@ -1852,6 +1966,22 @@ MWF.xScript.CMSEnvironment = function(ev){
             _form.saveDocument(callback);
         },
         "close": function(){_form.closeDocument();},
+
+        /**
+         * @summary 根据表单中所有组件的校验设置和表单的“发布校验”脚本进行校验。<b>（仅内容管理表单中可用）</b>
+         * @method verifyPublish
+         * @static
+         * @o2syntax
+         * this.form.verifyPublish()
+         *  @example
+         *  if( !this.form.verifyPublish() ){
+         *      return false;
+         *  }
+         *  @return {Boolean} 是否通过校验
+         */
+        "verifyPublish": function(isSave){
+            return !(!_form.formValidation("publish") || !_form[isSave ? 'formSaveValidation' : 'formPublishValidation']());
+        },
 
         /**发布当前文档。<b>（仅内容管理表单中可用）</b>
          * @method publish
@@ -2227,62 +2357,63 @@ MWF.xScript.CMSEnvironment = function(ev){
                     }, false);
 
                     if (!cmpt.processStarter) cmpt.processStarter = new o2.xApplication.process.TaskCenter.Starter(obj);
-                    cmpt.processStarter.load();
+                    cmpt.processStarter.load({
+                        "appFlag": app
+                    });
                 }, true, true);
                 return "";
             }
+            MWF.xDesktop.requireApp("process.TaskCenter", "ProcessStarter", null, false);
             var action = MWF.Actions.get("x_processplatform_assemble_surface").getProcessByName(process, app, function(json){
                 if (json.data){
-                    MWF.xDesktop.requireApp("process.TaskCenter", "ProcessStarter", function(){
-                        var starter = new MWF.xApplication.process.TaskCenter.ProcessStarter(json.data, _form.app, {
-                            "workData": data,
-                            "identity": identity,
-                            "latest": latest,
-                            "skipDraftCheck": skipDraftCheck,
-                            "onStarted": function(data, title, processName){
-                                var application;
-                                if (data.work){
-                                    var work = data.work;
-                                    var options = {
-                                        "draft": work,
-                                        "draftData":data.data||{},
-                                        "appId": "process.Work"+(new o2.widget.UUID).toString(),
-                                        "desktopReload": false
-                                    };
+                    var starter = new MWF.xApplication.process.TaskCenter.ProcessStarter(json.data, _form.app, {
+                        "workData": data,
+                        "identity": identity,
+                        "latest": latest,
+                        "skipDraftCheck": skipDraftCheck,
+                        "onStarted": function(data, title, processName){
+                            var application;
+                            if (data.work){
+                                var work = data.work;
+                                var options = {
+                                    "draft": work,
+                                    "draftData":data.data||{},
+                                    "appId": "process.Work"+(new o2.widget.UUID).toString(),
+                                    "desktopReload": false
+                                };
+                                if( !layout.inBrowser && afterCreated )options.onPostLoadForm = afterCreated;
+                                application = layout.desktop.openApplication(null, "process.Work", options);
+                            }else{
+                                var currentTask = [];
+                                data.each(function(work){
+                                    if (work.currentTaskIndex != -1) currentTask.push(work.taskList[work.currentTaskIndex].work);
+                                }.bind(this));
+
+                                if (currentTask.length==1){
+                                    var options = {"workId": currentTask[0], "appId": currentTask[0]};
                                     if( !layout.inBrowser && afterCreated )options.onPostLoadForm = afterCreated;
-                                    application = layout.desktop.openApplication(null, "process.Work", options);
-                                }else{
-                                    var currentTask = [];
-                                    data.each(function(work){
-                                        if (work.currentTaskIndex != -1) currentTask.push(work.taskList[work.currentTaskIndex].work);
-                                    }.bind(this));
+                                    application =layout.desktop.openApplication(null, "process.Work", options);
+                                }else{}
+                            }
 
-                                    if (currentTask.length==1){
-                                        var options = {"workId": currentTask[0], "appId": currentTask[0]};
-                                        if( !layout.inBrowser && afterCreated )options.onPostLoadForm = afterCreated;
-                                        application =layout.desktop.openApplication(null, "process.Work", options);
-                                    }else{}
-                                }
+                            // var currentTask = [];
+                            // data.each(function(work){
+                            //     if (work.currentTaskIndex != -1) currentTask.push(work.taskList[work.currentTaskIndex].work);
+                            // }.bind(this));
+                            //
+                            // if (currentTask.length==1){
+                            //     var options = {"workId": currentTask[0], "appId": currentTask[0]};
+                            //     layout.desktop.openApplication(null, "process.Work", options);
+                            // }else{}
 
-                                // var currentTask = [];
-                                // data.each(function(work){
-                                //     if (work.currentTaskIndex != -1) currentTask.push(work.taskList[work.currentTaskIndex].work);
-                                // }.bind(this));
-                                //
-                                // if (currentTask.length==1){
-                                //     var options = {"workId": currentTask[0], "appId": currentTask[0]};
-                                //     layout.desktop.openApplication(null, "process.Work", options);
-                                // }else{}
+                            if (callback) callback(data);
 
-                                if (callback) callback(data);
-
-                                if(layout.inBrowser && afterCreated){
-                                    afterCreated(application)
-                                }
-                            }.bind(this)
-                        });
-                        starter.load();
-                    }.bind(this));
+                            if(layout.inBrowser && afterCreated){
+                                afterCreated(application)
+                            }
+                        }.bind(this)
+                    });
+                    starter.load();
                 }
             });
         }
@@ -2415,6 +2546,9 @@ if( !MWF.xScript.createTable )MWF.xScript.createTable = function(){
         };
         this.updateRow = function(id, data, success, error, async){
             return this.action.rowUpdate(this.name, id, data, success, error, async);
+        };
+        this.partUpdateRow = function(id, data, success, error, async){
+            return this.action.rowPartUpdate(this.name, id, data, success, error, async);
         };
     }
 };
@@ -2575,7 +2709,7 @@ MWF.xScript.CMSJSONData = function(data, callback, key, parent, _form){
                     var value = typeOf( v ) === "null" ? "" : v;
                     this.add(kk, value, false, true);
                 }
-             },
+            },
             "del": {"value": function(delKey){
                     if (!this.hasOwnProperty(delKey)) return null;
                     // delete data[delKey];

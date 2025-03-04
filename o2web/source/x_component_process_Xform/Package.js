@@ -61,7 +61,17 @@ MWF.xApplication.process.Xform.require = function(callback){
         ["process.Xform", "ReadLog"],
         ["process.Xform", "Relatedlink"],
         ["process.Xform", "AssociatedDocument"],
-        ["process.Xform", "Security"]
+        ["process.Xform", "Security"],
+        ["process.Xform", "OOInput"],
+        ["process.Xform", "OOButton"],
+        ["process.Xform", "OORadioGroup"],
+        ["process.Xform", "OOCheckGroup"],
+        ["process.Xform", "OOSelect"],
+        ["process.Xform", "OOTextarea"],
+        ["process.Xform", "OODatetime"],
+        ["process.Xform", "OOOrg"],
+        ["process.Xform", "OOLog"],
+        ["process.Xform", "Codeeditor"]
     ];
     MWF.xDesktop.requireApp(modules, null, function(){
         if (callback) callback();

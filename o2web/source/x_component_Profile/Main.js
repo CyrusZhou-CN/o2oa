@@ -385,7 +385,8 @@ MWF.xApplication.Profile.Main = new Class({
         this.emPowerContentNode = this.tab.pages[i].contentNode.getElement("div.o2_profile_emPower_content");
 
         MWF.require("MWF.widget.Tab", function() {
-            this.tabEmpower = new MWF.widget.Tab(this.emPowerContentNode, {"style": "empower"});
+            this.tabEmpower = new MWF.widget.Tab(this.emPowerContentNode, {"style": "empower_v10"});
+            // this.tabEmpower = new MWF.widget.Tab(this.emPowerContentNode, {"style": "empower"});
             this.tabEmpower.load();
 
             tabEmpowerNodes.each(function(node){
@@ -1084,8 +1085,8 @@ MWF.xApplication.Profile.Main = new Class({
 
         if (password!=morePassword){
             this.notice(this.lp.passwordNotMatch, "error");
-            this.passwordInputNode.setStyles(this.css.inforContentInputNode_error);
-            this.morePasswordInputNode.setStyles(this.css.inforContentInputNode_error);
+            // this.passwordInputNode.setStyles(this.css.inforContentInputNode_error);
+            // this.morePasswordInputNode.setStyles(this.css.inforContentInputNode_error);
         }else if(null||remindNode){
             this.notice(remindNode.get("text"), "error");
         }else{
@@ -1094,7 +1095,7 @@ MWF.xApplication.Profile.Main = new Class({
                 this.passwordInputNode.set("value", "");
                 this.morePasswordInputNode.set("value", "");
                 this.notice(this.lp.changePasswordOk, "success");
-            }.bind(this));
+            }.bind(this), null, false);
 
             if (layout.config.mail){
                 var url = "http://"+layout.config.mail+"//names.nsf?changepassword&password="+encodeURIComponent(oldPassword)+"&passwordnew="+encodeURIComponent(password)+"&passwordconfirm="+encodeURIComponent(password);
@@ -1115,21 +1116,21 @@ MWF.xApplication.Profile.Main = new Class({
             if (callback) callback();
         }
     },
-    createPasswordStrengthNode : function(){
-        var passwordStrengthArea = this.passwordRemindContainer;
-
-        var lowNode = new Element( "div", {styles : this.css.passwordStrengthNode }).inject( passwordStrengthArea );
-        this.lowColorNode = new Element( "div", {styles : this.css.passwordStrengthColor }).inject( lowNode );
-        this.lowTextNode = new Element( "div", {styles : this.css.passwordStrengthText, text : this.lp.weak }).inject( lowNode );
-
-        var middleNode = new Element( "div" , {styles : this.css.passwordStrengthNode }).inject( passwordStrengthArea );
-        this.middleColorNode = new Element( "div", {styles : this.css.passwordStrengthColor }).inject( middleNode );
-        this.middleTextNode = new Element( "div", {styles : this.css.passwordStrengthText, text : this.lp.middle }).inject( middleNode );
-
-        var highNode = new Element("div", {styles : this.css.passwordStrengthNode }).inject( passwordStrengthArea );
-        this.highColorNode = new Element( "div", {styles : this.css.passwordStrengthColor }).inject( highNode );
-        this.highTextNode = new Element( "div", {styles : this.css.passwordStrengthText, text : this.lp.high }).inject( highNode );
-    },
+    // createPasswordStrengthNode : function(){
+    //     var passwordStrengthArea = this.passwordRemindContainer;
+    //
+    //     var lowNode = new Element( "div", {styles : this.css.passwordStrengthNode }).inject( passwordStrengthArea );
+    //     this.lowColorNode = new Element( "div", {styles : this.css.passwordStrengthColor }).inject( lowNode );
+    //     this.lowTextNode = new Element( "div", {styles : this.css.passwordStrengthText, text : this.lp.weak }).inject( lowNode );
+    //
+    //     var middleNode = new Element( "div" , {styles : this.css.passwordStrengthNode }).inject( passwordStrengthArea );
+    //     this.middleColorNode = new Element( "div", {styles : this.css.passwordStrengthColor }).inject( middleNode );
+    //     this.middleTextNode = new Element( "div", {styles : this.css.passwordStrengthText, text : this.lp.middle }).inject( middleNode );
+    //
+    //     var highNode = new Element("div", {styles : this.css.passwordStrengthNode }).inject( passwordStrengthArea );
+    //     this.highColorNode = new Element( "div", {styles : this.css.passwordStrengthColor }).inject( highNode );
+    //     this.highTextNode = new Element( "div", {styles : this.css.passwordStrengthText, text : this.lp.high }).inject( highNode );
+    // },
     getPasswordLevel: function( password, callback ){
         /*Level（级别）
          •0-3 : [easy]
@@ -1344,7 +1345,7 @@ MWF.xApplication.Profile.emPowerPopupForm = new Class({
                             "line-height": "36px",
                             "background": "#FFFFFF",
                             "border": "1px solid #DEDEDE",
-                            "border-radius": "100px",
+                            "border-radius": "4px",
                             "font-family": "MicrosoftYaHei",
                             "padding":"0 5px",
                             "font-size": "14px",

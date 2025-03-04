@@ -146,6 +146,10 @@ public class Record extends SliceJpaObject {
 			this.nextManualList = this.properties.getNextManualList();
 			this.nextManualTaskIdentityList = this.getProperties().getNextManualTaskIdentityList();
 			this.startTime = this.getProperties().getStartTime();
+			this.personOrderNumber = this.getProperties().getPersonOrderNumber();
+			this.identityOrderNumber = this.getProperties().getIdentityOrderNumber();
+			this.unitOrderNumber = this.getProperties().getUnitOrderNumber();
+			this.unitLevelName = this.getProperties().getUnitLevelName();
 		}
 	}
 
@@ -154,7 +158,6 @@ public class Record extends SliceJpaObject {
 		this.recordTime = new Date();
 		this.order = recordTime.getTime();
 		this.properties = new RecordProperties();
-
 	}
 
 	public Record(WorkLog workLog, Task task) {
@@ -305,6 +308,74 @@ public class Record extends SliceJpaObject {
 	public void setStartTime(Date startTime) {
 		this.getProperties().setStartTime(startTime);
 		this.startTime = startTime;
+	}
+
+	public static final String PERSONORDERNUMBER_FIELDNAME = "personOrderNumber";
+	@Transient
+	@FieldDescribe("人员排序值")
+	private Integer personOrderNumber;
+
+	public Integer getPersonOrderNumber() {
+		if ((null == personOrderNumber) && (null != this.properties)) {
+			this.personOrderNumber = this.properties.getPersonOrderNumber();
+		}
+		return personOrderNumber;
+	}
+
+	public void setPersonOrderNumber(Integer personOrderNumber) {
+		this.getProperties().setPersonOrderNumber(personOrderNumber);
+		this.personOrderNumber = personOrderNumber;
+	}
+
+	public static final String IDENTITYORDERNUMBER_FIELDNAME = "identityOrderNumber";
+	@Transient
+	@FieldDescribe("身份排序值")
+	private Integer identityOrderNumber;
+
+	public Integer getIdentityOrderNumber() {
+		if ((null == identityOrderNumber) && (null != this.properties)) {
+			this.identityOrderNumber = this.properties.getIdentityOrderNumber();
+		}
+		return identityOrderNumber;
+	}
+
+	public void setIdentityOrderNumber(Integer identityOrderNumber) {
+		this.getProperties().setIdentityOrderNumber(identityOrderNumber);
+		this.identityOrderNumber = identityOrderNumber;
+	}
+
+	public static final String UNITORDERNUMBER_FIELDNAME = "unitOrderNumber";
+	@Transient
+	@FieldDescribe("组织排序值")
+	private Integer unitOrderNumber;
+
+	public Integer getUnitOrderNumber() {
+		if ((null == unitOrderNumber) && (null != this.properties)) {
+			this.unitOrderNumber = this.properties.getUnitOrderNumber();
+		}
+		return unitOrderNumber;
+	}
+
+	public void setUnitOrderNumber(Integer unitOrderNumber) {
+		this.getProperties().setUnitOrderNumber(unitOrderNumber);
+		this.unitOrderNumber = unitOrderNumber;
+	}
+
+	public static final String UNITLEVELNAME_FIELDNAME = "unitLevelName";
+	@Transient
+	@FieldDescribe("组织层级")
+	private String unitLevelName;
+
+	public String getUnitLevelName() {
+		if ((null == unitLevelName) && (null != this.properties)) {
+			this.unitLevelName = this.properties.getUnitLevelName();
+		}
+		return unitLevelName;
+	}
+
+	public void setUnitLevelName(String unitLevelName) {
+		this.getProperties().setUnitLevelName(unitLevelName);
+		this.unitLevelName = unitLevelName;
 	}
 
 	public RecordProperties getProperties() {

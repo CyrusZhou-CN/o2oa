@@ -56,21 +56,15 @@ abstract class AbstractJaxrsAction {
 
 	protected String contentType(Boolean stream, String fileName) throws Exception {
 		String extension = FilenameUtils.getExtension(fileName);
-		String type = "";
-		if (BooleanUtils.isTrue(stream) || StringUtils.isEmpty(extension)) {
-			type = MediaType.APPLICATION_OCTET_STREAM;
-		} else {
-			type = Config.mimeTypes(extension);
-		}
-		return type;
+		return Config.mimeTypes(extension);
 	}
 
 	protected String contentDisposition(Boolean stream, String fileName) throws Exception {
-		fileName = URLEncoder.encode(fileName, DefaultCharset.name).replaceAll("\\+","%20");
+		String encode = URLEncoder.encode(fileName, DefaultCharset.name).replaceAll("\\+", "%20");
 		if (BooleanUtils.isTrue(stream)) {
-			return "attachment; filename*=UTF-8''" + fileName;
+			return "attachment; filename=\"" + fileName + "\"; filename*=UTF-8''" + encode;
 		} else {
-			return "inline; filename*=UTF-8''" + fileName;
+			return "inline; filename=\"" + fileName + "\"; filename*=UTF-8''" + encode;
 		}
 	}
 

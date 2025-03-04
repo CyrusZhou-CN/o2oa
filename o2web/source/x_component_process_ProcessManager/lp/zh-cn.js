@@ -40,6 +40,13 @@ MWF.xApplication.process.ProcessManager.LP = {
     "deleteProcessTitle": "删除设计确认",
     "deleteProcess": "删除选中的流程，同时也会删除选中流程的流转中实例。确定要删除选中的流程吗？",
 
+    "sorkKeyNote": "-排序-",
+    "createTime": "创建时间",
+    "updateTime": "更新时间",
+    "asc": "正序",
+    "desc": "倒序",
+    "searchPlacholder": "输入名称/别名/id搜索",
+
 	"process": {
         "create": "新建流程",
         "search": "搜索流程",
@@ -47,10 +54,10 @@ MWF.xApplication.process.ProcessManager.LP = {
 
 		"noProcessNoticeText": "此应用现在还没有流程，您可以点击此处创建一个新流程",
 		"loaded": "流程加载完毕",
-		
+
 		"deleteProcessTitle": "删除流程确认",
 		"deleteProcess": "是否确定要删除当前流程？"
-		
+
 	},
 	"form": {
         "create": "新建表单",
@@ -64,7 +71,7 @@ MWF.xApplication.process.ProcessManager.LP = {
 
         "deleteFormTemplateTitle": "删除表单模板确认",
         "deleteFormTemplate": "是否确定要删除当前表单模板吗？"
-		
+
 	},
     "view": {
         "create": "新建视图",
@@ -153,7 +160,7 @@ MWF.xApplication.process.ProcessManager.LP = {
         "noProcessInfor": "您已为所有流程创建了{type}类型的数据映射"
 
     },
-    
+
     "application": {
         "inputApplicationName": "请输入应用名称",
         "property": "应用属性",
@@ -175,8 +182,8 @@ MWF.xApplication.process.ProcessManager.LP = {
         "setAppUsableIdentity" : "设置应用可用身份",
         "setAppUsableUnit" : "设置应用可用组织",
 
-        "maintenanceIdentity": "流程维护人",
-        "setMaintainer": "设置流程维护人"
+        "maintenanceIdentity": "流程实例维护人",
+        "setMaintainer": "设置流程实例维护人"
     },
     "createSelectTemplate": "新建：选择模板",
     "templateCategory": "模板分类：",

@@ -25,10 +25,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(name = "IMMsg", description = "消息会话消息.")
 @Entity
 @ContainerEntity(dumpSize = 1000, type = ContainerEntity.Type.content, reference = ContainerEntity.Reference.strong)
-@Table(name = PersistenceProperties.IMMsg.table, uniqueConstraints = {
+@Table(name = PersistenceProperties.IMMsg.table, indexes = {
+        @javax.persistence.Index(name = PersistenceProperties.IMMsg.table
+                                        + JpaObject.IndexNameMiddle
+                                        + JpaObject.createTime_FIELDNAME, columnList = JpaObject.CREATETIMECOLUMN)}, uniqueConstraints = {
         @UniqueConstraint(name = PersistenceProperties.IMMsg.table + JpaObject.IndexNameMiddle
-                + JpaObject.DefaultUniqueConstraintSuffix, columnNames = { JpaObject.IDCOLUMN,
-                JpaObject.CREATETIMECOLUMN, JpaObject.UPDATETIMECOLUMN, JpaObject.SEQUENCECOLUMN }) })
+                                 + JpaObject.DefaultUniqueConstraintSuffix, columnNames = {
+                JpaObject.IDCOLUMN,
+                JpaObject.CREATETIMECOLUMN, JpaObject.UPDATETIMECOLUMN, JpaObject.SEQUENCECOLUMN})})
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public class IMMsg extends SliceJpaObject {
 
@@ -77,6 +81,12 @@ public class IMMsg extends SliceJpaObject {
     private String createPerson;
 
 
+    public static final String quoteMessageId_FIELDNAME = "quoteMessageId";
+    @FieldDescribe("引用消息id.")
+    @Column(length = length_64B, name = ColumnNamePrefix + quoteMessageId_FIELDNAME)
+    private String quoteMessageId;
+
+
     public String getConversationId() {
         return conversationId;
     }
@@ -99,5 +109,13 @@ public class IMMsg extends SliceJpaObject {
 
     public void setCreatePerson(String createPerson) {
         this.createPerson = createPerson;
+    }
+
+    public String getQuoteMessageId() {
+        return quoteMessageId;
+    }
+
+    public void setQuoteMessageId(String quoteMessageId) {
+        this.quoteMessageId = quoteMessageId;
     }
 }

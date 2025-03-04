@@ -23,8 +23,11 @@ public class ActionWriteImConfig extends BaseAction {
 	ActionResult<Wo> execute(EffectivePerson effectivePerson, JsonElement jsonElement) throws Exception {
 
 		LOGGER.debug("execute:{}.", effectivePerson::getDistinguishedName);
-
-		ActionResult<Wo> result = new ActionResult<Wo>();
+		if (!effectivePerson.isManager()) {
+			throw new ExceptionConversationCheckError("没有权限");
+		}
+		ActionResult<Wo> result = new ActionResult<>();
+		Wo wo = new Wo();
 		Wi wi = this.convertToWrapIn(jsonElement, Wi.class);
 		LinkedHashMap<String, Object> map = new LinkedHashMap<>();
 		for (Map.Entry<String, JsonElement> en : Config.web().entrySet()) {
@@ -38,7 +41,6 @@ public class ActionWriteImConfig extends BaseAction {
 		saveWi.setFileContent(content);
 		ActionResponse response = CipherConnectionAction.post(false,
 				Config.url_x_program_center_jaxrs("config", "save"), saveWi);
-		Wo wo = new Wo();
 		if (response != null) {
 			SaveConfigWo saveWo = response.getData(SaveConfigWo.class);
 			if (saveWo != null && saveWo.getStatus() != null) {
@@ -98,6 +100,36 @@ public class ActionWriteImConfig extends BaseAction {
 		private Boolean enableClearMsg;
 		@FieldDescribe("是否开启撤回聊天消息的功能.")
 		private Boolean enableRevokeMsg;
+		@FieldDescribe("撤回时效（分钟数）")
+		private Integer revokeOutMinute;
+		@FieldDescribe("会话检查脚本.")
+		private String conversationCheckInvoke;
+		@FieldDescribe("是否使用onlyOffice预览文件(需要先安装onlyOffice扩展应用).")
+		private Boolean enableOnlyOfficePreview;
+
+		public Boolean getEnableOnlyOfficePreview() {
+			return enableOnlyOfficePreview;
+		}
+
+		public void setEnableOnlyOfficePreview(Boolean enableOnlyOfficePreview) {
+			this.enableOnlyOfficePreview = enableOnlyOfficePreview;
+		}
+
+		public String getConversationCheckInvoke() {
+			return conversationCheckInvoke;
+		}
+
+		public void setConversationCheckInvoke(String conversationCheckInvoke) {
+			this.conversationCheckInvoke = conversationCheckInvoke;
+		}
+
+		public Integer getRevokeOutMinute() {
+			return revokeOutMinute;
+		}
+
+		public void setRevokeOutMinute(Integer revokeOutMinute) {
+			this.revokeOutMinute = revokeOutMinute;
+		}
 
 		public Boolean getEnableClearMsg() {
 			return enableClearMsg;

@@ -38,7 +38,8 @@ MWF.xApplication.process.ProcessDesigner.Activity = new Class({
         this.height = 40;
     },
     getPoint: function(){
-        this.paperSize = $(this.paper.canvas).getParent().getSize();
+        var parentNode = $(this.paper.canvas).getParent() || this.process.designer.paperInNode;
+        this.paperSize = parentNode.getSize();
         this.paperOriginalSize = {x: this.paperSize.x*0.99, y: this.paperSize.y*0.99};
 
         var height = this.paperSize.y;
@@ -412,14 +413,16 @@ MWF.xApplication.process.ProcessDesigner.Activity = new Class({
             this.set.toFront();
             this.set.isFront = true;
         }
-        //this.paperSize = $(this.paper.canvas).getParent().getSize();
+        var paperSize = this.process.getPaperSize();
+
 
         if ((this.set.ox+dx)<0)	dx = 0 - this.set.ox;
-        if ((this.set.ox+dx+this.width)>this.paperSize.x){
-            this.paperSize.x = this.set.ox+dx+this.width;
-            this.paper.setSize(this.paperSize.x, this.paperSize.y);
+        if ((this.set.ox+dx+this.width)>paperSize.x){
+            //this.paperSize.x = this.set.ox+dx+this.width;
+            this.process.setPaperSizeX( this.set.ox+dx+this.width );
+            this.paper.setSize(paperSize.x, paperSize.y);
             //alert("set width");
-            $(this.paper.canvas).getParent().setStyle("width", ""+this.paperSize.x+"px");
+            $(this.paper.canvas).getParent().setStyle("width", ""+paperSize.x+"px");
         }
         //if ((this.set.ox+dx+this.width)<this.paperOriginalSize.x){
         //    if (this.paperSize.x > this.paperOriginalSize.x){
@@ -431,11 +434,12 @@ MWF.xApplication.process.ProcessDesigner.Activity = new Class({
         //}
 
         if ((this.set.oy + dy)<0) dy = 0 - this.set.oy;
-        if ((this.set.oy + dy+this.height)>this.paperSize.y){
-            this.paperSize.y = this.set.oy + dy+this.height;
-            this.paper.setSize(this.paperSize.x, this.paperSize.y);
+        if ((this.set.oy + dy+this.height)>paperSize.y){
+            //this.paperSize.y = this.set.oy + dy+this.height;
+            this.process.setPaperSizeY( this.set.oy + dy+this.height );
+            this.paper.setSize(paperSize.x, paperSize.y);
             //alert("set height");
-            $(this.paper.canvas).getParent().setStyle("height", ""+this.paperSize.y+"px");
+            $(this.paper.canvas).getParent().setStyle("height", ""+paperSize.y+"px");
         }
         //if ((this.set.oy + dy+this.height)<this.paperOriginalSize.y){
         //    if (this.paperSize.y > this.paperOriginalSize.y){
@@ -484,7 +488,7 @@ MWF.xApplication.process.ProcessDesigner.Activity = new Class({
         this.icon.attr(atts.iatt);
 
         this.routes.each(function(route){
-            if (this.process.selectedActivitys.indexOf(route.toActivity) != -1){
+            if (this.process.selectedActivitys.indexOf(route.toActivity) !== -1){
                 route.corners.each(function(corner, idx){
                     //	var p = this.positionPoints[idx];
                     var p = corner.data("point");
@@ -493,9 +497,22 @@ MWF.xApplication.process.ProcessDesigner.Activity = new Class({
                     var cornerPath = MWFRaphael.getRectPath(cx-2.5,cy-2.5, 5, 5, 0);
                     corner.attr("path", cornerPath);
                     route.positionPoints[idx] = {"x": cx, "y": cy};
+                    route.data.track = route.positionPointsToString();
 
                 }.bind(this));
             }
+
+            if (route.data.position){
+                var t = route.getTextPoint();
+                var tx = t.x.toFloat() + dx.toFloat() - this.set.movex;
+                var ty = t.y.toFloat() + dy.toFloat() - this.set.movey;
+                route.text.attr({
+                    "x": tx,
+                    "y": ty
+                });
+                route.data.position = tx + "," + ty;
+            }
+
         }.bind(this));
 
 
@@ -503,9 +520,6 @@ MWF.xApplication.process.ProcessDesigner.Activity = new Class({
         this.set.movex = dx;
         this.set.movey = dy;
 
-        //	var path = this.shap.attr("path");
-        //	path = Raphael.transformPath(path, "t"+this.set.movex+","+this.set.movey);
-        //	this.redrawRoute(path);
         this.redrawRoute();
 
         this.paper.safari();

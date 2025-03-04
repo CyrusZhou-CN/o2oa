@@ -16,7 +16,7 @@
             <div class="listItemLine"></div>
 
             <div class="listItemFlag">
-                {{if $.allowRapid}}
+                {{if $.allowRapid && $._.type!=='read'}}
                 <div class="rapidEditor o2icon-bianji" data-o2-events="click:editTask" title="{{$._.lp.rapidEditor}}"></div>
                 {{end if}}
                 {{if $._.type=='read'}}
@@ -65,7 +65,7 @@
         </div>
         {{end each}}
 
-        <div class="batchAction mainColor_bg" data-o2-element="batchAction" data-o2-events="click:batchProcessTask">{{$.lp.batch}}</div>
+        <div class="batchAction mainColor_bg" data-o2-element="batchAction" data-o2-events="click:batchProcess">{{$.lp.batch}}</div>
     {{end if}}
     {{if !$.data.length}}
         <div class="emptyListArea">

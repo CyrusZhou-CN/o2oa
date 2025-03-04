@@ -12,11 +12,11 @@ Object.assign(o2.APP$Elinput.prototype, {
         return !!(this.readonly || this.json.isReadonly || this.form.json.isReadonly || this.isSectionMergeRead() );
     },
     reload: function(){
-        if (!this.vm) return;
-
-        var node = this.vm.$el;
-        this.vm.$destroy();
-        node.empty();
+        if (this.vm) {
+            var node = this.vm.$el;
+            this.vm.$destroy();
+            node.empty();
+        }
 
         this.vm = null;
 
@@ -50,6 +50,12 @@ Object.assign(o2.APP$Elinput.prototype, {
             if (this.json.elStyles){
                 this.node.setStyles( this._parseStyles(this.json.elStyles) );
             }
+
+            if( !this.eventLoaded ){
+                this._loadDomEvents();
+                this.eventLoaded = true;
+            }
+
 
             this.fireEvent("postLoad");
             if( this.moduleSelectAG && typeOf(this.moduleSelectAG.then) === "function" ){
@@ -99,6 +105,17 @@ Object.assign(o2.APP$Elinput.prototype, {
                 }
             }
         }.bind(this));
+    },
+    addModuleEvent: function(key, fun){
+        if (this.options.moduleEvents.indexOf(key)!==-1 || this.options.elEvents.indexOf(key)!==-1 ){
+            this.addEvent(key, function(event){
+                return (fun) ? fun(this, event) : null;
+            }.bind(this));
+        }else{
+            this.node.addEvent(key, function(event){
+                return (fun) ? fun(this, event) : null;
+            }.bind(this));
+        }
     },
     getValue: function(){
         if (this.moduleValueAG) return this.moduleValueAG;

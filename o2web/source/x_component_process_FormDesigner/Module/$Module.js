@@ -339,7 +339,6 @@ MWF.xApplication.process.FormDesigner.Module.$Module = MWF.FC$Module = new Class
 		}, null);
 	},
 	selectedContainer: function(){
-		debugger;
 		if (this.parentContainer) this.parentContainer.selected();
 	},
 	styleBrush: function(){
@@ -449,7 +448,7 @@ MWF.xApplication.process.FormDesigner.Module.$Module = MWF.FC$Module = new Class
 		}
 		this.form.unSelectedMulti();
 		this.node.setStyles({
-			"border-width": "1px",
+			"border-width": "1.5px",
 			"border-color": "red"
 		});
 
@@ -1114,7 +1113,6 @@ MWF.xApplication.process.FormDesigner.Module.$Module = MWF.FC$Module = new Class
 	},
 	setCustomStyles: function(){
 		this._recoveryModuleData();
-		//debugger;
 		var border = this.node.getStyle("border");
 		this.node.clearStyles();
 		this.node.setStyles(this.css.moduleNode);
@@ -1182,7 +1180,6 @@ MWF.xApplication.process.FormDesigner.Module.$Module = MWF.FC$Module = new Class
 	_setEditStyle: function(name, obj, oldValue){
 		var title = "";
 		var text = "";
-		debugger;
 		if (name==="name"){
 			title = this.json.name || this.json.id;
 			if (this.json.type==="Common"){
@@ -1367,18 +1364,18 @@ MWF.xApplication.process.FormDesigner.Module.$Module = MWF.FC$Module = new Class
 
 //	dragInElement: function(dragging, inObj, module){
 //		this.containerNode = module.containerNode;
-//		
+//
 //	//	var border = this.containerNode.retrieve("thisborder", null);
 //	//	if (!border){
 //			var top = this.containerNode.getStyle("border-top");
 //			var left = this.containerNode.getStyle("border-left");
 //			var bottom = this.containerNode.getStyle("border-bottom");
 //			var right = this.containerNode.getStyle("border-right");
-//			
+//
 //			this.containerNode.store("thisborder", {"top": top, "left": left, "bottom": bottom, "right": right});
 //	//	}
 //		this.containerNode.setStyles({"border": "1px solid #ffa200"});
-//		
+//
 //		if (!this.copyNode) this.createCopyNode(dragging, inObj);
 //		this.copyNode.inject(inObj, "before");
 //	},
@@ -1390,18 +1387,18 @@ MWF.xApplication.process.FormDesigner.Module.$Module = MWF.FC$Module = new Class
 //			var bottom = inObj.getStyle("border-bottom");
 //			var right = inObj.getStyle("border-right");
 //			inObj.store("thisborder", {"top": top, "left": left, "bottom": bottom, "right": right});
-//	//	} 
-//		
+//	//	}
+//
 //		inObj.setStyles({"border": "1px solid #ffa200"});
-//		
+//
 //		if (!this.copyNode) this.createCopyNode(dragging, inObj);
-//		
+//
 //		this.copyNode.inject(inObj);
-//		
+//
 //		this.containerNode = inObj;
 //	},
-//	
-//	
+//
+//
 //	dragOutElement: function(dragging, inObj){
 //		var border = this.containerNode.retrieve("thisborder");
 //		if (border) {
@@ -1433,10 +1430,10 @@ MWF.xApplication.process.FormDesigner.Module.$Module = MWF.FC$Module = new Class
 //		}
 //		this.containerNode = null;
 //	},
-//	
-//	
-//	
-//	
+//
+//
+//
+//
 //	dragCancel: function(dragging){
 //		if (this.node){
 //			var thisDisplay = this.node.retrieve("thisDisplay");

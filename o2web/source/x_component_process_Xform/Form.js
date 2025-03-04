@@ -202,7 +202,21 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
              * @event MWF.xApplication.process.Xform.Form#afterGoBack
              * @see {@link https://www.yuque.com/o2oa/ixsnyt/hm5uft#i0zTS|组件事件说明}
              */
-            "afterGoBack"
+            "afterGoBack",
+
+            /**
+             * 回溯前触发。
+             * @event MWF.xApplication.process.Xform.Form#beforeRollback
+             * @see {@link https://www.yuque.com/o2oa/ixsnyt/hm5uft#i0zTS|组件事件说明}
+             */
+            "beforeRollback",
+
+            /**
+             * 回溯后触发。
+             * @event MWF.xApplication.process.Xform.Form#afterRollback
+             * @see {@link https://www.yuque.com/o2oa/ixsnyt/hm5uft#i0zTS|组件事件说明}
+             */
+            "afterRollback"
         ]
     },
     initialize: function (node, data, options) {
@@ -355,7 +369,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
             styleNode = document.createElement("style");
             styleNode.setAttribute("type", "text/css");
             styleNode.id = "style" + this.json.id;
-            styleNode.inject(document.head, "before");
+            styleNode.inject(document.head, "bottom");
 
             if (styleNode.styleSheet) {
                 var setFunc = function () {
@@ -371,6 +385,8 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                 styleNode.appendChild(cssTextNode);
             }
             return "css" + id;
+        }else if( cssText ){
+            return "css" + this.json.id.replace(/\-/g, "");
         }
         return "";
     },
@@ -418,7 +434,6 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
     },
     load: function (callback) {
         this.loadMacro(function () {
-            debugger
             this.loadLanguage(function(flag){
                 this.isParseLanguage = flag;
                 if (flag && this.formDataText){
@@ -446,7 +461,8 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
 
                     var cssClass = "";
                     if (this.json.css && this.json.css.code) cssClass = this.loadCss();
-
+                    if (this.json.cssUrl) this.container.loadCss(this.json.cssUrl);
+                    if (this.json.cssLink) this.container.loadCss(this.json.cssLink);
 
                     //this.container.setStyle("opacity", 0);
 
@@ -684,6 +700,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
             this.isAllSubformLoaded = true;
         }
         if (!this.isAllSubformLoaded) return;
+        if (this.isLoaded)return;
         //console.log( "checkSubformLoaded this.subformCount="+ this.subformCount + " this.subformLoadedCount="+this.subformLoadedCount );
         if ((!this.subformCount || this.subformCount === this.subformLoadedCount) &&
             (!this.subpageCount || this.subpageCount === this.subpageLoadedCount) &&
@@ -693,6 +710,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
 
             var moduleAgList = [];
             this.modules.each( function(module){
+                if( !module )return;
                 if( module.moduleValueAG )moduleAgList.push( module.moduleValueAG );
                 if( module.moduleSelectAG && module.moduleValueAG !== module.moduleSelectAG )moduleAgList.push(module.moduleSelectAG);
             });
@@ -787,7 +805,6 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
             tools.each(function (tool) {
                 var actionStyle = this.css.html5ActionButtonDingdingNormal;
                 var classBg = "";
-                debugger;
                 if (tool.action === "processWork" || tool.action === "flowWork" || tool.action === "retractWork" || tool.id === "action_processWork" || tool.id === "action_retract" || tool.id === "action_flowWork") {
                     actionStyle = this.css.html5ActionButtonDingdingPrimary;
                     classBg = "mainColor_bg mainColor_border";
@@ -1785,7 +1802,6 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
         //     this.app.fireEvent("beforeClose");
         // //    this.fireEvent("afterClose");
         // }
-        // debugger;
         // if (!this.options.readonly)
         //     if (this.businessData.work) this.workAction.checkDraft(this.businessData.work.id);
 
@@ -1897,6 +1913,15 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
             }
         }
     },
+    getCurrentRouteAlias: function (){
+        if( this.flow && this.flow.currentAction === 'process'){
+            var processor = this.flow.processor;
+            if( processor && processor.routeRadio  ){
+                return processor.routeRadio.getData().data.alias;
+            }
+        }
+        return null;
+    },
     formSaveValidation: function(){
         var flag = true;
         Object.each(this.forms, function (field, key) {
@@ -1908,6 +1933,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
     },
     formValidation: function (routeName, opinion, medias) {
         if (this.options.readonly) return true;
+        this.Macro.environment.form.currentRouteAlias = this.getCurrentRouteAlias();
         this.Macro.environment.form.currentRouteName = routeName;
         this.Macro.environment.form.opinion = opinion;
         this.Macro.environment.form.medias = medias;
@@ -1921,6 +1947,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
         return flag;
     },
     validationOtherFlow: function (routeName, opinion, processor, flowData) {
+        this.Macro.environment.form.currentRouteAlias = null;
         this.Macro.environment.form.currentRouteName = routeName;
         this.Macro.environment.form.opinion = opinion;
         this.Macro.environment.form.flowData = flowData;
@@ -1942,6 +1969,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
         return true;
     },
     validation: function (routeName, opinion, processor, medias) {
+        this.Macro.environment.form.currentRouteAlias = this.getCurrentRouteAlias();
         this.Macro.environment.form.currentRouteName = routeName;
         this.Macro.environment.form.opinion = opinion;
         this.Macro.environment.form.medias = medias;
@@ -2104,7 +2132,6 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
         if (this.app && this.app.fireEvent) this.app.fireEvent("beforeProcess");
 
         //处理忽略授权
-        debugger;
         var ignoreEmpowerIdentityList = this.getIgnoreImpowerIdentity(processorOrgList);
 
         var _self = this;
@@ -2588,6 +2615,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                 "zindex": 20001,
                 "isResize": false,
                 "content": flowNode,
+                "container": this.app.content,
                 "maskNode": this.app.content,
                 "positionHeight": 900,
                 "maxHeight": 900,
@@ -2701,6 +2729,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                 //_self.app.content.unmask();
                 _self.fireEvent("closeProcessor", [this]);
                 if (_self.app && _self.app.fireEvent) _self.app.fireEvent("closeProcessor", [this]);
+                _self.flow = null;
             },
             "opinionOptions": {
                 "opinion": op.opinion,
@@ -2712,7 +2741,6 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                 "defaultRoute": defaultRoute,
                 "isHandwriting": this.json.isHandwriting === "no" ? false : true,
                 "onSubmit": function (routeName, opinion, medias, appendTaskIdentityList, processorOrgList, callbackBeforeSave) {
-                    debugger;
                     if (!medias || !medias.length) {
                         medias = mds;
                     } else {
@@ -3017,7 +3045,6 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
             return false;
         }
 
-        debugger;
         if (!this.submitFormModule) {
             if (!MWF["APPSubmitform"]) {
                 MWF.xDesktop.requireApp("process.Xform", "Subform", null, false);
@@ -3280,7 +3307,6 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                         }.bind(this));
                     }else{
                         _self.submitWork(routeName, opinion, medias, function () {
-                            debugger;
                             this.destroy();
                             processNode.destroy();
                             if (_self.processDlg) _self.processDlg.close();
@@ -3377,8 +3403,8 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                 "fromLeft": (Browser.name === "firefox") ? e.event.clientX - 20 : e.event.x - 20,
                 "width": width,
                 "height": height,
-                "container": this.app.content,
-                "maskNode": mask || this.app.content,
+                "container": layout.mobile ? $(document.body) : this.app.content,
+                "maskNode": mask || (layout.mobile ? $(document.body) : this.app.content),
                 "buttonList": [
                     {
                         "type": "ok",
@@ -3965,6 +3991,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
 
             this.doRollbackActionInvoke(log, idList, function (json) {
                 if (json.data.properties) {
+                    this.fireEvent("afterRollback");
                     if (this.app && this.app.fireEvent) this.app.fireEvent("afterRollback");
                     this.addRollbackMessage(json.data);
 
@@ -4244,7 +4271,6 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                         }
                     ],
                     "onPostShow": function () {
-                        debugger;
                         var node = this.node.getElement('.activesArea');
                         activitys.forEach(function(a, i){
                             _self.createGoBackActivity(node, a, i);
@@ -4303,7 +4329,6 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
 
     doGoBack: function(dlg, activitys){
         var node = dlg.node;
-        debugger;
         var check = node.querySelector('input[name="goBackActivity"]:checked');
 
         if (!check) {
@@ -4998,6 +5023,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                 "url": this.app.path + "reroute.html",
                 "lp": MWF.xApplication.process.Xform.LP.form,
                 "container": this.app.content,
+                "maskNode": this.app.content,
                 "isClose": true,
                 "buttonList": [
                     {
@@ -5025,7 +5051,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                     var createActivityOption = function(list, name){
                         list.each(function (activity) {
                             var activityType = name.replace("List", "");
-                            new Element("option", {
+                            var op = new Element("option", {
                                 "value": activity.id + "#"+activityType,
                                 "text": activity.name
                             }).inject(select);
@@ -5086,7 +5112,6 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
         var opinion = $("rerouteWork_opinion").get("value");
         var select = $("rerouteWork_selectActivity");
 
-        debugger;
         var checkbox = dlg.node.getElement(".rerouteWork_mergeWork");
         var mergeWork = !!(checkbox && checkbox.checked);
 
@@ -5228,7 +5253,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                     _self.mask.loadNode(_self.app.content);
 
                     _self.doDeleteWork(function () {
-                        _self.app.notice(MWF.xApplication.process.Xform.LP.workDelete + ": “" + _self.businessData.work.title + "”", "success");
+                        _self.app.notice(MWF.xApplication.process.Xform.LP.workDelete + ": “" + o2.txt(_self.businessData.work.title) + "”", "success");
                         if (_self.mask) {
                             _self.mask.hide();
                             _self.mask = null;
@@ -5325,7 +5350,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                         _self.doDeleteWork(function () {
                             _self.fireEvent("afterDelete");
                             if (_self.app && _self.app.fireEvent) _self.app.fireEvent("afterDelete");
-                            _self.app.notice(MWF.xApplication.process.Xform.LP.workDelete + ": “" + _self.businessData.work.title + "”", "success");
+                            _self.app.notice(MWF.xApplication.process.Xform.LP.workDelete + ": “" + o2.txt(_self.businessData.work.title) + "”", "success");
                             if (_self.mask) {
                                 _self.mask.hide();
                                 _self.mask = null;
@@ -5373,7 +5398,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                         _self.doDeleteWork(function () {
                             _self.fireEvent("afterDelete");
                             if (_self.app && _self.app.fireEvent) _self.app.fireEvent("afterDelete");
-                            _self.app.notice(MWF.xApplication.process.Xform.LP.workDelete + ": “" + _self.businessData.work.title + "”", "success");
+                            _self.app.notice(MWF.xApplication.process.Xform.LP.workDelete + ": “" + o2.txt(_self.businessData.work.title) + "”", "success");
                             _self.app.close();
                             this.close();
                             if (_self.mask) {
@@ -5490,7 +5515,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
             var _self = this;
 
             //"您确定要将“" + title + "”标记为已阅吗？";
-            var title = this.businessData.work.title;
+            var title = o2.txt(this.businessData.work.title);
             var text = MWF.xApplication.process.Xform.LP.setReadedConfirmContent.replace("{title}",title);
             MWF.xApplication.process.Xform.LP.form.setReadedConfirmInfo = text;
 
@@ -5771,7 +5796,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                     job: this.businessData.work.job,
                 }
             } else {
-                this.app.notice(MWF.xApplication.process.Xform.LP.noPermissionOrWorkNotExisted, "error")
+                this.app.notice(o2.txt(MWF.xApplication.process.Xform.LP.noPermissionOrWorkNotExisted), "error")
                 return
             }
             MWF.xDesktop.requireApp("IMV2", "Starter", function () {
@@ -6441,7 +6466,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                         _self.doTerminateWork(function () {
                             _self.fireEvent("afterTerminat");
                             if (_self.app && _self.app.fireEvent) _self.app.fireEvent("afterTerminat");
-                            _self.app.notice(MWF.xApplication.process.Xform.LP.workTerminate + ": “" + _self.businessData.work.title + "”", "success");
+                            _self.app.notice(MWF.xApplication.process.Xform.LP.workTerminate + ": “" + o2.txt(_self.businessData.work.title) + "”", "success");
                             _self.json.mode === "Mobile" ? _self.finishOnMobile() : _self.app.close();
                             this.close();
                         }.bind(this), function (xhr, text, error) {

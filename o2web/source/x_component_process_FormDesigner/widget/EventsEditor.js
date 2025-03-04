@@ -14,8 +14,6 @@ MWF.xApplication.process.FormDesigner.widget.EventsEditor = new Class({
 		this.setOptions(options);
 		this.node = $(node);
         this.app = designer;
-
-        debugger;
 		
 		this.path = "../x_component_process_FormDesigner/widget/$EventsEditor/";
 		this.cssPath = "../x_component_process_FormDesigner/widget/$EventsEditor/"+this.options.style+"/css.wcss";
@@ -224,6 +222,7 @@ MWF.xApplication.process.FormDesigner.widget.EventsEditor.Item = new Class({
 						this.checkIcon();
 					}.bind(this),
                     "onSave": function(){
+						debugger;
                         var json = this.codeEditor.toJson();
                         this.data.code = json.code;
                         this.data.html = json.html;

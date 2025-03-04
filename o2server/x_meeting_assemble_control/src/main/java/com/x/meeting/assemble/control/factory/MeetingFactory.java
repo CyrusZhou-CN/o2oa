@@ -162,10 +162,10 @@ public class MeetingFactory extends AbstractFactory {
 		CriteriaBuilder cb = em.getCriteriaBuilder();
 		CriteriaQuery<String> cq = cb.createQuery(String.class);
 		Root<Meeting> root = cq.from(Meeting.class);
-		//Predicate p = cb.greaterThanOrEqualTo(root.get(Meeting_.startTime), start);
-		//p = cb.and(p, cb.lessThanOrEqualTo(root.get(Meeting_.startTime), end));
-		Predicate p = cb.greaterThanOrEqualTo(root.get(Meeting_.completedTime), start);
-		p = cb.and(p, cb.lessThanOrEqualTo(root.get(Meeting_.completedTime), end));
+		Predicate p = cb.or(cb.between(root.get(Meeting_.startTime), start, end),
+				cb.between(root.get(Meeting_.completedTime), start, end),
+				cb.and(cb.lessThanOrEqualTo(root.get(Meeting_.startTime), start),
+						cb.greaterThanOrEqualTo(root.get(Meeting_.completedTime), end)));
 		cq.select(root.get(Meeting_.id)).where(p);
 		return em.createQuery(cq).getResultList();
 	}
@@ -175,10 +175,10 @@ public class MeetingFactory extends AbstractFactory {
 		CriteriaBuilder cb = em.getCriteriaBuilder();
 		CriteriaQuery<String> cq = cb.createQuery(String.class);
 		Root<Meeting> root = cq.from(Meeting.class);
-		//Predicate p = cb.greaterThanOrEqualTo(root.get(Meeting_.startTime), start);
-		//p = cb.and(p, cb.lessThanOrEqualTo(root.get(Meeting_.startTime), end));
-		Predicate p = cb.greaterThanOrEqualTo(root.get(Meeting_.completedTime), start);
-		p = cb.and(p, cb.lessThanOrEqualTo(root.get(Meeting_.completedTime), end));
+		Predicate p = cb.or(cb.between(root.get(Meeting_.startTime), start, end),
+				cb.between(root.get(Meeting_.completedTime), start, end),
+				cb.and(cb.lessThanOrEqualTo(root.get(Meeting_.startTime), start),
+						cb.greaterThanOrEqualTo(root.get(Meeting_.completedTime), end)));
 		p = cb.and(p, cb.equal(root.get(Meeting_.room), roomId));
 
 		cq.select(root.get(Meeting_.id)).where(p);
@@ -190,10 +190,10 @@ public class MeetingFactory extends AbstractFactory {
 		CriteriaBuilder cb = em.getCriteriaBuilder();
 		CriteriaQuery<String> cq = cb.createQuery(String.class);
 		Root<Meeting> root = cq.from(Meeting.class);
-		//Predicate p = cb.greaterThanOrEqualTo(root.get(Meeting_.startTime), start);
-		//p = cb.and(p, cb.lessThanOrEqualTo(root.get(Meeting_.startTime), end));
-		Predicate p = cb.greaterThanOrEqualTo(root.get(Meeting_.completedTime), start);
-		p = cb.and(p, cb.lessThanOrEqualTo(root.get(Meeting_.completedTime), end));
+		Predicate p = cb.or(cb.between(root.get(Meeting_.startTime), start, end),
+				cb.between(root.get(Meeting_.completedTime), start, end),
+				cb.and(cb.lessThanOrEqualTo(root.get(Meeting_.startTime), start),
+						cb.greaterThanOrEqualTo(root.get(Meeting_.completedTime), end)));
 		p = cb.and(p,
 				cb.or(cb.equal(root.get(Meeting_.applicant), person), cb.equal(root.get(Meeting_.auditor), person),
 						cb.isMember(person, root.get(Meeting_.invitePersonList))));
@@ -213,6 +213,25 @@ public class MeetingFactory extends AbstractFactory {
 		p = cb.and(p, cb.equal(root.get(Meeting_.manualCompleted), false));
 		if (allowOnly) {
 			p = cb.and(p, cb.equal(root.get(Meeting_.confirmStatus), ConfirmStatus.allow));
+		}
+		cq.select(root.get(Meeting_.id)).where(p);
+		return em.createQuery(cq).getResultList();
+	}
+
+	public List<String> listAllWithRoom(String roomId, boolean allowOnly,Date startTime, Date completedTime) throws Exception {
+		EntityManager em = this.entityManagerContainer().get(Meeting.class);
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<String> cq = cb.createQuery(String.class);
+		Root<Meeting> root = cq.from(Meeting.class);
+		Predicate p = cb.equal(root.get(Meeting_.room), roomId);
+		p = cb.and(p, cb.or(cb.between(root.get(Meeting_.startTime), startTime, completedTime),
+				cb.between(root.get(Meeting_.completedTime), startTime, completedTime),
+				cb.and(cb.lessThanOrEqualTo(root.get(Meeting_.startTime), startTime),
+						cb.greaterThanOrEqualTo(root.get(Meeting_.completedTime), completedTime))));
+		p = cb.and(p, cb.equal(root.get(Meeting_.manualCompleted), false));
+		if (allowOnly) {
+			p = cb.and(p, cb.or(cb.equal(root.get(Meeting_.confirmStatus), ConfirmStatus.wait),
+					cb.equal(root.get(Meeting_.confirmStatus), ConfirmStatus.allow)));
 		}
 		cq.select(root.get(Meeting_.id)).where(p);
 		return em.createQuery(cq).getResultList();

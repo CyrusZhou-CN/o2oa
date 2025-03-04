@@ -111,6 +111,7 @@ MWF.xApplication.process.Xform.$Input = MWF.APP$Input =  new Class(
             "nodeId": this.json.id,
             "MWFType": this.json.type
         });
+        this.clearDefaultMargin();
     },
     loadDescription: function(){
         if (this.isReadonly())return;
@@ -122,10 +123,10 @@ MWF.xApplication.process.Xform.$Input = MWF.APP$Input =  new Class(
                     size = { y: 26 }
                 }else{
                     size = this.node.getFirst().getSize();
-                    w = size.x-3;
-                    if( this.hasIcon() ){
-                        if (COMMON.Browser.safari) w = w-20;
-                    }
+                    // w = size.x-3;
+                    // if( this.hasIcon() ){
+                    //     if (COMMON.Browser.safari) w = w-20;
+                    // }
                 }
 
                 /**
@@ -137,8 +138,12 @@ MWF.xApplication.process.Xform.$Input = MWF.APP$Input =  new Class(
                     "height": ""+size.y+"px",
                     "line-height": ""+size.y+"px"
                 });
-                if( w )this.descriptionNode.setStyles({
-                    "width": ""+w+"px"
+                // if( w )this.descriptionNode.setStyles({
+                //     "width": ""+w+"px"
+                // });
+                this.descriptionNode.setStyles({
+                    "width": "auto",
+                    "overflow": "auto"
                 });
                 this.setDescriptionEvent();
             }
@@ -326,7 +331,7 @@ MWF.xApplication.process.Xform.$Input = MWF.APP$Input =  new Class(
      * @return {Boolean} 是否只读.
      */
 	isReadonly : function(){
-        return !!(this.readonly || this.json.isReadonly || this.form.json.isReadonly || this.isSectionMergeRead());
+        return !!(this.readonly || this.json.isReadonly || this.form.json.isReadonly || this.json.showMode==="read" || this.isSectionMergeRead());
     },
 	getTextData: function(){
 		//var value = this.node.get("value");
@@ -520,7 +525,7 @@ MWF.xApplication.process.Xform.$Input = MWF.APP$Input =  new Class(
             }).inject(node);
             var textNode = new Element("div", {
                 "styles": {
-                    "height": "20px",
+                    "height": "auto",
                     "line-height": "20px",
                     "margin-left": "20px",
                     "color": "red",
@@ -587,7 +592,7 @@ MWF.xApplication.process.Xform.$Input = MWF.APP$Input =  new Class(
             var v = (data.valueType==="value") ? n : n.length;
             switch (data.operateor){
                 case "isnull":
-                    if (!v){
+                    if (!v || (o2.typeOf(v)==="array" && !v.length)){
                         this.notValidationMode(data.prompt);
                         return false;
                     }
@@ -738,4 +743,4 @@ MWF.xApplication.process.Xform.$Input = MWF.APP$Input =  new Class(
         }
         return true;
     }
-}); 
+});

@@ -179,19 +179,23 @@ MWF.xApplication.process.Xform.Org = MWF.APPOrg =  new Class(
                     size = { y: 26 }
                 }else{
                     size = this.node.getFirst().getSize();
-                    w = size.x-3;
-                    if( this.json.showIcon!='no' && !this.form.json.hideModuleIcon ) {
-                        if (COMMON.Browser.safari) w = w - 20;
-                    }
+                    // w = size.x-3;
+                    // if( this.json.showIcon!='no' && !this.form.json.hideModuleIcon ) {
+                    //     if (COMMON.Browser.safari) w = w - 20;
+                    // }
                 }
                 this.descriptionNode = new Element("div", {"styles": this.form.css.descriptionNode, "text": this.json.description}).inject(this.node);
                 this.descriptionNode.setStyles({
                     "height": ""+size.y+"px",
                     "line-height": ""+size.y+"px"
                 });
-                if( w )this.descriptionNode.setStyles({
-                    "width": ""+w+"px"
+                this.descriptionNode.setStyles({
+                    "width": "auto",
+                    "overflow": "auto"
                 });
+                // if( w )this.descriptionNode.setStyles({
+                //     "width": ""+w+"px"
+                // });
                 this.setDescriptionEvent();
             }
         }
@@ -611,6 +615,7 @@ MWF.xApplication.process.Xform.Org = MWF.APPOrg =  new Class(
 
         this.checkEmpower( array, function( data ){
             var values = [];
+
             data.each(function(d){
                 values.push(MWF.org.parseOrgData(d, true, simple));
             }.bind(this));
@@ -620,6 +625,7 @@ MWF.xApplication.process.Xform.Org = MWF.APPOrg =  new Class(
             }else{
                 this.setData(values, true);
             }
+
             //this._setBusinessData(values);
             this.validationMode();
             this.validation();
@@ -740,6 +746,7 @@ MWF.xApplication.process.Xform.Org = MWF.APPOrg =  new Class(
             "nodeId": this.json.id,
             "MWFType": this.json.type
         });
+        this.clearDefaultMargin();
     },
     _searchConfirmPerson: function(item){
         var inforNode = item.inforNode || new Element("div");
@@ -1100,7 +1107,7 @@ MWF.xApplication.process.Xform.Org = MWF.APPOrg =  new Class(
         if (change) this.fireEvent("change");
     },
     setData: function(value, fireChange){
-        if (!value) return false;
+        // if (!value) return false;
         var oldValues = this.getData();
         if (value.length==1 && !(value[0])) value=[];
 
@@ -1248,7 +1255,6 @@ MWF.xApplication.process.Xform.Org = MWF.APPOrg =  new Class(
         var flag = false;
         if (typeOf(value)!=="array") value = (!!value) ? [value] : [];
         //value = (value.flat) ? value.flat() : value.flatten();
-
         if (value.some(function(e){ return (e && o2.typeOf(e.then)=="function") }) || this.json.asyncMode==="yes"){
             var p = Promise.all(value).then(function(d){
                 if (typeOf(d)!=="array") d = (!!d) ? [d] : [];

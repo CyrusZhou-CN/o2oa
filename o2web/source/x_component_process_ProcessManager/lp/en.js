@@ -151,8 +151,8 @@ MWF.xApplication.process.ProcessManager.LP={
 		"setUsableUnit": "Set UsableUnit",
 		"setAppUsableIdentity": "Set AppUsableIdentity",
 		"setAppUsableUnit": "Set AppUsableUnit",
-		"maintenanceIdentity": "Process Maintainer",
-		"setMaintainer": "Set Process Maintainer"
+		"maintenanceIdentity": "Process instance maintainer",
+		"setMaintainer": "Set Process instance maintainer"
 	},
 	"createSelectTemplate": "Create: Select template",
 	"templateCategory": "Template Category: ",
@@ -178,6 +178,12 @@ MWF.xApplication.process.ProcessManager.LP={
 	"fileForm": "File Form",
 	"submitPcForm": "SubmitForm (PC)",
 	"submitMobileForm": "SubmitForm (Mobile)",
-	"elementForm": "Element component template"
+	"elementForm": "Element component template",
+	"sorkKeyNote": "-Sort by-",
+	"createTime": "Creation time",
+	"updateTime": "Update time",
+	"asc": "positive sequence",
+	"desc": "Reverse order",
+	"searchPlacholder": "Enter name/alias/id search"
 }
 MWF.xApplication.process.ProcessManager["lp."+o2.language] = MWF.xApplication.process.ProcessManager.LP

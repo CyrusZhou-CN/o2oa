@@ -187,7 +187,8 @@ MWF.xApplication.process.Xform.Actionbar = MWF.APPActionbar =  new Class(
                         var actionNode = new Element("div", {
                             "id": tool.id,
                             "MWFnodetype": tool.type,
-                            "MWFButtonImage": path+""+this.form.options.style+"/custom/"+iconPath+tool.img,
+                            "MWFButtonImage": this.json.iconType==="font" ? "" : path+""+this.form.options.style+"/custom/"+iconPath+tool.img,
+                            "MWFButtonIcon": tool.icon,
                             "title": tool.title,
                             "MWFButtonAction": "runCustomAction",
                             "MWFButtonText": tool.text
@@ -216,7 +217,7 @@ MWF.xApplication.process.Xform.Actionbar = MWF.APPActionbar =  new Class(
                 var iconPath = this.json.customIconStyle ? (this.json.customIconStyle+ "/") : "";
                 return path+""+this.form.options.style+"/custom/"+iconPath+img;
             }else{
-                return path+(this.options.style||"default") +"/tools/"+ (this.json.style || "default") +"/"+img;
+                return path+(this.options.style||"default") +"/tools/"+ (this.json.iconStyle || this.json.style || "default") +"/"+img;
             }
         },
         getImageOverPath: function(img, iscustom){
@@ -256,7 +257,8 @@ MWF.xApplication.process.Xform.Actionbar = MWF.APPActionbar =  new Class(
                     "id": tool.id,
                     "MWFnodetype": tool.type,
                     //"MWFButtonImage": this.form.path+""+this.form.options.style+"/actionbar/"+tool.img,
-                    "MWFButtonImage": this.getImagePath(tool.img, tool.customImg),
+                    "MWFButtonImage": this.json.iconType==="font" ? "" : this.getImagePath(tool.img, tool.customImg),
+                    "MWFButtonIcon": tool.icon,
                     "title": tool.title,
                     "MWFButtonAction": tool.action,
                     "MWFButtonText": tool.text,
@@ -310,7 +312,6 @@ MWF.xApplication.process.Xform.Actionbar = MWF.APPActionbar =  new Class(
             this.form.Macro.exec(script, this);
         },
         saveWork: function(){
-            debugger;
             this.form.saveWork();
         },
         closeWork: function(){

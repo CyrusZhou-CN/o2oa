@@ -22,7 +22,7 @@ MWF.xApplication.process.Xform.Textfield = MWF.APPTextfield =  new Class({
 	Implements: [Events],
 	Extends: MWF.APP$Input,
 	iconStyle: "textFieldIcon",
-	
+
 	// _loadUserInterface: function(){
 	// 	this._loadNode();
     //     if (this.json.compute === "show"){
@@ -48,19 +48,23 @@ MWF.xApplication.process.Xform.Textfield = MWF.APPTextfield =  new Class({
                     size = { y: 26 }
                 }else{
                      size = this.node.getFirst().getSize();
-                     w = size.x-3;
-                    if( this.hasIcon() ){
-                        if (COMMON.Browser.safari) w = w-20;
-                    }
+                    //  w = size.x-3;
+                    // if( this.hasIcon() ){
+                    //     if (COMMON.Browser.safari) w = w-20;
+                    // }
                 }
                 this.descriptionNode = new Element("div", {"styles": this.form.css.descriptionNode, "text": this.json.description}).inject(this.node);
                 this.descriptionNode.setStyles({
                     "height": ""+size.y+"px",
                     "line-height": ""+size.y+"px"
                 });
-                if( w )this.descriptionNode.setStyles({
-                    "width": ""+w+"px"
+                this.descriptionNode.setStyles({
+                    "width": "auto",
+                    "overflow": "auto"
                 });
+                // if( w )this.descriptionNode.setStyles({
+                //     "width": ""+w+"px"
+                // });
                 this.setDescriptionEvent();
             }
         }
@@ -109,6 +113,7 @@ MWF.xApplication.process.Xform.Textfield = MWF.APPTextfield =  new Class({
             "nodeId": this.json.id,
             "MWFType": this.json.type
         });
+        this.clearDefaultMargin();
     },
 
     _resetNodeEdit: function(){
@@ -233,4 +238,4 @@ MWF.xApplication.process.Xform.Textfield = MWF.APPTextfield =  new Class({
         return v;
     }
 
-}); 
+});

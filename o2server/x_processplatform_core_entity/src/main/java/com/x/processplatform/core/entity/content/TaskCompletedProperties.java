@@ -1,20 +1,22 @@
 package com.x.processplatform.core.entity.content;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
 import com.x.base.core.entity.JsonProperties;
 import com.x.base.core.project.annotation.FieldDescribe;
 import com.x.base.core.project.gson.GsonPropertyObject;
 import com.x.processplatform.core.entity.element.ActivityType;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public class TaskCompletedProperties extends JsonProperties {
 
 	private static final long serialVersionUID = -7986324325800894903L;
 
-	@FieldDescribe("从task带过来的上一处理人")
+	@FieldDescribe("从task带过来的上一处理人列表")
 	private List<String> prevTaskIdentityList;
+
+	@FieldDescribe("从task带过来的上一处理人")
+	private String prevTaskIdentity;
 
 	@Deprecated(since = "8.2")
 	@FieldDescribe("后续处理人")
@@ -37,30 +39,6 @@ public class TaskCompletedProperties extends JsonProperties {
 	@FieldDescribe("Ticket创建方式,create,reset,add.")
 	private String act;
 
-//	public static final String EMPOWERFROM_FIELDNAME = "empowerFrom";
-//	@FieldDescribe("授权来源.")
-//	private String empowerFrom;
-//
-//	public static final String EMPOWERTO_FIELDNAME = "empowerTo";
-//	@FieldDescribe("授权对象.")
-//	private String empowerTo;
-//
-//	public String getEmpowerFrom() {
-//		return empowerFrom;
-//	}
-//
-//	public void setEmpowerFrom(String empowerFrom) {
-//		this.empowerFrom = empowerFrom;
-//	}
-//
-//	public String getEmpowerTo() {
-//		return empowerTo;
-//	}
-//
-//	public void setEmpowerTo(String empowerTo) {
-//		this.empowerTo = empowerTo;
-//	}
-
 	public String getAct() {
 		return act;
 	}
@@ -76,6 +54,17 @@ public class TaskCompletedProperties extends JsonProperties {
 		return prevTaskList;
 	}
 
+	public List<String> getNextTaskIdentityList() {
+		if (null == this.nextTaskIdentityList) {
+			this.nextTaskIdentityList = new ArrayList<>();
+		}
+		return nextTaskIdentityList;
+	}
+
+	public void setNextTaskIdentityList(List<String> nextTaskIdentityList) {
+		this.nextTaskIdentityList = nextTaskIdentityList;
+	}
+
 	public String getTitle() {
 		return title;
 	}
@@ -86,24 +75,21 @@ public class TaskCompletedProperties extends JsonProperties {
 
 	public List<String> getPrevTaskIdentityList() {
 		if (null == this.prevTaskIdentityList) {
-			this.prevTaskIdentityList = new ArrayList<String>();
+			this.prevTaskIdentityList = new ArrayList<>();
 		}
 		return prevTaskIdentityList;
 	}
 
-	public List<String> getNextTaskIdentityList() {
-		if (null == this.nextTaskIdentityList) {
-			this.nextTaskIdentityList = new ArrayList<String>();
-		}
-		return nextTaskIdentityList;
-	}
-
-	public void setNextTaskIdentityList(List<String> nextTaskIdentityList) {
-		this.nextTaskIdentityList = nextTaskIdentityList;
-	}
-
 	public void setPrevTaskIdentityList(List<String> prevTaskIdentityList) {
 		this.prevTaskIdentityList = prevTaskIdentityList;
+	}
+
+	public String getPrevTaskIdentity() {
+		return prevTaskIdentity;
+	}
+
+	public void setPrevTaskIdentity(String prevTaskIdentity) {
+		this.prevTaskIdentity = prevTaskIdentity;
 	}
 
 	public String getOpinion() {
