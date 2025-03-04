@@ -12,14 +12,14 @@ public class RecordProperties extends JsonProperties {
 
 	private static final long serialVersionUID = 4021727898101550914L;
 
+	@FieldDescribe("record中记录的处理人排序值.")
+	private Integer personOrderNumber = null;
+
 	@FieldDescribe("record中记录的处理人身份排序值.")
 	private Integer identityOrderNumber = null;
 
 	@FieldDescribe("record中记录的处理人身份所在组织排序值.")
 	private Integer unitOrderNumber = null;
-
-	@FieldDescribe("record中记录的处理人身份所在组织层级排序值.")
-	private String unitLevelOrderNumber = "";
 
 	@FieldDescribe("record中记录的处理人身份所在组织层级名.")
 	private String unitLevelName = "";
@@ -66,13 +66,20 @@ public class RecordProperties extends JsonProperties {
 	@FieldDescribe("意见组")
 	private String fromOpinionGroup;
 
+	public Integer getPersonOrderNumber() {
+		return personOrderNumber;
+	}
+
+	public void setPersonOrderNumber(Integer personOrderNumber) {
+		this.personOrderNumber = personOrderNumber;
+	}
+
 	public List<String> getNextManualTaskIdentityList() {
 		if (null == this.nextManualTaskIdentityList) {
 			this.nextManualTaskIdentityList = new ArrayList<>();
 		}
 		return this.nextManualTaskIdentityList;
 	}
-	
 
 	public void setNextManualTaskIdentityList(List<String> nextManualTaskIdentityList) {
 		this.nextManualTaskIdentityList = nextManualTaskIdentityList;
@@ -185,7 +192,6 @@ public class RecordProperties extends JsonProperties {
 		this.nextManualList = nextManualList;
 	}
 
-
 	public Date getStartTime() {
 		return startTime;
 	}
@@ -272,14 +278,6 @@ public class RecordProperties extends JsonProperties {
 
 	public void setUnitOrderNumber(Integer unitOrderNumber) {
 		this.unitOrderNumber = unitOrderNumber;
-	}
-
-	public String getUnitLevelOrderNumber() {
-		return unitLevelOrderNumber;
-	}
-
-	public void setUnitLevelOrderNumber(String unitLevelOrderNumber) {
-		this.unitLevelOrderNumber = unitLevelOrderNumber;
 	}
 
 	public String getUnitLevelName() {

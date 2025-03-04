@@ -1424,6 +1424,10 @@ MWF.xApplication.process.TaskCenter.Starter = new Class({
         this.appList = [];
         this.columnList = [];
         this.setOptions(options);
+        if( this.options.appFlag ){
+            var appFlag = this.options.appFlag;
+            this.options.appFlag = o2.typeOf(appFlag) === "string" ? [appFlag] : appFlag;
+        }
         if (layout.mobile){
             this.showStartProcessArea_mobile();
         }else{
@@ -1431,6 +1435,7 @@ MWF.xApplication.process.TaskCenter.Starter = new Class({
         }
     },
     showStartProcessArea_pc: function () {
+        debugger;
         if (this.startProcessAreaNode) this.startProcessAreaNode.destroy();
         this.createStartProcessArea();
         this.content.mask({
@@ -1508,7 +1513,6 @@ MWF.xApplication.process.TaskCenter.Starter = new Class({
         this.startProcessSearchIconNode.addEvent("click", function(){ this.searchStartProcess(); }.bind(this));
     },
     searchStartProcess: function(){
-        debugger;
         var key = this.startProcessSearchInputNode.get("value");
         if (key && key!==this.lp.searchProcess){
             if (this.appStartableData){
@@ -1556,12 +1560,28 @@ MWF.xApplication.process.TaskCenter.Starter = new Class({
 
                 if( this.options.appFlag ){
                     json_process.data = json_process.data.filter(function (d){
-                        return [d.id, d.name, d.alias].contains(this.options.appFlag);
-                    }.bind(this));
+                        return [d.id, d.name, d.alias].some(function(item){
+                            if( this.options.appFlag.contains(item) ){
+                                d.tmpOrder = this.options.appFlag.indexOf(item);
+                                return true;
+                            }
+                            return false;
+                        }.bind(this));
+                    }.bind(this)).sort(function (a, b){
+                        return a.tmpOrder - b.tmpOrder;
+                    });
 
                     json_column.data = json_column.data.filter(function (d){
-                        return [d.id, d.appName, d.appAlias].contains(this.options.appFlag);
-                    }.bind(this));
+                        return [d.id, d.appName, d.appAlias].some(function(item){
+                            if( this.options.appFlag.contains(item) ){
+                                d.tmpOrder = this.options.appFlag.indexOf(item);
+                                return true;
+                            }
+                            return false;
+                        }.bind(this));
+                    }.bind(this)).sort(function (a, b){
+                        return a.tmpOrder - b.tmpOrder;
+                    });;
                 }
 
                 this.appStartableData = json_process.data;
@@ -1598,9 +1618,13 @@ MWF.xApplication.process.TaskCenter.Starter = new Class({
     setResizeStartProcessAreaHeight: function () {
         if (this.startProcessAreaNode) {
             var size = this.content.getSize();
+            var scroll = this.content.getScroll();
             var nodeSize = this.startProcessAreaNode.getSize();
-            var x = (size.x-nodeSize.x)/2;
-            var y = (size.y-nodeSize.y)/2;
+
+            var x = (size.x-nodeSize.x)/2 + scroll.x;
+            var y = (size.y-nodeSize.y)/2 + scroll.y;
+
+
             this.startProcessAreaNode.setStyle("top", "" + y + "px");
             this.startProcessAreaNode.setStyle("left", "" + x + "px");
 
@@ -1692,8 +1716,17 @@ MWF.xApplication.process.TaskCenter.Starter = new Class({
             if( this.options.appFlag ){
                 o2.Actions.load("x_processplatform_assemble_surface").ApplicationAction.listWithPersonAndTerminal("mobile", function (appjson) {
                     appjson.data = appjson.data.filter(function (d){
-                        return [d.id, d.name, d.alias].contains( this.options.appFlag );
-                    }.bind(this));
+                        return [d.id, d.name, d.alias].some(function(item){
+                           if( this.options.appFlag.contains(item) ){
+                               d.tmpOrder = this.options.appFlag.indexOf(item);
+                               return true;
+                           }
+                           return false;
+                        }.bind(this));
+                    }.bind(this)).sort(function(a, b){
+                        return a.tmpOrder - b.tmpOrder;
+                    });
+
                     appjson.data.each(function (app) {
                         if (app.processList && app.processList.length > 0) {
                             var appNode = new Element("div.appNode").inject(this.startProcessListNode);

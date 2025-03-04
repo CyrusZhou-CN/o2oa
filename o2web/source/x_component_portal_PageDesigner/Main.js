@@ -38,10 +38,10 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
         }
         this.actions = MWF.Actions.get("x_portal_assemble_designer");
 		//this.actions = new MWF.xApplication.portal.PortalManager.Actions.RestActions();
-		
+
 		this.lp = MWF.xApplication.portal.PageDesigner.LP;
 	},
-	
+
 	loadApplication: function(callback){
 		this.createNode();
 		if (!this.options.isRefresh){
@@ -156,14 +156,19 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
                             "html": html
                         }).inject(this.content);
 
+                        var originalIds = {};
+                        Object.each(json, function (moduleJson){
+                            originalIds[moduleJson.id] = true;
+                        });
+
                         Object.each(json, function (moduleJson) {
                             var oid = moduleJson.id;
                             var id = moduleJson.id;
-                                var idx = 1;
-                                while (this.page.json.moduleList[id]) {
-                                    id = oid + "_" + idx;
-                                    idx++;
-                                }
+                            var idx = 1;
+                            while (this.page.json.moduleList[id] || ( originalIds[id] && idx > 1 ) ) {
+                                id = oid + "_" + idx;
+                                idx++;
+                            }
                             if (oid != id) {
                                 idMap[oid] = id;
                                 moduleJson.id = id;
@@ -173,7 +178,7 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
                             if( moduleJson.type === "Datatemplate" )datatemplateJsons.push(moduleJson);
                             this.page.json.moduleList[moduleJson.id] = moduleJson;
                         }.bind(this));
-                        delete json;
+                        json = null;
 
                         datatemplateJsons.each(function (json) {
                             this.checkDatatemplateRelativeId(json, idMap);
@@ -198,7 +203,7 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
                         while (copyModuleNode) {
                             copyModuleNode.inject(injectNode, where);
                             var copyModuleJson = this.page.getDomjson(copyModuleNode);
-                            module = this.page.loadModule(copyModuleJson, copyModuleNode, parent);
+                            var module = this.page.loadModule(copyModuleJson, copyModuleNode, parent);
                             module._setEditStyle_custom("id");
                             module.selected();
                             moduleList.push( module );
@@ -206,7 +211,7 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
                             copyModuleNode = tmpNode.getFirst();
                         }
                         tmpNode.destroy();
-                        delete tmpNode;
+                        tmpNode = null;
 
                         if( this.page.history && moduleList.length){
                             moduleList[0].addHistoryLog("paste", moduleList);
@@ -237,7 +242,7 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
 		// this.resizeNode();
 		// this.addEvent("resize", this.resizeNode.bind(this));
 		this.loadPage();
-		
+
 		if (this.toolbarContentNode){
 			this.setScrollBar(this.toolbarContentNode, null, {
 				"V": {"x": 0, "y": 0},
@@ -261,7 +266,7 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
 		this.tools = [];
         this.toolGroups = [];
 		this.toolbarDecrease = 0;
-		
+
 		this.designNode = null;
 		this.page = null;
 	},
@@ -279,14 +284,14 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
 
         if (this.options.style=="bottom") this.propertyNode.inject(this.pageNode, "after");
 	},
-	
+
 	//loadToolbar----------------------
 	loadToolbar: function(){
 		this.toolbarTitleNode = new Element("div", {
 			"styles": this.css.toolbarTitleNode,
 			"text": MWF.APPPOD.LP.tools
 		}).inject(this.toolbarNode);
-		
+
 		this.toolbarTitleActionNode = new Element("div", {
 			"styles": this.css.toolbarTitleActionNode,
 			"events": {
@@ -343,19 +348,19 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
 		if (this.toolbarMode=="all"){
 			var size = this.toolbarNode.getSize();
 			this.toolbarDecrease = (size.x.toFloat())-60;
-			
+
 			this.tools.each(function(node){
 				node.getLast().setStyle("display", "none");
 			});
 			this.toolbarTitleNode.set("text", "");
-			
+
 			this.toolbarNode.setStyle("width", "60px");
-			
+
 			var pageMargin = this.pageNode.getStyle("margin-left").toFloat();
 			pageMargin = pageMargin - this.toolbarDecrease;
-			
+
 			this.pageNode.setStyle("margin-left", ""+pageMargin+"px");
-			
+
 			this.toolbarTitleActionNode.setStyles(this.css.toolbarTitleActionNodeRight);
 
             this.toolbarGroupContentNode.getElements(".o2formModuleTools").hide();
@@ -365,32 +370,32 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
 			sizeX = 60 + this.toolbarDecrease;
 			var pageMargin = this.pageNode.getStyle("margin-left").toFloat();
 			pageMargin = pageMargin + this.toolbarDecrease;
-			
+
 			this.toolbarNode.setStyle("width", ""+sizeX+"px");
 			this.pageNode.setStyle("margin-left", ""+pageMargin+"px");
-			
+
 			this.tools.each(function(node){
 				node.getLast().setStyle("display", "block");
 			});
-			
+
 			this.toolbarTitleNode.set("text", MWF.APPPOD.LP.tools);
-			
+
 			this.toolbarTitleActionNode.setStyles(this.css.toolbarTitleActionNode);
 
             this.toolbarGroupContentNode.getElements(".o2formModuleTools").show();
 
 			this.toolbarMode="all";
 		}
-		
+
 	},
-	
+
 	//loadPageNode------------------------------
 	loadPageNode: function(){
 		this.pageToolbarNode = new Element("div", {
 			"styles": this.css.pageToolbarNode
 		}).inject(this.pageNode);
 		this.loadPageToolbar();
-		
+
 		this.pageContentNode = new Element("div", {
 			"styles": this.css.pageContentNode
 		}).inject(this.pageNode);
@@ -435,6 +440,7 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
             if (this.page.currentSelectedModule==this){
                 return true;
             }else{
+                this.mobilePreSelectedModule = this.page.currentSelectedModule;
                 this.page.currentSelectedModule.unSelected();
             }
         }
@@ -444,8 +450,13 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
         }
         this.page.unSelectedMulti();
 
+        if( this.mobilePage )this.mobilePage.hideDomTree();
+
         if (this.page.designTabPageScriptAreaNode) this.page.designTabPageScriptAreaNode.hide();
         this.page = this.pcPage;
+        this.pcPage.showDomTree();
+        ( this.pcPreSelectedModule || this.pcPage ).selected();
+
         if ((this.scriptPage && this.scriptPage.isShow) || this.scriptPanel){
             this.loadAllScript();
         }
@@ -468,6 +479,7 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
             if (this.page.currentSelectedModule==this){
                 return true;
             }else{
+                this.pcPreSelectedModule = this.page.currentSelectedModule;
                 this.page.currentSelectedModule.unSelected();
             }
         }
@@ -476,6 +488,8 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
             this.page.propertyMultiTd = null;
         }
         this.page.unSelectedMulti();
+
+        if( this.pcPage )this.pcPage.hideDomTree();
 
         if (!this.mobilePage){
             this.designMobileNode.set("id", "designMobileNode");
@@ -487,6 +501,9 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
 
             // this.mobilePage = new MWF.PCPage(this, this.designMobileNode, {"mode": "Mobile"});
             // this.mobilePage.load(this.pageMobileData);
+        }else{
+            this.mobilePage.showDomTree();
+            ( this.mobilePreSelectedModule || this.mobilePage ).selected();
         }
 
         if (this.page.designTabPageScriptAreaNode) this.page.designTabPageScriptAreaNode.hide();
@@ -797,7 +814,15 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
             }.bind(this)
         });
     },
-
+    clearNoDomModule: function(e){
+        var _self = this;
+        this.confirm("warn", e.picNode,  MWF.APPPOD.LP.clearNoDomModuleTitle, MWF.APPPOD.LP.clearNoDomModuleContent, 460, 120, function(){
+            _self.page._clearNoDomModule();
+            this.close();
+        }, function(){
+            this.close();
+        });
+    },
     checkLoadAllScript: function(){
         if (this.page || this.form){
             this.loadAllScript();
@@ -910,12 +935,12 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
             this.propertyTitleNode.setStyle("cursor", "row-resize");
             this.loadPropertyResizeBottom();
         }
-		
+
 		this.propertyResizeBar = new Element("div", {
 			"styles": this.css.propertyResizeBar
 		}).inject(this.propertyNode);
 		this.loadPropertyResize();
-		
+
 		this.propertyContentNode = new Element("div", {
 			"styles": this.css.propertyContentNode
 		}).inject(this.propertyNode);
@@ -935,12 +960,12 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
 		//}).inject(this.propertyDomScrollArea);
 
         this.loadPropertyTab();
-		
+
 		this.propertyDomPercent = 0.4;
 		this.propertyContentResizeNode = new Element("div", {
 			"styles": this.css.propertyContentResizeNode
 		}).inject(this.propertyContentNode);
-		
+
 		this.propertyContentArea = new Element("div", {
 			"styles": this.css.propertyContentArea
 		}).inject(this.propertyContentNode);
@@ -1038,7 +1063,7 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
 				var x = (Browser.name=="firefox") ? e.event.clientX : e.event.x;
 				var y = (Browser.name=="firefox") ? e.event.clientY : e.event.y;
 				el.store("position", {"x": x, "y": y});
-				
+
 				var size = this.propertyNode.getSize();
 				el.store("initialWidth", size.x);
 			}.bind(this),
@@ -1049,7 +1074,7 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
 				var position = el.retrieve("position");
 				var initialWidth = el.retrieve("initialWidth").toFloat();
 				var dx = position.x.toFloat()-x.toFloat();
-				
+
 				var width = initialWidth+dx;
 				if (width> bodySize.x/2) width =  bodySize.x/2;
 				if (width<40) width = 40;
@@ -1098,7 +1123,7 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
 				var x = (Browser.name=="firefox") ? e.event.clientX : e.event.x;
 				var y = (Browser.name=="firefox") ? e.event.clientY : e.event.y;
 				el.store("position", {"x": x, "y": y});
-				
+
 				var size = this.propertyDomContentArea.getSize();
 				el.store("initialHeight", size.y);
                 el.store("initialWidth", size.x);
@@ -1127,36 +1152,36 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
 		var size = this.propertyContentNode.getSize();
 		var resizeNodeSize = this.propertyContentResizeNode.getSize();
 		var height = size.y-resizeNodeSize.y;
-		
+
 		var domHeight = this.propertyDomPercent*height;
 		var contentHeight = height-domHeight;
-		
+
 		this.propertyDomContentArea.setStyle("height", ""+domHeight+"px");
         this.propertyDomScrollArea.setStyle("height", ""+(domHeight-28)+"px");
         this.historyScrollArea.setStyle("height", ""+(domHeight-28)+"px");
 		this.propertyContentArea.setStyle("height", ""+contentHeight+"px");
-		
+
 		if (this.page){
 			if (this.page.currentSelectedModule){
 				if (this.page.currentSelectedModule.property){
 					var tab = this.page.currentSelectedModule.property.propertyTab;
 					if (tab){
 						var tabTitleSize = tab.tabNodeContainer.getSize();
-						
+
 						tab.pages.each(function(page){
 							var topMargin = page.contentNodeArea.getStyle("margin-top").toFloat();
 							var bottomMargin = page.contentNodeArea.getStyle("margin-bottom").toFloat();
-							
+
 							var tabContentNodeAreaHeight = contentHeight - topMargin - bottomMargin - tabTitleSize.y.toFloat()-15;
 							page.contentNodeArea.setStyle("height", tabContentNodeAreaHeight);
 						}.bind(this));
-						
+
 					}
 				}
 			}
 		}
 	},
-	
+
 	//loadTools------------------------------
     loadTools: function(callback){
         o2.loadCss("../o2_lib/vue/element/index.css");
@@ -1299,7 +1324,7 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
 // 			r.send();
 // 		}
 // 	},
-	
+
 	//resizeNode------------------------------------------------
     resizeNodeLeftRight: function(){
         var nodeSize = this.node.getSize();
@@ -1457,7 +1482,7 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
             this.setPropertyContentResize();
         }
 	},
-	
+
 	//loadPage------------------------------------------
 	loadPage: function(){
 		this.getPageData(function(){
@@ -1945,7 +1970,47 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
         }, {
             "navi": 0
         });
-    }
+    },
+    copyPropertyToModule: function (){
+        if( !this.page.currentSelectedModule ){
+            this.notice( MWF.APPPOD.LP.selectCopyModuleNotice, 'info');
+            return;
+        }
+        var module = this.page.currentSelectedModule;
+        var modulesTypes = [
+            ['Org', 'OOOrg','Author','Reader'],
+            ['Checkbox', 'OOCheckGroup', 'Radio', 'OORadioGroup', 'Select', 'OOSelect'],
+            ['Calendar', 'OODatetime'],
+            ['Textfield', 'Textarea', 'OOInput', 'OOTextarea'],
+            ['Button', 'OOButton']
+        ].filter(function (types){
+            return types.contains( module.json.type );
+        });
+        modulesTypes = modulesTypes.length ? modulesTypes[0] : [module.json.type];
+
+        this.selector = new MWF.O2Selector(this.content, {
+            count: 1,
+            title: MWF.APPPOD.LP.selectCopyModule,
+            type: 'FieldProperty',
+            moduleTypes: modulesTypes,
+            currentFormFields: Object.values(this.page.json.moduleList),
+            onComplete: function (items){
+                if( !items.length )return;
+                for( var key in items[0].data ){
+                    var value = items[0].data[key];
+                    if( !['id', 'type', 'pid'].contains(key) && module.json[key] !== value ){
+                        module.json[key] = value;
+                        module.setPropertiesOrStyles(key, value);
+                        module._setEditStyle(key, null, value);
+                        // this.setScriptJsEditor(module, change.name, change.fromValue);
+                    }
+                }
+                if( module.property ){
+                    module.property.reset();
+                }
+            }.bind(this)
+        });
+    },
 });
 
 MWF.xApplication.portal.PageDesigner.ToolsGroup = new Class({

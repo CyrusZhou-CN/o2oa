@@ -12,11 +12,11 @@ Object.assign(o2.APP$Elinput.prototype, {
         return !!(this.readonly || this.json.isReadonly || this.form.json.isReadonly || this.isSectionMergeRead() );
     },
     reload: function(){
-        if (!this.vm) return;
-
-        var node = this.vm.$el;
-        this.vm.$destroy();
-        node.empty();
+        if (this.vm) {
+            var node = this.vm.$el;
+            this.vm.$destroy();
+            node.empty();
+        }
 
         this.vm = null;
 
@@ -51,6 +51,12 @@ Object.assign(o2.APP$Elinput.prototype, {
                 this.node.setStyles( this._parseStyles(this.json.elStyles) );
             }
 
+            if( !this.eventLoaded ){
+                this._loadDomEvents();
+                this.eventLoaded = true;
+            }
+
+
             this.fireEvent("postLoad");
             if( this.moduleSelectAG && typeOf(this.moduleSelectAG.then) === "function" ){
                 this.moduleSelectAG.then(function () {
@@ -76,6 +82,7 @@ Object.assign(o2.APP$Elinput.prototype, {
     // },
     _loadNodeEdit: function(){
         var id = (this.json.id.indexOf("..")!==-1) ? this.json.id.replace(/\.\./g, "_") : this.json.id;
+        id = (id.indexOf("@")!==-1) ? id.replace(/@/g, "_") : id;
         this.json["$id"] = (id.indexOf("-")!==-1) ? id.replace(/-/g, "_") : id;
         this.node.appendHTML(this._createElementHtml(), "before");
         var input = this.node.getPrevious();
@@ -99,6 +106,17 @@ Object.assign(o2.APP$Elinput.prototype, {
                 }
             }
         }.bind(this));
+    },
+    addModuleEvent: function(key, fun){
+        if (this.options.moduleEvents.indexOf(key)!==-1 || this.options.elEvents.indexOf(key)!==-1 ){
+            this.addEvent(key, function(event){
+                return (fun) ? fun(this, event) : null;
+            }.bind(this));
+        }else{
+            this.node.addEvent(key, function(event){
+                return (fun) ? fun(this, event) : null;
+            }.bind(this));
+        }
     },
     getValue: function(){
         if (this.moduleValueAG) return this.moduleValueAG;

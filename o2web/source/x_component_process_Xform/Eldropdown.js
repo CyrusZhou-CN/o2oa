@@ -14,7 +14,7 @@ o2.xDesktop.requireApp("process.Xform", "$Elinput", null, false);
  * @see {@link https://element.eleme.cn/#/zh-CN/component/dropdown|Element UI Dropdown 下拉菜单}
  */
 MWF.xApplication.process.Xform.Eldropdown = MWF.APPEldropdown =  new Class(
-    /** @lends o2.xApplication.process.Xform.Eldropdown# */
+    /** @lends MWF.xApplication.process.Xform.Eldropdown# */
     {
     Implements: [Events],
     Extends: MWF.APP$Elinput,
@@ -54,6 +54,7 @@ MWF.xApplication.process.Xform.Eldropdown = MWF.APPEldropdown =  new Class(
     },
     _loadNodeEdit: function(){
         var id = (this.json.id.indexOf("..")!==-1) ? this.json.id.replace(/\.\./g, "_") : this.json.id;
+        id = (id.indexOf("@")!==-1) ? id.replace(/@/g, "_") : id;
         this.json["$id"] = (id.indexOf("-")!==-1) ? id.replace(/-/g, "_") : id;
          this.node.appendHTML(this._createElementHtml(), "before");
         var input = this.node.getPrevious();
@@ -172,4 +173,4 @@ MWF.xApplication.process.Xform.Eldropdown = MWF.APPEldropdown =  new Class(
                 "</span>";
         }
     }
-}); 
+});

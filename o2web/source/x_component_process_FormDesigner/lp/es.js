@@ -356,7 +356,18 @@ MWF.xApplication.process.FormDesigner.LP={
 		"relatedLink": "recomendación",
 		"associatedDocument": "Un documento asociado",
 		"security": "Etiqueta de seguridad",
-		"securityInfo": "Solo se permite un campo de \"identificación de nivel secreto\""
+		"securityInfo": "Solo se permite un campo de \"identificación de nivel secreto\"",
+		"group_O2OA": "Componentes de o2oa",
+		"oo_input": "Cuadro de entrada",
+		"oo_button": "Botones",
+		"oo_radioGroup": "Elecciones individuales",
+		"oo_checkGroup": "Casillas",
+		"oo_select": "Desplegable",
+		"oo_textarea": "Texto multilínea",
+		"oo_calendar": "Calendario",
+		"oo_datetime": "Marco de fecha",
+		"oo_org": "Personal",
+		"codeedit": "Editor de guiones"
 	},
 	"propertyTemplate": {
 		"base": "Base",
@@ -383,6 +394,8 @@ MWF.xApplication.process.FormDesigner.LP={
 		"preloadScript": "Pre-cargar script",
 		"script": "Script",
 		"dict": "Diccionario de datos",
+		"useCache": "Usar caché",
+		"useCacheNote": "Para acelerar el proceso, el diccionario de datos se almacenará en caché cuando se abra por primera vez. Debe actualizar la página web para volver a obtener el diccionario de datos modificado. Seleccione lo contrario para obtenerlo desde el servidor cada vez.",
 		"dictName": "nombre del diccionario",
 		"dictPath": "Ruta de datos",
 		"valueKey": "Nombre del atributo de valor",
@@ -825,6 +838,11 @@ MWF.xApplication.process.FormDesigner.LP={
 		"reservar": "Reservar",
 		"changeViewReserve": "Volver a seleccionar después de cambiar la vista, conservar los datos de la vista original",
 		"changeViewNotReserve": "Vuelva a seleccionar después de cambiar la vista, elimine los datos de la vista original",
+		"selectView": "Seleccionar vista",
+		"calculationView": "Vista de cálculo",
+		"viewScript": "Ver secuencia de comandos",
+		"nameAliasID": "Nombre, alias e id",
+		"calculation": "cálculo",
 		"filter": "Filtro",
 		"title": "Título",
 		"path": "Ruta",
@@ -1368,6 +1386,9 @@ MWF.xApplication.process.FormDesigner.LP={
 			"logoImg": "Logotipo superior izquierdo (172x40)",
 			"logoUrl": "Enlace del logotipo"
 		},
+		"foxit": {
+			"api": "API"
+		},
 		"smartbi": {
 			"select": "Selección de recursos",
 			"displayToolbar": "Mostrar barra de herramientas",
@@ -1467,7 +1488,23 @@ MWF.xApplication.process.FormDesigner.LP={
 		"checkOtherFlow": "Verificar otros métodos de circulación",
 		"checkOtherFlowNote": "Ejecute el guión de verificación cuando se agregue, restablezca o devuelva, obtenga el método de circulación a través de este.formulario.currentrouteme (agregue la etiqueta a: addatask, restablezca a: reset, devuelva a: goback), obtenga una opinión a través de este.formulario.opinion, obtenga otros parámetros de la circulación a través de este.formulario.flowdata",
 		"forceClearCustomViewStyle": "Limpiar estilos personalizados al cambiar",
-		"forceClearCustomStyle": "Limpiar estilos personalizados al cambiar"
+		"forceClearCustomStyle": "Limpiar estilos personalizados al cambiar",
+		"showMode": "Modo",
+		"defaultView": "Vista inicial",
+		"dayView": "Día",
+		"monthView": "Mes",
+		"yearView": "Año",
+		"secondEnable": "Segundos de selección",
+		"weekBegin": "A partir de la semana",
+		"valueFormat": "Formato de valor vinculado",
+		"readModeEvents": "Si responde a eventos del ratón en modo de lectura",
+		"required": "Obligatorio",
+		"logTaskFormat": "Formato pendiente",
+		"scriptMode": "Tipo de guión",
+		"scriptEditor": "Editor de guiones",
+		"lineNumber": "Mostrar el número de línea",
+		"isReader": "Como lector de gestión de contenidos",
+		"isAuther": "Como editor de gestión de contenidos"
 	},
 	"smartbi": {
 		"nosetup": "Por favor, instala la aplicación SmartBI primero",
@@ -1551,7 +1588,12 @@ MWF.xApplication.process.FormDesigner.LP={
 		"clearNoDomModule": "Borrar configuraciones de componentes que no están en el árbol HTML",
 		"autoSave": "AutoGuardar",
 		"brush": "cepillar",
-		"viewAllVersion": "Ver todas las versiones del formulario"
-	}
+		"viewAllVersion": "Ver todas las versiones del formulario",
+		"add": "Nueva construcción",
+		"gotoApp": "Abrir su aplicación",
+		"copyProperty": "Atributos del componente de copia"
+	},
+	"selectCopyModule": "Por favor, elija el componente que necesita copiar el atributo",
+	"selectCopyModuleNotice": "¡¡ por favor, elija el componente primero!"
 }
 MWF.xApplication.process.FormDesigner["lp."+o2.language] = MWF.xApplication.process.FormDesigner.LP

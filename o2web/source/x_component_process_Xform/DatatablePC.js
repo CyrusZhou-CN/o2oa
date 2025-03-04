@@ -38,6 +38,7 @@
           "activityName": "拟稿",
           "extension": "jpg",
           "id": "9514758e-9e28-4bfe-87d7-824f2811f173",
+ 		  "businessId": "1234758e-9e28-4bfe-87d7-824f2811f173",
           "lastUpdateTime": "2020-12-09 21:48:03",
           "length": 452863.0,
           "name": "111.jpg",
@@ -250,8 +251,6 @@ MWF.xApplication.process.Xform.DatatablePC = new Class(
 			//this._loadUserInterface();
 		},
 		_loadUserInterface: function(){
-			// this.fireEvent("queryLoad");
-			debugger;
 			//区段合并后编辑
 			if( this.isSectionMergeEdit() ){ //区段合并，删除区段值合并数据后编辑
 				if( this.json.mergeTypeEdit === "script" ){
@@ -422,7 +421,7 @@ MWF.xApplication.process.Xform.DatatablePC = new Class(
 			if(this.editable){
 				var actionTh = new Element("th.mwf_addlineaction", {"styles": {"width": "46px"}}).inject(this.titleTr, "top"); //操作列
 				if(this.addable){
-					var addLineAction = new Element("div", {
+					var addLineAction = new Element("div.addLineAction.ooicon-create", {
 						"styles": this.form.css.addLineAction,
 						"events": {
 							"click": function(e){
@@ -2193,7 +2192,6 @@ MWF.xApplication.process.Xform.DatatablePC = new Class(
 				this.importActionNode.setStyles(styles);
 
 				this.importActionNode.addEvent("click", function () {
-					debugger;
 					this.importFromExcel();
 				}.bind(this))
 			}
@@ -2674,7 +2672,6 @@ MWF.xApplication.process.Xform.DatatablePC.Line =  new Class({
 		if( !this.datatable.multiEditMode )this.originalData = Object.clone(this.data);
 
 		// if(this.options.isNew && this.options.isEdited){
-		// 	debugger;
 		// 	this.data = this.getData();
 		// 	if( !this.datatable.multiEditMode )this.originalData = Object.clone(this.data);
 		// 	this.options.isNew = false;
@@ -2737,15 +2734,15 @@ MWF.xApplication.process.Xform.DatatablePC.Line =  new Class({
             delete this.allField[oldId];
             this.allField[id] = module;
 
-            if(this.form.all[oldId]){
+			if(this.form.all[oldId] && this.form.all[oldId] === module){
                 delete this.form.all[oldId];
-                this.form.all[id] = module;
             }
+            this.form.all[id] = module;
 
-            if(this.form.forms[oldId]){
+            if(this.form.forms[oldId] && this.form.forms[oldId] === module){
                 delete this.form.forms[oldId];
-                this.form.forms[id] = module;
             }
+            if( module.field )this.form.forms[id] = module;
 
             if( hasIndexArg || hasIndexInSectionLineArg ){
 				this.loadSequence();
@@ -2769,7 +2766,14 @@ MWF.xApplication.process.Xform.DatatablePC.Line =  new Class({
 			if( tJson ){
 				var json = Object.clone(tJson);
 
-				if( !this.options.isEdited || !this.options.isEditable )json.isReadonly = true;
+				if( !this.options.isEdited || !this.options.isEditable ){
+					if( json.hasOwnProperty('showMode') ){
+						json.showMode = 'read';
+					}else{
+						json.isReadonly = true;
+					}
+
+				}
 
 				var templateJsonId = json.id;
 
@@ -2947,7 +2951,7 @@ MWF.xApplication.process.Xform.DatatablePC.Line =  new Class({
 
 					for( var i=0; i<this.form.businessData.attachmentList.length; i++ ){
 						var attData = this.form.businessData.attachmentList[i];
-						if( attData.id === d.id ){
+						if( (attData.businessId && attData.businessId === d.businessId) || attData.id === d.id ){
 							this.form.businessData.attachmentList.erase(attData);
 							break;
 						}
@@ -3035,7 +3039,7 @@ MWF.xApplication.process.Xform.DatatablePC.Line =  new Class({
 		}
 	},
 	createAddAction: function(td){
-		this.addLineAction = new Element("div", {
+		this.addLineAction = new Element("div.addLineAction.ooicon-create", {
 			"styles": this.form.css.addLineAction,
 			"events": {
 				"click": function(ev){
@@ -3046,7 +3050,7 @@ MWF.xApplication.process.Xform.DatatablePC.Line =  new Class({
 		}).inject(td);
 	},
 	createCompleteAction: function(td){
-		this.completeLineAction = new Element("div", {
+		this.completeLineAction = new Element("div.completeLineAction.ooicon-checkmark", {
 			"styles": this.form.css.completeLineAction,
 			"events": {
 				"click": function(ev){
@@ -3057,7 +3061,7 @@ MWF.xApplication.process.Xform.DatatablePC.Line =  new Class({
 		}).inject(td);
 	},
 	createCancelEditAction: function(td){
-		this.cancelLineEditAction = new Element("div", {
+		this.cancelLineEditAction = new Element("div.cancelLineEditAction.ooicon-process-cancel", {
 			"styles": this.form.css.delLineAction,
 			"events": {
 				"click": function(ev){
@@ -3068,7 +3072,7 @@ MWF.xApplication.process.Xform.DatatablePC.Line =  new Class({
 		}).inject(td);
 	},
 	createDelAction: function(td){
-		this.delLineAction = new Element("div", {
+		this.delLineAction = new Element("div.delLineAction.ooicon-delete", {
 			"styles": this.form.css.delLineAction,
 			"events": {
 				"click": function(ev){
@@ -3238,7 +3242,7 @@ MWF.xApplication.process.Xform.DatatablePC.Line =  new Class({
 			}).inject(node);
 			var textNode = new Element("div", {
 				"styles": {
-					"height": "20px",
+					"height": "auto",
 					"line-height": "20px",
 					"margin-left": "20px",
 					"color": "red",
@@ -3307,7 +3311,7 @@ MWF.xApplication.process.Xform.DatatablePC.Line =  new Class({
 			if( module.json.type==="Attachment" || module.json.type==="AttachmentDg" ){
 				data[key] = (data[key] || []).filter(function(att, index){
 					for( var i=0; i<attachmentList.length; i++){
-						if( attachmentList[i].id === att.id )return true;
+						if( (attachmentList[i].businessId && attachmentList[i].businessId === att.businessId) || attachmentList[i].id === att.id )return true;
 					}
 					return false;
 				}.bind(this))
@@ -3566,7 +3570,7 @@ MWF.xApplication.process.Xform.DatatablePC.ImporterLine =  new Class({
 						}
 					}
 
-				});
+				}, true);
 				if(!module.parentLine)module.parentLine = this;
 				if(!module.parentDatatable)module.parentDatatable = this.datatable;
 

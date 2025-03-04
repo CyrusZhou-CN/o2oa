@@ -37,6 +37,7 @@
                     "activityName": "拟稿",
                     "extension": "jpg",
                     "id": "9514758e-9e28-4bfe-87d7-824f2811f173",
+	 				"businessId": "1234758e-9e28-4bfe-87d7-824f2811f173",
                     "lastUpdateTime": "2020-12-09 21:48:03",
                     "length": 452863.0,
                     "name": "111.jpg",
@@ -218,7 +219,6 @@ MWF.xApplication.process.Xform.Datatemplate = MWF.APPDatatemplate = new Class(
 		},
 		_loadUserInterface: function(){
 			// this.fireEvent("queryLoad");
-			debugger;
 			this.loading = true;
 
 			if( this.isSectionMergeEdit() ){ //区段合并，删除区段值合并数据后编辑
@@ -2078,15 +2078,15 @@ MWF.xApplication.process.Xform.Datatemplate.Line =  new Class({
 			delete this.allField[oldId];
 			this.allField[id] = module;
 
-			if(this.form.all[oldId]){
+			if(this.form.all[oldId] && this.form.all[oldId] === module){
 				delete this.form.all[oldId];
-				this.form.all[id] = module;
 			}
+			this.form.all[id] = module;
 
-			if(this.form.forms[oldId]){
+			if(this.form.forms[oldId] && this.form.forms[oldId] === module){
 				delete this.form.forms[oldId];
-				this.form.forms[id] = module;
 			}
+			if( module.field )this.form.forms[id] = module;
 
 			this.checkSequence(module, templateJsonId);
 		}.bind(this));
@@ -2252,18 +2252,38 @@ MWF.xApplication.process.Xform.Datatemplate.Line =  new Class({
 	setEvents: function (module, id) {
 		if( this.template.addActionIdList.contains( id )){
 			this.addActionList.push( module );
-			module.node.addEvent("click", function (ev) {
-				this.template._insertLine( ev, this )
-			}.bind(this))
+
+			var addAddEvent = function (){
+				module.node.addEvent("click", function (ev) {
+					this.template._insertLine( ev, this )
+				}.bind(this));
+			}.bind(this);
+
+			if( module.json.type.substr(0, 2) === "El" ){
+				module.vm ? addAddEvent() : module.addEvent("load", addAddEvent);
+			}else{
+				addAddEvent();
+			}
+
 			if( !this.template.editable )module.node.hide();
 			if( !this.options.isAddable )module.node.hide();
 		}
 
 		if( this.template.deleteActionIdList.contains(id)){
 			this.deleteActionList.push( module );
-			module.node.addEvent("click", function (ev) {
-				this.template._deleteLine( ev, this )
-			}.bind(this))
+
+			var addDeleteEvent = function (){
+				module.node.addEvent("click", function (ev) {
+					this.template._deleteLine( ev, this )
+				}.bind(this));
+			}.bind(this);
+
+			if( module.json.type.substr(0, 2) === "El" ){
+				module.vm ? addDeleteEvent() : module.addEvent("load", addDeleteEvent);
+			}else{
+				addDeleteEvent();
+			}
+
 			if( !this.template.editable )module.node.hide();
 			if( !this.options.isDeleteable )module.node.hide();
 		}
@@ -2271,9 +2291,18 @@ MWF.xApplication.process.Xform.Datatemplate.Line =  new Class({
 		if( this.template.selectorId === id){
 			this.selector = module;
 			// module.setData(""); //默认不选择
-			module.node.addEvent("click", function (ev) {
-				this.checkSelect();
-			}.bind(this))
+			var addSelectEvent = function (){
+				module.node.addEvent("click", function (ev) {
+					this.checkSelect();
+				}.bind(this));
+			}.bind(this);
+
+			if( module.json.type.substr(0, 2) === "El" ){
+				module.vm ? addSelectEvent() : module.addEvent("load", addSelectEvent);
+			}else{
+				addSelectEvent();
+			}
+
 			if( !this.template.editable )module.node.hide();
 			if( !this.options.isDeleteable )module.node.hide();
 			this.unselect();
@@ -2612,7 +2641,7 @@ MWF.xApplication.process.Xform.Datatemplate.ImporterLine =  new Class({
 							}
 						}
 					}
-				});
+				}, true);
 				if(!module.parentLine)module.parentLine = this;
 				if(!module.parentDatatemplate)module.parentDatatemplate = this.template;
 
@@ -2702,7 +2731,7 @@ MWF.xApplication.process.Xform.Datatemplate.Exporter = new Class({
 		if( this.template.isShowAllSection ){
 			lineList = this.template.sectionLineEdited ? this.template.sectionLineEdited.lineList : this.template.lineList;
 		}else if( this.template.isMergeRead ) {
-			lineList = this.template.lineList; 
+			lineList = this.template.lineList;
 		}else{
 			lineList = this.template.lineList;
 		}

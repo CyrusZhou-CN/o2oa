@@ -70,7 +70,7 @@ MWF.xApplication.portal.Portal.Main = new Class({
     toPortal: function(portal, page, par, nohis){
         this.options.portalId = portal;
         this.options.pageId = page;
-        if (!nohis) this.doHistory(page,this.options.portalId);
+        if (!nohis) this.doHistory(page,this.options.portalId, par);
 
         if (this.appForm) this.appForm.fireEvent("beforeClose");
         Object.keys(this.$events).each(function(k){
@@ -84,14 +84,14 @@ MWF.xApplication.portal.Portal.Main = new Class({
         this.portal = null;
         this.loadPortal(par);
     },
-    doHistory: function(name, portal){
+    doHistory: function(name, portal, par){
         if (this.inBrowser){
-            var stateObj = { "page": name, "id": portal || this.options.portalId };
+            var stateObj = { "page": name, "id": portal || this.options.portalId, "parameters":par };
             history.pushState(stateObj, "page");
         }
     },
     toPage: function(name, par, nohis){
-        if (!nohis) this.doHistory(name, this.portal.id);
+        if (!nohis) this.doHistory(name, this.portal.id, par);
         var pageJson = null;
         var loadModuleFlag = false;
         var check = function(){
@@ -121,7 +121,7 @@ MWF.xApplication.portal.Portal.Main = new Class({
                     }
 
                     if (page){
-                        this.options.pageId = pageJson.data.id;
+                        this.options.pageId = (pageJson.data && pageJson.data.page) ? pageJson.data.page.id : "";
 
                         if (this.appForm) this.appForm.fireEvent("beforeClose");
                         Object.keys(this.$events).each(function(k){
@@ -277,6 +277,11 @@ MWF.xApplication.portal.Portal.Main = new Class({
                 this.appForm.formDataText = this.pageDataText;
 
                 this.appForm.load();
+
+                this.addEvent('resize', function(){
+                    debugger;
+                    this.appForm.fireEvent('resize');
+                }.bind(this));
 
                 if (callback) callback();
                 if (this.mask) this.mask.hide();

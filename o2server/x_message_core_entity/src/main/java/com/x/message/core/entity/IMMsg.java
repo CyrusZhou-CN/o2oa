@@ -25,10 +25,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(name = "IMMsg", description = "消息会话消息.")
 @Entity
 @ContainerEntity(dumpSize = 1000, type = ContainerEntity.Type.content, reference = ContainerEntity.Reference.strong)
-@Table(name = PersistenceProperties.IMMsg.table, uniqueConstraints = {
+@Table(name = PersistenceProperties.IMMsg.table, indexes = {
+        @javax.persistence.Index(name = PersistenceProperties.IMMsg.table
+                                        + JpaObject.IndexNameMiddle
+                                        + JpaObject.createTime_FIELDNAME, columnList = JpaObject.CREATETIMECOLUMN)}, uniqueConstraints = {
         @UniqueConstraint(name = PersistenceProperties.IMMsg.table + JpaObject.IndexNameMiddle
-                + JpaObject.DefaultUniqueConstraintSuffix, columnNames = { JpaObject.IDCOLUMN,
-                JpaObject.CREATETIMECOLUMN, JpaObject.UPDATETIMECOLUMN, JpaObject.SEQUENCECOLUMN }) })
+                                 + JpaObject.DefaultUniqueConstraintSuffix, columnNames = {
+                JpaObject.IDCOLUMN,
+                JpaObject.CREATETIMECOLUMN, JpaObject.UPDATETIMECOLUMN, JpaObject.SEQUENCECOLUMN})})
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public class IMMsg extends SliceJpaObject {
 
@@ -68,6 +72,11 @@ public class IMMsg extends SliceJpaObject {
     @Basic(fetch = FetchType.EAGER)
     @Column(length = length_10M, name = ColumnNamePrefix + body_FIELDNAME)
     private String body;
+
+    public static final String bodyFileId_FIELDNAME = "bodyFileId";
+    @FieldDescribe("消息内容如果是有 fileId 的填入这个字段.")
+    @Column(length = length_64B, name = ColumnNamePrefix + bodyFileId_FIELDNAME)
+    private String bodyFileId;
 
 
     public static final String createPerson_FIELDNAME = "createPerson";
@@ -113,5 +122,13 @@ public class IMMsg extends SliceJpaObject {
 
     public void setQuoteMessageId(String quoteMessageId) {
         this.quoteMessageId = quoteMessageId;
+    }
+
+    public String getBodyFileId() {
+        return bodyFileId;
+    }
+
+    public void setBodyFileId(String bodyFileId) {
+        this.bodyFileId = bodyFileId;
     }
 }

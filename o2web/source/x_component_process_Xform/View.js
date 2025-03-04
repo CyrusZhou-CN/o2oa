@@ -57,7 +57,9 @@ MWF.xApplication.process.Xform.View = MWF.APPView =  new Class(
         this.node.empty();
     },
     _afterLoaded: function(){
-        if (this.json.queryView){
+        if(!!this.json.viewType){
+            this.loadView();
+        }else if (this.json.queryView){
             this.loadView();
         }else{
             if (this.json.selectViewType==="cms"){
@@ -80,7 +82,7 @@ MWF.xApplication.process.Xform.View = MWF.APPView =  new Class(
             if (this.view.getViewRes && this.view.getViewRes.res) if (this.view.getViewRes.res.isRunning()) this.view.getViewRes.res.cancel();
         }
         this.node.empty();
-        this.loadView( callback );
+        this.loadView( callback, true );
     },
     /**
      * @summary 当视图被设置为延迟加载（未立即载入），通过active方法激活
@@ -91,11 +93,33 @@ MWF.xApplication.process.Xform.View = MWF.APPView =  new Class(
         if (this.view){
             if (!this.view.loadingAreaNode) this.view.loadView( callback );
         }else{
-            this.loadView( callback );
+            this.loadView( callback, true );
         }
     },
-    loadView: function( callback ){
-        if (!this.json.queryView || !this.json.queryView.name || !this.json.queryView.appName) return "";
+    getViewName: function (){
+        var appName, viewName;
+        if (this.json.viewType === "script") {
+            if (this.json.viewScript && this.json.viewScript.code) {
+                var data = this.form.Macro.exec(this.json.viewScript.code, this);
+                if (data) {
+                    appName = data.application;
+                    viewName = data.view;
+                }
+            }
+        }else{
+            appName = (this.json.queryView) ? this.json.queryView.appName : this.json.application;
+            viewName = (this.json.queryView) ? this.json.queryView.name : this.json.viewName;
+        }
+        return {appName: appName, viewName: viewName};
+    },
+    loadView: function( callback, force ){
+        var viewObj = this.getViewName();
+        var appName = viewObj.appName, viewName = viewObj.viewName;
+        if( !appName || !viewName ){
+            if(callback) callback();
+            return ;
+        }
+
         var filter = null;
         if (this.json.filterList && this.json.filterList.length){
             filter = [];
@@ -108,8 +132,8 @@ MWF.xApplication.process.Xform.View = MWF.APPView =  new Class(
 
         //var data = JSON.parse(this.json.data);
         var viewJson = {
-            "application": (this.json.queryView) ? this.json.queryView.appName : this.json.application,
-            "viewName": (this.json.queryView) ? this.json.queryView.name : this.json.viewName,
+            "application": appName,
+            "viewName": viewName,
             "isTitle": this.json.isTitle || "yes",
             "select": this.json.select || "none",
             "titleStyles": this.json.titleStyles,
@@ -133,7 +157,7 @@ MWF.xApplication.process.Xform.View = MWF.APPView =  new Class(
          * var view = this.form.get("fieldId").view; //获取组件对象
          */
             this.view = new MWF.xApplication.query.Query.Viewer(this.node, viewJson, {
-                "isload": (this.json.loadView!=="no"),
+                "isload": force || (this.json.loadView!=="no"),
                 "resizeNode": (this.node.getStyle("height").toString().toLowerCase()!=="auto" && this.node.getStyle("height").toInt()>0),
                 "onLoadLayout": function () {
                     this.fireEvent("loadViewLayout");

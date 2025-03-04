@@ -72,7 +72,8 @@ MWF.xApplication.attendancev2.LP={
 		"timeMinutesSelectorMinute": "Minute",
 		"chooseDatePlaceholder": "Select Date",
 		"selectPlaceholder": "Select",
-		"selectOrgPersonOverCount": "You can select up to ({count}) data!"
+		"selectOrgPersonOverCount": "You can select up to ({count}) data!",
+		"errorPageNumber": "Please enter the correct page number!"
 	},
 	"myAttendanceTitle": "My Statistics",
 	"myAttendanceCalendar": "Attendance Calendar",
@@ -138,6 +139,7 @@ MWF.xApplication.attendancev2.LP={
 	"workAddressManagerTitle": "Workplace Management",
 	"workAddressSelector": "Select Workplace",
 	"workAddressAdd": "Add Workplace",
+	"workAddressUpdate": "Update Workplace",
 	"workAddressView": "View Workplace",
 	"workAddressName": "Place Name",
 	"workAddressRange": "Error Range",

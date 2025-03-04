@@ -50,7 +50,7 @@ MWF.xApplication.process.ProcessDesigner.widget.PersonSelector = new Class({
             }else if (this.options.type.toLowerCase()==="duty"){
                 var dutys = JSON.decode(this.options.names);
                 dutys.each(function(d){
-                    var dutyItem = new MWF.widget.O2Duty(d, this.node, {
+                    var dutyItem = new MWF.widget.O2ProcessDuty(d, this.node, {
                         "canRemove": true,
                         "onRemove": function(item, e){
                             var _self = this;
@@ -131,25 +131,25 @@ MWF.xApplication.process.ProcessDesigner.widget.PersonSelector = new Class({
 
         if (names && names.length){
             names.each(function(name){
-                var data = (typeOf(name)==="string") ? {"name": name, "id": name}: name;
+                var data = (typeOf(name)==="string") ? {"name": name.split('@')[0], "id": name, "distinguishedName":name}: name;
                 var distinguishedName = (typeOf(name)==="string") ? name : data.distinguishedName;
                 var flag = distinguishedName.split("@").getLast();
                 var widget;
                 switch (flag.toLowerCase()){
                     case "i":
-                        widget = new MWF.widget.O2Identity(name, node, {"style": "xform","lazy":true,"disableInfor" : disableInfor});
+                        widget = new MWF.widget.O2Identity(data, node, {"style": "xform","lazy":true,"disableInfor" : disableInfor});
                         break;
                     case "p":
-                        widget = new MWF.widget.O2Person(name, node, {"style": "xform","lazy":true,"disableInfor" : disableInfor});
+                        widget = new MWF.widget.O2Person(data, node, {"style": "xform","lazy":true,"disableInfor" : disableInfor});
                         break;
                     case "u":
-                        widget = new MWF.widget.O2Unit(name, node, {"style": "xform","lazy":true,"disableInfor" : disableInfor});
+                        widget = new MWF.widget.O2Unit(data, node, {"style": "xform","lazy":true,"disableInfor" : disableInfor});
                         break;
                     case "g":
-                        widget = new MWF.widget.O2Group(name, node, {"style": "xform","lazy":true,"disableInfor" : disableInfor});
+                        widget = new MWF.widget.O2Group(data, node, {"style": "xform","lazy":true,"disableInfor" : disableInfor});
                         break;
                     default:
-                        widget = new MWF.widget.O2Other(name, node, {"style": "xform","lazy":true,"disableInfor" : disableInfor});
+                        widget = new MWF.widget.O2Other(data, node, {"style": "xform","lazy":true,"disableInfor" : disableInfor});
                 }
                 this.identitys.push(widget);
             }.bind(this));
@@ -334,7 +334,7 @@ MWF.xApplication.process.ProcessDesigner.widget.PersonSelector.DutyInput = Class
         var code = this.scriptEditor.editor.editor.getValue();
         this.data.code = code;
         if (!this.item){
-            var dutyItem = new MWF.widget.O2Duty(this.data, this.itemNode, {
+            var dutyItem = new MWF.widget.O2ProcessDuty(this.data, this.itemNode, {
                 "canRemove": true,
                 "onRemove": function(item, e){
                     var _self = item;
@@ -481,7 +481,7 @@ MWF.xApplication.process.ProcessDesigner.widget.PersonSelector.DutyInput = Class
     // }
 });
 
-MWF.widget.O2Duty = new Class({
+MWF.widget.O2ProcessDuty = new Class({
     Extends: MWF.widget.O2Group,
     getPersonData: function(){
     },

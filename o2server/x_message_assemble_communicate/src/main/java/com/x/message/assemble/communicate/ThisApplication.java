@@ -58,7 +58,7 @@ public class ThisApplication {
 
 	public static final TableConsumeQueue tableConsumeQueue = new TableConsumeQueue();
 
-	public static final HadoopConsumeQueue hadoopConsumeQueue = new HadoopConsumeQueue();
+	public static final IMMessageDeleteQueue imMessageDeleteQueue = new IMMessageDeleteQueue();
 
 	private static final Map<Session, String> WSCLIENTS = new ConcurrentHashMap<>();
 
@@ -90,7 +90,6 @@ public class ThisApplication {
 		context().startQueue(mailConsumeQueue);
 		context().startQueue(jdbcConsumeQueue);
 		context().startQueue(tableConsumeQueue);
-		context().startQueue(hadoopConsumeQueue);
 		if (BooleanUtils.isTrue(Config.qiyeweixin().getEnable())
 				&& BooleanUtils.isTrue(Config.qiyeweixin().getMessageEnable())) {
 			context().startQueue(qiyeweixinConsumeQueue);
@@ -115,6 +114,7 @@ public class ThisApplication {
 		context().startQueue(andFxConsumeQueue);
 		context().startQueue(wsConsumeQueue);
 		context().startQueue(calendarConsumeQueue);
+		context().startQueue(imMessageDeleteQueue);
 	}
 
 	public static void destroy() {

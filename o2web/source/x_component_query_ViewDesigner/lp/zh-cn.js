@@ -30,6 +30,11 @@ MWF.xApplication.query.ViewDesigner.LP = {
     "searchPlacholder": "输入名称/别名/id搜索",
     "searchAndSort": "排序和搜索",
 
+    "mustSelectFormStyle" : "必须选择一种样式",
+    "notValidJson" : "错误的json格式",
+    "mustSelectDict" : "请先选择数据字典",
+    "mustSelect": "请选择",
+
     "action": {
         "move": "移动",
         "delete": "删除",
@@ -183,6 +188,9 @@ MWF.xApplication.query.ViewDesigner.LP = {
         "asc":"升序",
         "desc":"降序",
         "orderToNumber":"转换成数字排序",
+        "switchOrder": "允许点击切换顺序",
+        "switchOrderByCurrent": "点击后只按当前列排序",
+        "firstOrder": "首次点击",
         "category":"分类",
         "hidden":"隐藏",
         "org":"组织对象",

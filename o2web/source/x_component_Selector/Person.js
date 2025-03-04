@@ -1,6 +1,7 @@
 MWF.xApplication.Selector = MWF.xApplication.Selector || {};
 //MWF.xDesktop.requireApp("Selector", "lp."+MWF.language, null, false);
 //MWF.xDesktop.requireApp("Selector", "Actions.RestActions", null, false);
+if(!MWF.O2Selector)MWF.O2Selector = {};
 MWF.xApplication.Selector.Person = new Class({
     Extends: MWF.widget.Common,
     Implements: [Options, Events],
@@ -118,7 +119,6 @@ MWF.xApplication.Selector.Person = new Class({
         this.className = "Person";
     },
     load: function(){
-        debugger;
         this.fireEvent("queryLoad",[this]);
         if( this.options.contentUrl ){
             this.loadWithUrl()
@@ -953,21 +953,6 @@ MWF.xApplication.Selector.Person = new Class({
         }).inject(this.itemAreaScrollNode);
         this.itemSearchAreaNode.setStyle("display", "none");
 
-
-
-        //MWF.require("MWF.widget.ScrollBar", function(){
-        //    var _self = this;
-        //    new MWF.widget.ScrollBar(this.itemAreaScrollNode, {
-        //        "style":"xApp_Organization_Explorer",
-        //        "where": "before",
-        //        "distance": 30,
-        //        "friction": 4,
-        //        "axis": {"x": false, "y": true},
-        //        "onScroll": function(y){
-        //            _self._scrollEvent(y);
-        //        }
-        //    });
-        //}.bind(this));
         this.initLoadSelectItems();
         this.checkLoadSelectItems();
     },
@@ -975,12 +960,6 @@ MWF.xApplication.Selector.Person = new Class({
 
         this.setSelectedItem();
 
-        //MWF.require("MWF.widget.ScrollBar", function(){
-        //    var _self = this;
-        //    new MWF.widget.ScrollBar(this.selectedScrollNode, {
-        //        "style":"xApp_Organization_Explorer", "where": "before", "distance": 100, "friction": 4,"axis": {"x": false, "y": true}
-        //    });
-        //}.bind(this));
         if(this.selectedScrollNode)this.selectedScrollNode.setStyle("display", "none");
     },
 
@@ -1037,9 +1016,10 @@ MWF.xApplication.Selector.Person = new Class({
                 "styles": this.css.searchInputDiv
             }).inject( this.selectNode);
         }
+
         this.searchInput = new Element("input", {
             "styles": this.css.searchInput, //(this.options.count.toInt()===1) ? this.css.searchInputSingle : this.css.searchInput,
-            "placeholder" : MWF.SelectorLP.searchDescription,
+            "placeholder" : MWF.SelectorLP['searchDescription'+this.className] || MWF.SelectorLP.searchDescription,
             "type": "text"
         }).inject(this.searchInputDiv);
 
@@ -1425,19 +1405,14 @@ MWF.xApplication.Selector.Person = new Class({
             "styles": this.css.selectedNodeMobile
         }).inject(this.selectedScrollNode);
 
-        // MWF.require("MWF.widget.ScrollBar", function(){
-        //     var _self = this;
-        //     new MWF.widget.ScrollBar(this.selectedScrollNode, {
-        //         "style":"xApp_Organization_Explorer", "where": "before", "distance": 100, "friction": 4,"axis": {"x": false, "y": true}
-        //     });
-        // }.bind(this));
         this.selectedWrapNode.setStyle("display", "none");
     },
 
     setSelectedItem: function(){
         var getSelectedIndex = function (e){
+            if( !e )return 9999999;
             var key = typeOf( e ) === "string" ? e : ( e.distinguishedName || e.unique || e.employee || e.levelName || e.id );
-            return (this.selectedIndexMap||{})[key];
+            return (this.selectedIndexMap||{})[key] || 9999999;
         }.bind(this);
         if (this.options.values.length){
             this.options.values.each(function(v, i){
@@ -2706,7 +2681,7 @@ MWF.xApplication.Selector.Person.ItemSelected = new Class({
             this.data.isFromValues = false;
         }
 
-        if(!this.selectedIndex)this.selectedIndex = MWF.O2Selector.selectedIndex++;
+        if(!this.selectedIndex && MWF.O2Selector.selectedIndex)this.selectedIndex = MWF.O2Selector.selectedIndex++;
 
         this.getData(function(){
             this.node.setStyle("display","");

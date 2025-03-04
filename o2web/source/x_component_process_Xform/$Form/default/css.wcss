@@ -13,7 +13,7 @@
 		"width": "18px",
 		"height": "18px",
 		"float": "right",
-		"cursor": "pointer" 
+		"cursor": "pointer"
 	},
 	"orgfieldIcon": {
         "background": "url(../x_component_process_Xform/$Form/default/icon/selectorg.png) center center no-repeat",
@@ -50,7 +50,7 @@
 		"width": "18px",
 		"height": "18px",
 		"float": "right",
-		"cursor": "pointer" 
+		"cursor": "pointer"
 	},
 	"selectIcon": {
 		"background": "url(../x_component_process_Xform/$Form/default/icon/pull.png) center center no-repeat",
@@ -100,33 +100,36 @@
 	"addLineAction": {
 		"width": "20px",
 		"height": "20px",
-		"background": "url(../x_component_process_Xform/$Form/default/icon/addline.png) center center no-repeat",
+//		"background": "url(../x_component_process_Xform/$Form/default/icon/addline.png) center center no-repeat",
 		"cursor": "pointer",
-		"float": "left"
+		"float": "left",
+      "line-height": "20px"
 	},
 	"delLineAction": {
 		"width": "20px",
 		"height": "20px",
-		"background": "url(../x_component_process_Xform/$Form/default/icon/delline.png) center center no-repeat",
+//		"background": "url(../x_component_process_Xform/$Form/default/icon/delline.png) center center no-repeat",
 		"cursor": "pointer",
-		"float": "left"
+		"float": "left",
+      "line-height": "20px"
 	},
 	"completeLineAction": {
 		"width": "20px",
 		"height": "20px",
-		"background": "url(../x_component_process_Xform/$Form/default/icon/check.png) center center no-repeat",
+//		"background": "url(../x_component_process_Xform/$Form/default/icon/check.png) center center no-repeat",
 		"cursor": "pointer",
-		"float": "left"
+		"float": "left",
+      "line-height": "20px"
 	},
 	"moveLineAction": {
 		"width": "5px",
 		"height": "20px",
 		"background": "url(../x_component_process_Xform/$Form/default/icon/move.png) center center no-repeat",
 		"cursor": "move",
-		"float": "left"
+		"float": "left",
+      "line-height": "20px"
 	},
     "datatableMoveLineAction": {
-      "width": "5px",
       "color": "#aaa",
       "cursor": "pointer",
       "float": "left"
@@ -687,7 +690,6 @@
         "padding-left": "24px",
         "padding-right": "5px",
         "margin-left": "5px",
-        "cursor": "pointer",
         "background": "url(../x_component_process_Work/$Processor/default/write.png) no-repeat 5px center"
     },
     "handwritingNode": {

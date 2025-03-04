@@ -131,6 +131,7 @@ public class ImAction extends StandardJaxrsAction {
 		asyncResponse.resume(ResponseFactory.getEntityTagActionResultResponse(request, result));
 	}
 
+
 	// conversation/{id} GET 如果没有扩展就创建扩展
 	@JaxrsMethodDescribe(value = "会话对象.", action = ActionGetConversation.class)
 	@GET
@@ -149,6 +150,24 @@ public class ImAction extends StandardJaxrsAction {
 		}
 		asyncResponse.resume(ResponseFactory.getEntityTagActionResultResponse(request, result));
 	}
+
+	@JaxrsMethodDescribe(value = "会话头像", action = ActionGetConversationIcon.class)
+	@GET
+	@Path("conversation/{id}/icon")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public void conversationIcon(@Suspended final AsyncResponse asyncResponse, @Context HttpServletRequest request,
+			@JaxrsParameterDescribe("会话id") @PathParam("id") String id) {
+		ActionResult<ActionGetConversationIcon.Wo> result = new ActionResult<>();
+		EffectivePerson effectivePerson = this.effectivePerson(request);
+		try {
+			result = new ActionGetConversationIcon().execute(effectivePerson, id);
+		} catch (Exception e) {
+			logger.error(e, effectivePerson, request, null);
+			result.error(e);
+		}
+		asyncResponse.resume(ResponseFactory.getEntityTagActionResultResponse(request, result));
+	}
+
 
 	@JaxrsMethodDescribe(value = "根据业务id查询会话，当前用户在会话中.", action = ActionConversationFindByBusinessId.class)
 	@GET
@@ -293,6 +312,25 @@ public class ImAction extends StandardJaxrsAction {
 		}
 		asyncResponse.resume(ResponseFactory.getEntityTagActionResultResponse(request, result));
 	}
+
+	@JaxrsMethodDescribe(value = "查询会话列表，管理员使用.", action = ActionPersonConversationList.class)
+	@POST
+	@Path("conversation/list/with/person")
+	@Produces(HttpMediaType.APPLICATION_JSON_UTF_8)
+	@Consumes(MediaType.APPLICATION_JSON)
+	public void getPersonConversationList(@Suspended final AsyncResponse asyncResponse, @Context HttpServletRequest request,
+			JsonElement jsonElement) {
+		ActionResult<List<ActionPersonConversationList.Wo>> result = new ActionResult<>();
+		EffectivePerson effectivePerson = this.effectivePerson(request);
+		try {
+			result = new ActionPersonConversationList().execute(effectivePerson, jsonElement);
+		} catch (Exception e) {
+			logger.error(e, effectivePerson, request, null);
+			result.error(e);
+		}
+		asyncResponse.resume(ResponseFactory.getEntityTagActionResultResponse(request, result));
+	}
+
 
 	@JaxrsMethodDescribe(value = "删除群聊，只有群主可以删除.", action = ActionDeleteGroupConversation.class)
 	@DELETE
@@ -553,6 +591,24 @@ public class ImAction extends StandardJaxrsAction {
 			result = new ActionCollectionMsgListWithPersonByPage().execute(effectivePerson, page, size);
 		} catch (Exception e) {
 			logger.error(e, effectivePerson, request, null);
+			result.error(e);
+		}
+		asyncResponse.resume(ResponseFactory.getEntityTagActionResultResponse(request, result));
+	}
+
+	@JaxrsMethodDescribe(value = "清除聊天消息，至少传入一个条件参数，管理员使用.", action = ActionDeleteMessageByConversation.class)
+	@POST
+	@Path("msg/clear")
+	@Produces(HttpMediaType.APPLICATION_JSON_UTF_8)
+	@Consumes(MediaType.APPLICATION_JSON)
+	public void deleteMessages(@Suspended final AsyncResponse asyncResponse, @Context HttpServletRequest request,
+			JsonElement jsonElement) {
+		ActionResult<ActionDeleteMessageByConversation.Wo> result = new ActionResult<>();
+		EffectivePerson effectivePerson = this.effectivePerson(request);
+		try {
+			result = new ActionDeleteMessageByConversation().execute(effectivePerson, jsonElement);
+		} catch (Exception e) {
+			logger.error(e, effectivePerson, request, jsonElement);
 			result.error(e);
 		}
 		asyncResponse.resume(ResponseFactory.getEntityTagActionResultResponse(request, result));

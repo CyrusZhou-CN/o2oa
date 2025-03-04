@@ -24,6 +24,15 @@ MWF.require("MWF.xDesktop.Window", null, false);
 						}, this);
 					}
 				}
+				if (MWF.xDesktop.$globalEvents['$all']) {
+					var evs = MWF.xDesktop.$globalEvents['$all'][type];
+					if (evs) {
+						evs.each(function (fn) {
+							if (delay) fn.delay(delay, this, args);
+							else fn.apply(this, args);
+						}, this);
+					}
+				}
 			}
 
 			type = removeOn(type);
@@ -302,6 +311,7 @@ MWF.xApplication.Common.Main = new Class({
 		//this.content.setStyles({"height": "100%", "overflow": "hidden"});
 
 		window.addEvent("resize", function () {
+			debugger;
 			this.fireAppEvent("resize");
 		}.bind(this));
 		// $(document.body).addEvent("resize", function(){
@@ -627,7 +637,7 @@ MWF.xApplication.Common.Main = new Class({
 			if (layout.mobile) {
 				noticeTarget = $(document.body);
 			}
-			
+
 			var off = offset;
 			if (!off) {
 				off = {

@@ -7,7 +7,7 @@ MWF.xDesktop.requireApp("process.Xform", "Radio", null, false);
  * var radio = this.form.get("name"); //获取组件
  * //方法2
  * var radio = this.target; //在组件事件脚本中获取
- * @extends MWF.xApplication.process.Xform.$Module
+ * @extends MWF.xApplication.process.Xform.$Selector
  * @o2category FormComponents
  * @o2range {Process|CMS|Portal}
  * @hideconstructor
@@ -52,16 +52,17 @@ MWF.xApplication.process.Xform.Elradio = MWF.APPElradio =  new Class(
         this.reload();
     },
     reload: function(){
-        if (!this.vm) return;
-
-        var node = this.vm.$el;
-        this.vm.$destroy();
-        node.empty();
+        if (this.vm) {
+            var node = this.vm.$el;
+            this.vm.$destroy();
+            node.empty();
+        }
 
         this.vm = null;
 
         this.vueApp = null;
 
+        this._resetNodeEdit();
         this._loadUserInterface();
     },
     _loadNode: function(){
@@ -74,6 +75,11 @@ MWF.xApplication.process.Xform.Elradio = MWF.APPElradio =  new Class(
             }
             if (this.json.elStyles){
                 this.node.setStyles( this._parseStyles(this.json.elStyles) );
+            }
+
+            if( !this.eventLoaded ){
+                this._loadDomEvents();
+                this.eventLoaded = true;
             }
 
             this.fireEvent("postLoad");
@@ -153,6 +159,7 @@ MWF.xApplication.process.Xform.Elradio = MWF.APPElradio =  new Class(
 
     _createElementHtml: function(radioValues){
         var id = (this.json.id.indexOf("..")!==-1) ? this.json.id.replace(/\.\./g, "_") : this.json.id;
+        id = (id.indexOf("@")!==-1) ? id.replace(/@/g, "_") : id;
         this.json["$id"] = (id.indexOf("-")!==-1) ? id.replace(/-/g, "_") : id;
 
         var html = "<el-radio-group class='o2_vue' style='box-sizing: border-box!important'";
@@ -215,6 +222,10 @@ MWF.xApplication.process.Xform.Elradio = MWF.APPElradio =  new Class(
         this.moduleValueAG = null;
         this._setBusinessData(value);
         this.json[this.json.$id] = value;
+        if( this.isReadonly() ){
+            var text = this.getText();
+            this.node.set('text', text||value);
+        }
     },
     __setData: function(data){
         this.moduleValueAG = null;
@@ -244,7 +255,8 @@ MWF.xApplication.process.Xform.Elradio = MWF.APPElradio =  new Class(
         // }else{
         //     if (callback) callback();
         // }
-        o2.loadAll({"css": "../o2_lib/vue/element/index.css", "js": [vue, "elementui"]}, { "sequence": true }, callback);
+        var elcssUrl = this.form.json.elementCssUrl || "../o2_lib/vue/element/index.css";
+        o2.loadAll({"css": elcssUrl, "js": [vue, "elementui"]}, { "sequence": true }, callback);
     },
     // _loadVue: function(callback){
     //     if (!window.Vue){
@@ -329,6 +341,44 @@ MWF.xApplication.process.Xform.Elradio = MWF.APPElradio =  new Class(
             this.styleNode.inject(this.node, "before");
         }
     },
+    _loadDomEvents: function(){
+        Object.each(this.json.events, function(e, key){
+            if (e.code){
+                if (this.options.moduleEvents.indexOf(key)===-1 && this.options.elEvents.indexOf(key)===-1){
+                    if( key === "click" ){
+                        this.clickEvnet = function (event){
+                            this.form.Macro.fire(e.code, this, event);
+                        }.bind(this);
+                        this.node.addEvent(key, function(event){
+                            o2.defer(this.clickEvnet, 100, this, [event]);
+                        }.bind(this));
+                    }else{
+                        this.node.addEvent(key, function(event){
+                            return this.form.Macro.fire(e.code, this, event);
+                        }.bind(this));
+                    }
+                }
+            }
+        }.bind(this));
+    },
+        /**
+         * @summary 获取选中项的text。
+         * @return {String} 返回选中项的text
+         * @example
+         * var text = this.form.get('fieldId').getText(); //获取选中项的文本
+         */
+        getText: function(){
+            var d = this.getTextData();
+            if( typeOf(d.then) === "function" ){
+                return d.then(function( d1 ){
+                    var texts = d1.text;
+                    return (texts && texts.length) ? texts[0] : "";
+                })
+            }else{
+                var texts = d.text;
+                return (texts && texts.length) ? texts[0] : "";
+            }
+        },
 
     getExcelData: function( type ){
 		var value = this.getData();
@@ -360,4 +410,4 @@ MWF.xApplication.process.Xform.Elradio = MWF.APPElradio =  new Class(
             }.bind(this));
         }
     }
-}); 
+});

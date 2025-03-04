@@ -259,10 +259,10 @@ MWF.xApplication.process.ProcessDesigner.LP={
 		"stratIdentity": "Autor del inicio",
 		"startUnit": "Organización de inicio",
 		"starGroup": "Grupo de inicio",
-		"manager": "Administrador",
-		"maintenanceIdentity": "Encargado del mantenimiento",
+		"manager": "Mantenedor de instancia de proceso",
+		"maintenanceIdentity": "¿A quién se transferirá cuando no se pueda encontrar un procesador?",
 		"defaultIdentity": "Manejador predeterminado",
-		"managerScript": "mantenimiento",
+		"managerScript": "Script del mantenedor de instancia de proceso",
 		"number": "Número",
 		"numberActivity": "Actividad de numeración",
 		"trigger": "Condiciones de activación",
@@ -594,7 +594,12 @@ MWF.xApplication.process.ProcessDesigner.LP={
 		"backActivitySelectTitle": "Selección de actividades que permitan la devolución",
 		"backActivitySelectInfo": "Puede seleccionar el nodo de actividad que la actividad actual permite devolver, y solo se puede devolver la actividad permitida que ha sido transferida. También puede establecer un método de procesamiento después de la devolución por separado para cada actividad de devolución permitida.",
 		"groupRange": "Alcance del Grupo",
-		"specifyGroup": "Grupo designado"
+		"specifyGroup": "Grupo designado",
+		"cmsCreator": "Editor",
+		"cmsCreatorId": "Identificación del editor",
+		"specifyCmsCreator": "Especificar un editor",
+		"useScript": "Usar guiones",
+		"cmsCreatorScript": "Guión del editor"
 	}
 }
 MWF.xApplication.process.ProcessDesigner["lp."+o2.language] = MWF.xApplication.process.ProcessDesigner.LP

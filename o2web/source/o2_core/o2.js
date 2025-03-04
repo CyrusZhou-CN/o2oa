@@ -544,13 +544,13 @@ if (!window.o2) {
             "d3": ["../o2_lib/d3/d3.min.js"],
             "ace": ["../o2_lib/ace/src-min-noconflict/ace.js", "../o2_lib/ace/src-min-noconflict/ext-language_tools.js"],
             //"ace": ["../o2_lib/ace/src-noconflict/ace.js","../o2_lib/ace/src-noconflict/ext-language_tools.js"],
-            "monaco": ["../o2_lib/vs/loader.js"],
+            "monaco": ["../o2_lib/vs/min/vs/loader.js"],
             "JSBeautifier": ["../o2_lib/JSBeautifier/beautify.js"],
             "JSBeautifier_css": ["../o2_lib/JSBeautifier/beautify-css.js"],
             "JSBeautifier_html": ["../o2_lib/JSBeautifier/beautify-html.js"],
             "JSONTemplate": ["../o2_lib/mootools/plugin/Template.js"],
             "kity": ["../o2_lib/kityminder/kity/kity.js"],
-            "kityminder": ["../o2_lib/kityminder/core/dist/kityminder.core.js"],
+            "kityminder": ["../o2_lib/kityminder/core/kityminder.core.js"],
             "vue": ["../o2_lib/vue/vue.pro.js"],
             "vue_develop": ["../o2_lib/vue/vue.js"],
             "elementui": ["../o2_lib/vue/element/index.js"]
@@ -3355,15 +3355,15 @@ if (!window.o2) {
 
         // 第三方扩展用的函数
         o2.thirdparty =  o2.thirdparty || {};
-        
+
         // 是否手机端
         o2.thirdparty.isMobile = function(){
-            return /(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i.test(navigator.userAgent.toLowerCase()); 
+            return /(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i.test(navigator.userAgent.toLowerCase());
         }
         function alwaysFalse() {
             return false;
         }
-        
+
         if (o2.thirdparty.isMobile()) {
             // 手机端钉钉
             o2.thirdparty.isDingdingMobile = function() {
@@ -3404,8 +3404,8 @@ if (!window.o2) {
             }
         }
 
-        
-    
+
+
         o2.common = o2.common || {};
 
         o2.common.encodeHtml = function (str) {
