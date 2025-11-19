@@ -16,6 +16,7 @@ import com.x.base.core.project.logger.Logger;
 import com.x.base.core.project.logger.LoggerFactory;
 import com.x.base.core.project.tools.ListTools;
 import com.x.processplatform.core.entity.content.Work;
+import com.x.processplatform.core.entity.element.Activity;
 import com.x.processplatform.core.entity.element.ActivityType;
 import com.x.processplatform.core.entity.element.Merge;
 import com.x.processplatform.core.entity.element.Route;
@@ -56,13 +57,12 @@ public class MergeProcessor extends AbstractMergeProcessor {
 		if (other.isPresent()) {
 			aeiObjects.getUpdateWorks().add(other.get());
 			aeiObjects.getDeleteWorks().add(aeiObjects.getWork());
-			/* 应该废弃改变对work的指向 ? */
-			this.mergeTaskCompleted(aeiObjects, aeiObjects.getWork(), other.get());
-			this.mergeRead(aeiObjects, aeiObjects.getWork(), other.get());
-			this.mergeReadCompleted(aeiObjects, aeiObjects.getWork(), other.get());
-			this.mergeReview(aeiObjects, aeiObjects.getWork(), other.get());
-			this.mergeAttachment(aeiObjects, aeiObjects.getWork(), other.get());
-			this.mergeWorkLog(aeiObjects, aeiObjects.getWork(), other.get());
+			mergeTaskCompleted(aeiObjects, aeiObjects.getWork(), other.get());
+			mergeRead(aeiObjects, aeiObjects.getWork(), other.get());
+			mergeReadCompleted(aeiObjects, aeiObjects.getWork(), other.get());
+			mergeReview(aeiObjects, aeiObjects.getWork(), other.get());
+			mergeAttachment(aeiObjects, aeiObjects.getWork(), other.get());
+			mergeWorkLog(aeiObjects, aeiObjects.getWork(), other.get());
 			aeiObjects.getWorkLogs().stream()
 					.filter(p -> StringUtils.equals(p.getFromActivityToken(), aeiObjects.getWork().getActivityToken()))
 					.forEach(obj -> aeiObjects.getDeleteWorkLogs().add(obj));
@@ -182,7 +182,14 @@ public class MergeProcessor extends AbstractMergeProcessor {
 		return list.isEmpty() ? Optional.empty() : Optional.of(list);
 	}
 
-	private void mergeTaskCompleted(AeiObjects aeiObjects, Work work, Work oldest) {
+	/**
+	 * 在V3Retract会调用到
+	 * 
+	 * @param aeiObjects
+	 * @param work
+	 * @param oldest
+	 */
+	public static void mergeTaskCompleted(AeiObjects aeiObjects, Work work, Work oldest) {
 		try {
 			aeiObjects.getTaskCompleteds().stream().filter(o -> StringUtils.equals(o.getWork(), work.getId()))
 					.forEach(o -> {
@@ -194,7 +201,7 @@ public class MergeProcessor extends AbstractMergeProcessor {
 		}
 	}
 
-	private void mergeRead(AeiObjects aeiObjects, Work work, Work oldest) {
+	public static void mergeRead(AeiObjects aeiObjects, Work work, Work oldest) {
 		try {
 			aeiObjects.getReads().stream().filter(o -> StringUtils.equals(o.getWork(), work.getId())).forEach(o -> {
 				o.setWork(oldest.getId());
@@ -205,7 +212,7 @@ public class MergeProcessor extends AbstractMergeProcessor {
 		}
 	}
 
-	private void mergeReadCompleted(AeiObjects aeiObjects, Work work, Work oldest) {
+	public static void mergeReadCompleted(AeiObjects aeiObjects, Work work, Work oldest) {
 		try {
 			aeiObjects.getReadCompleteds().stream().filter(o -> StringUtils.equals(o.getWork(), work.getId()))
 					.forEach(o -> {
@@ -217,7 +224,7 @@ public class MergeProcessor extends AbstractMergeProcessor {
 		}
 	}
 
-	private void mergeReview(AeiObjects aeiObjects, Work work, Work oldest) {
+	public static void mergeReview(AeiObjects aeiObjects, Work work, Work oldest) {
 		try {
 			aeiObjects.getReviews().stream().filter(o -> StringUtils.equals(o.getWork(), work.getId())).forEach(o -> {
 				o.setWork(oldest.getId());
@@ -228,7 +235,7 @@ public class MergeProcessor extends AbstractMergeProcessor {
 		}
 	}
 
-	private void mergeAttachment(AeiObjects aeiObjects, Work work, Work oldest) {
+	public static void mergeAttachment(AeiObjects aeiObjects, Work work, Work oldest) {
 		try {
 			aeiObjects.getAttachments().stream().filter(o -> StringUtils.equals(o.getWork(), work.getId()))
 					.forEach(o -> {
@@ -240,7 +247,7 @@ public class MergeProcessor extends AbstractMergeProcessor {
 		}
 	}
 
-	private void mergeWorkLog(AeiObjects aeiObjects, Work work, Work oldest) {
+	public static void mergeWorkLog(AeiObjects aeiObjects, Work work, Work oldest) {
 		try {
 			aeiObjects.getWorkLogs().stream()
 					.filter(o -> StringUtils.equals(work.getActivityToken(), o.getArrivedActivityToken())
@@ -263,6 +270,22 @@ public class MergeProcessor extends AbstractMergeProcessor {
 	protected Optional<Route> inquiring(AeiObjects aeiObjects, Merge merge) throws Exception {
 		// 发送ProcessingSignal
 		aeiObjects.getProcessingAttributes().push(Signal.mergeInquire(aeiObjects.getWork().getActivityToken(), merge));
+		if (StringUtils.isNotEmpty(aeiObjects.getWork().getDestinationActivity())
+				&& Objects.nonNull(aeiObjects.getWork().getDestinationActivityType())
+				&& BooleanUtils.isTrue(aeiObjects.getWork().getForceRouteEnable())) {
+			Activity activity = aeiObjects.business().element()
+					.getActivity(aeiObjects.getWork().getDestinationActivity());
+			if (null != activity) {
+				Route route = new Route();
+				route.setActivity(activity.getId());
+				route.setActivityType(activity.getActivityType());
+				// 清理掉goBackStore
+				aeiObjects.getWork().setGoBackStore(null);
+				// 清理掉退回到的activityToken标志
+				aeiObjects.getWork().setGoBackActivityToken(null);
+				return Optional.of(route);
+			}
+		}
 		return aeiObjects.getRoutes().stream().findFirst();
 	}
 

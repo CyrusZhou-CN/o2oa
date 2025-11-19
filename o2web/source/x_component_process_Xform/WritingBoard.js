@@ -28,13 +28,34 @@ MWF.xApplication.process.Xform.WritingBoard = MWF.APPWritingBoard = new Class(
             this.field = true;
             this.fieldModuleLoaded = false;
         },
-        _loadUserInterface: function () {
+        _loadUserInterface: function(){
             this.field = true;
             this.node.empty();
 
-            if (!this.isReadonly()) {
+            if (!this.isReadable){
+                this.node?.addClass('hide');
+                return '';
+            }
 
-                var actionNode = new Element("div").inject(this.node);
+            if ( this.isSectionMergeRead() ) { //区段合并显示
+                this._loadMergeReadNode();
+            }else{
+                // if( this.isSectionMergeEdit() ){
+                //     this._loadMergeEditNode();
+                // }else{
+                this._loadNode();
+                // }
+            }
+        },
+        _loadMergeReadContentNode: function( contentNode, data ){
+            //ontentNode.set("text", data.data)
+            this._loadNode( contentNode, data.data, true );
+        },
+        _loadNode: function (node, data, readonly) {
+            node = node || this.node;
+            if (!readonly && !this.isReadonly()) {
+
+                var actionNode = new Element("div").inject(node);
                 actionNode.set({
                     //"id": this.json.id,
                     "text": this.json.name || this.json.id,
@@ -54,7 +75,7 @@ MWF.xApplication.process.Xform.WritingBoard = MWF.APPWritingBoard = new Class(
             }
 
 
-            var data = this._getBusinessData();
+            data = data || this._getBusinessData();
             if (data) {
                 var img = new Element("img", {
                     src: MWF.xDesktop.getImageSrc(data)
@@ -67,7 +88,7 @@ MWF.xApplication.process.Xform.WritingBoard = MWF.APPWritingBoard = new Class(
                         "max-width": "90%"
                     })
                 }
-                img.inject(this.node);
+                img.inject(node);
             }
 
             this.fieldModuleLoaded = true;
@@ -292,18 +313,25 @@ MWF.xApplication.process.Xform.WritingBoard = MWF.APPWritingBoard = new Class(
             }.bind(this))
         },
         createErrorNode: function (text) {
-            var node = new Element("div");
-            var iconNode = new Element("div", {
+            node = new Element("div", {styles:{
+                "margin-top": "0.3em"  
+            }});
+            var iconNode = new Element("div.ooicon-error", {
                 "styles": {
                     "width": "20px",
-                    "height": "20px",
+                    "height": "1.2em",
                     "float": "left",
-                    "background": "url(" + "../x_component_process_Xform/$Form/default/icon/error.png) center center no-repeat"
+                    "display": "flex",
+                    "color": "red",
+                    "align-items": "center",
+                    "justify-content": "center"
+                    // "background": "url("+"../x_component_process_Xform/$Form/default/icon/error.png) center center no-repeat"
                 }
             }).inject(node);
             var textNode = new Element("div", {
                 "styles": {
-                    "line-height": "20px",
+                    "height": "auto",
+                    "line-height": "1.2em",
                     "margin-left": "20px",
                     "color": "red",
                     "word-break": "keep-all"
@@ -420,6 +448,8 @@ MWF.xApplication.process.Xform.WritingBoard = MWF.APPWritingBoard = new Class(
             return true;
         },
         validation: function (routeName, opinion) {
+            if (this.isReadonly() || this.json.showMode!=="disabled" || this.node?.isDisplayNone() || !this.isEditable) return true;
+            
             if( !this.isReadonly() ){
                 if (!this.validationConfig(routeName, opinion)) return false;
 
@@ -437,8 +467,9 @@ MWF.xApplication.process.Xform.WritingBoard = MWF.APPWritingBoard = new Class(
             return true;
         },
         _parseStyles: function (styles) {
-            Object.each(styles, function (value, key) {
-                if ((value.indexOf("x_processplatform_assemble_surface") != -1 || value.indexOf("x_portal_assemble_surface") != -1 || value.indexOf("x_cms_assemble_control") != -1)) {
+            Object.each(styles, function (v, key) {
+                var value = v.toString();
+                if ((value.indexOf("x_processplatform_assemble_surface") != -1 || value.indexOf("x_portal_assemble_surface") != -1 || value.indexOf("x_cms_assemble_control") != -1) && !value.includes("../")) {
                     var host1 = MWF.Actions.getHost("x_processplatform_assemble_surface");
                     var host2 = MWF.Actions.getHost("x_portal_assemble_surface");
                     var host3 = MWF.Actions.getHost("x_cms_assemble_control");

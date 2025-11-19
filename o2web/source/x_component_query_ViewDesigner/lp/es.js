@@ -50,7 +50,9 @@ MWF.xApplication.query.ViewDesigner.LP={
 		"deleteEvent": "¿Está seguro de que desea eliminar el evento actual?",
 		"selectProcess": "Seleccione una aplicación o flujo de trabajo",
 		"selectCMS": "Seleccione una categoría o clasificación de gestión de contenido",
-		"selectDateRange": "El tipo de período es un rango. Seleccione una fecha de inicio y una fecha de finalización."
+		"selectDateRange": "El tipo de período es un rango. Seleccione una fecha de inicio y una fecha de finalización.",
+		"columnNameExist": "El nombre de la columna ya existe",
+		"columnNameRepeat": "El nombre de la columna no puede repetirse: {column}"
 	},
 	"actionbar": {
 		"readhide": "Establecer si se muestra al leer",
@@ -328,7 +330,16 @@ MWF.xApplication.query.ViewDesigner.LP={
 		"headStyle": "Estilo de encabezado",
 		"columnTitleStyle": "Estilo de título de columna",
 		"columnContentStyle": "Estilo de contenido de columna",
-		"exportNotice": "Hasta 2.000 artículos en todas partes a la vez"
+		"exportNotice": "Hasta 2.000 artículos en todas partes a la vez",
+		"orgRange": "Rango de selección",
+		"org_unit": "Organización",
+		"org_person": "Personal",
+		"org_identity": "Identidad",
+		"org_role": "Personajes",
+		"org_group": "Grupo",
+		"fulltextSearch": "Activar la recuperación de texto completo",
+		"enabled": "Habilitar",
+		"disabled": "Desactivado"
 	},
 	"viewStyle": {
 		"default": "Estilo predeterminado",

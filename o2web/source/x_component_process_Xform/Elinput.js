@@ -136,6 +136,7 @@ MWF.xApplication.process.Xform.Elinput = MWF.APPElinput =  new Class(
         _createEventFunction: function(methods, k){
             methods["$loadElEvent_"+k.camelCase()] = function(){
                 var flag = true;
+                debugger;
                 if (k==="change"){
                     if(this.json.inputType === "number"  ){
                         if( this.json.resultType === "number" ){
@@ -181,6 +182,7 @@ MWF.xApplication.process.Xform.Elinput = MWF.APPElinput =  new Class(
             }
         },
     getValue: function(){
+        if (!this.isReadable) return '';
         if (this.moduleValueAG) return this.moduleValueAG;
         var value = this._getBusinessData();
         if( this.json.inputType === "number" ){
@@ -198,6 +200,38 @@ MWF.xApplication.process.Xform.Elinput = MWF.APPElinput =  new Class(
                 value = this._computeValue();
                 return (o2.typeOf(value)!=="null") ? value : "";
             }
+        }
+    },
+    __setReadonly: function(data){
+        if (this.isReadonly()) {
+            this.node.set("text", data);
+            if( this.json.inputType === "textarea"){
+                this.node.setStyle('white-space', 'pre');
+            }
+            if( this.json.elProperties ){
+                this.node.set(this.json.elProperties );
+            }
+            if (this.json.elStyles){
+                this.node.setStyles( this._parseStyles(this.json.elStyles) );
+            }
+
+            if( !this.eventLoaded ){
+                this._loadDomEvents();
+                this.eventLoaded = true;
+            }
+
+
+            this.fireEvent("postLoad");
+            if( this.moduleSelectAG && typeOf(this.moduleSelectAG.then) === "function" ){
+                this.moduleSelectAG.then(function () {
+                    this.fireEvent("load");
+                    this.isLoaded = true;
+                }.bind(this));
+            }else{
+                this.fireEvent("load");
+                this.isLoaded = true;
+            }
+
         }
     }
 });

@@ -7,9 +7,12 @@ MWF.xApplication.cms.FormDesigner.LP = Object.merge( {}, MWF.xApplication.proces
         "empty": "空白表单",
         "publishEdit": "发布类编辑表单",
         "publishRead": "发布类阅读表单",
+        "publishEditTidy": "发布类编辑表单(简洁)",
+        "publishReadTidy": "发布类阅读表单(简洁)",
         "publishEditGreen": "发布类编辑表单(绿色)",
         "publishReadGreen": "发布类阅读表单(绿色)",
-        "dataInput": "数据录入类表单"
+        "dataInput": "数据录入类表单",
+        "dataInputTidy": "数据录入类表单(简洁)"
     },
     "validation" : {
         "publish" : "发布时"
@@ -34,7 +37,9 @@ MWF.xApplication.cms.FormDesigner.LP = Object.merge( {}, MWF.xApplication.proces
         "banner": "横幅",
         "title": "标题",
         "sectionTitle": "区段标题",
-        "section": "区段"
+        "section": "区段",
+        "cmcc": "集团样式",
+        "blueFlat": "蓝白扁平"
     },
     "propertyTemplate": {
         "setPopular": "设置热点操作",
@@ -64,7 +69,10 @@ MWF.xApplication.cms.FormDesigner.LP = Object.merge( {}, MWF.xApplication.proces
         "blankToAllNotify": "读者（发布范围）为空时通知阅读范围",
         "blankNotToAllNotify": "读者（发布范围）为空时不通知",
         "specificValue": "指定",
-        "formField": "表单字段"
+        "formField": "表单字段",
+
+        "draft": "草稿",
+        "published": "已发布",
     },
     "actionBar": {
         "close":"关闭",

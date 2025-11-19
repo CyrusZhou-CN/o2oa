@@ -467,7 +467,6 @@ o2.widget.O2Process = new Class({
         });
     },
     open : function (e) {
-        debugger;
         if( this.data.id && this.data.application ){
             var appId = "process.ProcessManager" + this.data.application;
             if (layout.desktop.apps[appId]){
@@ -508,7 +507,6 @@ o2.widget.O2CMSCategory = new Class({
         });
     },
     open : function (e) {
-        debugger;
         if( this.data.id && this.data.appId ){
             // var appId = "cms.ColumnManager" + this.data.id;
             // if (layout.desktop.apps[appId]){
@@ -967,7 +965,29 @@ o2.widget.O2Dictionary = new Class({
         }
     }
 });
-
+o2.widget.O2ProcessActivity = new Class({
+    Extends: o2.widget.O2Group,
+    getPersonData: function(){
+        return this.data;
+    },
+    createInforNode: function(){
+        this.inforNode = new Element("div", {
+            "styles": this.style.identityInforNode
+        });
+        var name =  this.data.alias ? this.data.name +"("+this.data.alias+")"  : this.data.name;
+        var showName = this.data.processName + ' - '+name;
+        var nameNode = new Element("div", {
+            "styles": this.style.identityInforNameNode,
+            "text": showName
+        }).inject(this.inforNode);
+        this.tooltip = new mBox.Tooltip({
+            content: this.inforNode,
+            setStyles: {content: {padding: 15, lineHeight: 20}},
+            attach: this.node,
+            transition: 'flyin'
+        });
+    }
+});
 
 o2.widget.O2Other = new Class({
     Extends: o2.widget.O2Group,
@@ -1003,17 +1023,3 @@ o2.widget.O2Org = function(value, container, options){
     }
     return null;
 };
-
-// o2.widget.O2Identity.iditems = o2.widget.O2Identity.iditems || [];
-// o2.widget.O2Identity.intervalId = window.setInterval(function(){
-//     if (o2.widget.O2Identity.iditems && o2.widget.O2Identity.iditems.length){
-//         o2.widget.O2Identity.iditems.each(function(item){
-//             if (item.tooltip){
-//                 debugger;
-//                 if (item.tooltip.options.attach){
-//
-//                 }
-//             }
-//         });
-//     }
-// }, 10000);

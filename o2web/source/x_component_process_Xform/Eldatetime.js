@@ -38,6 +38,7 @@ MWF.xApplication.process.Xform.Eldatetime = MWF.APPEldatetime =  new Class(
         "elEvents": ["focus", "blur", "change"]
     },
     _queryLoaded: function(){
+        this._loadReadEditAbeld();
         var data = this._getBusinessData();
         if( data ){
             if( ["datetimerange"].contains(this.json.selectType) ) {
@@ -52,11 +53,11 @@ MWF.xApplication.process.Xform.Eldatetime = MWF.APPEldatetime =  new Class(
         if (this.isReadonly()){
             if( o2.typeOf(data) === "array" ){
                 var ds = data.map(function (d){
-                    return this.formatDate(new Date(d), format);
+                    return this.isValidDate(d) ? this.formatDate(new Date(d), format) : d;
                 }.bind(this));
                 this.node.set("text", this.json.rangeSeparator ? ds.join(this.json.rangeSeparator) : ds );
             }else{
-                this.node.set("text", data ? this.formatDate(new Date(data), format) : "");
+                this.node.set("text", this.isValidDate(data) ? this.formatDate(new Date(data), format) : data);
             }
 
             if( this.json.elProperties ){
@@ -76,6 +77,13 @@ MWF.xApplication.process.Xform.Eldatetime = MWF.APPEldatetime =  new Class(
             this.isLoaded = true;
         }
     },
+    isValidDate: function(dateString) {
+        if( !dateString ){
+            return false;
+        }
+        var date = new Date(dateString);
+        return !isNaN(date.getTime());
+    },
     _appendVueData: function(){
         if (!this.json.isReadonly && !this.form.json.isReadonly) this.json.isReadonly = false;
         if (!this.json.disabled) this.json.disabled = false;
@@ -87,6 +95,7 @@ MWF.xApplication.process.Xform.Eldatetime = MWF.APPEldatetime =  new Class(
         if (!this.json.prefixIcon) this.json.prefixIcon = "";
         if (!this.json.description) this.json.description = "";
         if (!this.json.arrowControl) this.json.arrowControl = false;
+        if (!this.json.popperClass) this.json.popperClass = "";
         this.json.pickerOptions = {
             firstDayOfWeek: this.json.firstDayOfWeek.toInt()
         }
@@ -98,6 +107,7 @@ MWF.xApplication.process.Xform.Eldatetime = MWF.APPEldatetime =  new Class(
         // if(this.json.selectableRange && this.json.selectableRange.code){
         //     this.json.pickerOptions.selectableRange = this.form.Macro.fire(this.json.selectableRange.code, this);
         // }
+        this._setPopperClass();
     },
     _createElementHtml: function() {
         var html = "<el-date-picker";
@@ -116,6 +126,7 @@ MWF.xApplication.process.Xform.Eldatetime = MWF.APPEldatetime =  new Class(
         html += " :format=\"format\"";
         html += " :picker-options=\"pickerOptions\"";
         html += " :arrow-control=\"arrowControl\"";
+        html += " :popper-class=\"popperClass\"";
         // html += " :picker-options=\"{" +
             // ":firstDayOfWeek=firstDayOfWeek," +
             // ":disabledDate=\"disabledDateFun\""+

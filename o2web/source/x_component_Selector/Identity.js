@@ -24,6 +24,9 @@ MWF.xApplication.Selector.Identity = new Class({
     _init : function(){
         this.selectType = "identity";
         this.className = "Identity";
+        if( !this.options.expandSubEnable ){
+            this.options.forceSearchInItem = true;
+        }
     },
     loadSelectItems : function(){
         this.itemsMap = {};
@@ -417,6 +420,46 @@ MWF.xApplication.Selector.Identity = new Class({
             if (callback) callback(json.data, groupLevelNameList);
         }.bind(this))
     },
+    initExclude: function (){
+        if(this.selectType !== "identity" || this.options.exclude.length < 0 || this.excludList )return;
+
+        var identityList = [], personList=[], unitList=[], groupList=[];
+        this.options.exclude.each(function (item) {
+            var a = typeOf( item ) === 'object' ? item.distinguishedName : item;
+            if( !a ){
+                return;
+            }
+            var flag = a.substr(a.length - 2, 2);
+            switch (flag.toLowerCase()) {
+                case "@i": identityList.push(item); break;
+                case "@p": personList.push(a); break;
+                case "@u": unitList.push(a); break;
+                case "@g": groupList.push(a); break;
+                default:
+                    identityList.push(item);
+                    personList.push(a);
+                    unitList.push(a);
+                    groupList.push(a);
+                    break;
+            }
+        }.bind(this));
+
+        var ps = [];
+        var action = o2.Actions.load("x_organization_assemble_express").IdentityAction;
+        // if( personList.length )ps.push( action.listWithPersonObject({personList: personList}) );
+        if( unitList.length )ps.push( action.listWithUnitSubNestedObject({unitList: unitList}) );
+        if( groupList.length )ps.push( action.listWithGroupObject({groupList: groupList}) );
+        if( ps.length ){
+            return Promise.all(ps).then(function (arr){
+                arr.each(function(a){
+                    identityList =  identityList.concat( a.data )
+                });
+                this.excludList = identityList;
+            }.bind(this));
+        }else{
+            this.excludList = identityList;
+        }
+    },
     caculateNestedSubCount: function(unitTree, groupTree, callback){
         if( !this.allUnitObject )this.allUnitObject = {};
         if( !this.allGroupObject )this.allGroupObject = {};
@@ -700,6 +743,9 @@ MWF.xApplication.Selector.Identity.Item = new Class({
     _getShowName: function(){
         return this.data.name;
     },
+    _getDescription: function (){
+        return '';
+    },
     _getTtiteText: function(){
         return this.data.name+((this.data.unitLevelName) ? "("+this.data.unitLevelName+")" : "");
     },
@@ -791,10 +837,23 @@ MWF.xApplication.Selector.Identity.Item = new Class({
         }
     }
 });
+
 MWF.xApplication.Selector.Identity.SearchItem = new Class({
     Extends: MWF.xApplication.Selector.Identity.Item,
+    _getItemTextCss: function(item){
+        return this.selector.css.selectorItemTextNode_search || this.selector.css.selectorItemTextNode;
+    },
+    _getSelectedItemTextCss: function (){
+        return this.selector.css.selectorItemTextNode_search_selected || this.selector.css.selectorItemTextNode_selected;
+    },
+    _init: function (){
+        this.clazz = "SearchItem";
+    },
     _getShowName: function(){
         return this.data.name+((this.data.unitLevelName) ? "("+this.data.unitLevelName+")" : "");
+    },
+    _getDescription: function (){
+        return this.data.unitLevelName || '';
     }
 });
 
@@ -854,6 +913,9 @@ MWF.xApplication.Selector.Identity.ItemSelected = new Class({
     },
     _getShowName: function(){
         return this.data.name+((this.data.unitLevelName) ? "("+this.data.unitLevelName+")" : "");
+    },
+    _getDescription: function (){
+        return this.data.unitLevelName || '';
     },
     _getTtiteText: function(){
         return this.data.name+((this.data.unitLevelName) ? "("+this.data.unitLevelName+")" : "");
@@ -1106,7 +1168,7 @@ MWF.xApplication.Selector.Identity.ItemCategory = new Class({
         return (this.data.subDirectIdentityCount) ? this.data.subDirectIdentityCount : 0;
     },
     afterLoad: function(){
-        if (this.level===1) this.clickItem();
+        if (this.level===1 && !this.selector.options.useBreadcrumbs ) this.clickItem();
         if( this.selector.isCheckStatusOrCount() ) {
             if (this.selector.loadingCount === "done"){
                 this.checkCountAndStatus();

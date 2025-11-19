@@ -46,6 +46,30 @@ MWF.xApplication.query.ViewDesigner.widget.ViewFilter = new Class({
             }.bind(this));
         }
     },
+    moveUp: function (curItem, type){
+        debugger;
+
+        var curIndex = this.items.indexOf(curItem);
+        var item, upItem, upIndex;
+        for( var i= curIndex-1; i>= 0; i-- ){
+            item = this.items[i];
+            if( item && item.data.type === type ){
+                upIndex = i;
+                upItem = item;
+                break;
+            }
+        }
+        if (upItem){
+            var data = type === 'custom' ? this.filtrData.customData : this.filtrData.filtrData;
+            data[curIndex] = upItem.data;
+            data[upIndex] = curItem.data;
+
+            curItem.node.inject(upItem.node, "before");
+
+            this.items[curIndex]=upItem;
+            this.items[upIndex]=curItem;
+        }
+    },
     createScriptArea: function(node){
         this.scriptValueArea = node;
         var title = node.get("title");
@@ -53,9 +77,9 @@ MWF.xApplication.query.ViewDesigner.widget.ViewFilter = new Class({
         MWF.require("MWF.widget.ScriptArea", function(){
             this.scriptArea = new MWF.widget.ScriptArea(node, {
                 "title": title,
-                "isload": true,
+                //"isload": true,
                 "isbind": false,
-                "forceType": "ace",
+                //"forceType": "ace",
                 "maxObj": this.app.formContentNode || this.app.pageContentNode,
                 "onChange": function(){
                     this.scriptData = this.scriptArea.toJson();
@@ -75,9 +99,9 @@ MWF.xApplication.query.ViewDesigner.widget.ViewFilter = new Class({
         MWF.require("MWF.widget.ScriptArea", function(){
             this.customFilterValueScriptArea = new MWF.widget.ScriptArea(node, {
                 "title": title,
-                "isload" : true,
+                //"isload" : true,
                 "isbind" : false,
-                "forceType": "ace",
+                //"forceType": "ace",
                 "maxObj": this.app.formContentNode || this.app.pageContentNode,
                 "onChange": function(){
                     this.customFilterValueScriptData = this.customFilterValueScriptArea.toJson();
@@ -133,6 +157,9 @@ MWF.xApplication.query.ViewDesigner.widget.ViewFilter = new Class({
         if( this.app.view ){
             var dataId = this.app.view.data.id;
             this.customFilterValueTypes = this.inputAreaNode.getElements("[name='"+dataId+"viewCustomFilterValueType']");
+            this.viewCustomFilterValueOrgTypes = this.inputAreaNode.getElements("[name='"+dataId+"viewCustomFilterValueOrgType']");
+
+            this.customFilterValueOrgArea = this.inputAreaNode.getElement("#"+dataId+"viewCustomFilterValueOrgArea");
 
             this.customFilterValueScriptDiv = this.inputAreaNode.getElement("#"+dataId+"viewCustomFilterValueScriptDiv");
             this.customFilterValueScript = this.inputAreaNode.getElement("[name='"+dataId+"viewCustomFilterValueScript']");
@@ -976,6 +1003,11 @@ MWF.xApplication.query.ViewDesigner.widget.ViewFilter = new Class({
             this.customFilterValueTypes.each( function (radio) {
                 if( radio.get("checked") )valueType = radio.get("value");
             });
+            
+            var orgTypes = [];
+            this.viewCustomFilterValueOrgTypes.map( function (check) {
+                if( check.get("checked") )orgTypes.push(check.get("value"));
+            });
             return {
                 "logic": logic,
                 "path": path,
@@ -987,7 +1019,8 @@ MWF.xApplication.query.ViewDesigner.widget.ViewFilter = new Class({
                 "otherValue": value2,
                 "code": this.scriptData,
                 "valueType" : valueType,
-                "valueScript" : this.customFilterValueScriptData
+                "valueScript" : this.customFilterValueScriptData,
+                "orgTypes": orgTypes
             };
         }
     },
@@ -1074,7 +1107,9 @@ MWF.xApplication.query.ViewDesigner.widget.ViewFilter = new Class({
         }
         this.scriptData = data.code;
         try{
-            if (this.scriptArea && this.scriptArea.editor) this.scriptArea.editor.setValue(this.scriptData.code);
+            if (this.scriptArea ) {
+                this.scriptArea.setData(this.scriptData.code, true);
+            }
         }catch (e) {}
 
         debugger;
@@ -1086,15 +1121,31 @@ MWF.xApplication.query.ViewDesigner.widget.ViewFilter = new Class({
                     if( "input" === radio.get("value") )radio.set("checked", true);
                 }
             });
+
+            this.viewCustomFilterValueOrgTypes.map( function (check) {
+                if( data.orgTypes ){
+                    if( data.orgTypes.includes(check.get("value")) )check.set("checked", true);
+                }else{
+                    if( "input" === check.get("value") )check.set("checked", true);
+                }
+            });
+
             if ( this.customFilterValueScriptArea ){
                 if( !data.valueType || data.valueType === "input" ){
                     this.customFilterValueScriptDiv.hide();
                     this.customFilterValueScriptData = "";
-                    this.customFilterValueScriptArea.editor.setValue( "" );
-                }else{
+                    this.customFilterValueOrgArea.hide();
+                    //this.customFilterValueScriptArea.editor.setValue( "" );
+                    this.customFilterValueScriptArea.setData( "" , true);
+                }else if( data.valueType === "script" ){
                     this.customFilterValueScriptDiv.show();
+                    this.customFilterValueOrgArea.hide();
                     this.customFilterValueScriptData = data.valueScript;
-                    this.customFilterValueScriptArea.editor.setValue( data.valueScript ? data.valueScript.code : "" );
+                    this.customFilterValueScriptArea.setData( data.valueScript ? data.valueScript.code : "", true );
+                }else if( data.valueType === "org" ){
+                    this.customFilterValueScriptDiv.hide();
+                    this.customFilterValueScriptData = "";
+                    this.customFilterValueOrgArea.show();
                 }
             }
         }
@@ -1139,6 +1190,7 @@ MWF.xApplication.query.ViewDesigner.widget.ViewFilter.Item = new Class({
     load: function(){
         this.node = new Element("div", {"styles": this.css.itemNode}).inject(this.container);
         this.deleteNode = new Element("div", {"styles": this.css.itemDeleteNode}).inject(this.node);
+        this.upNode = new Element("div", {"styles": this.css.itemUpNode, "text":"↑"}).inject(this.node);
         this.contentNode = new Element("div", {"styles": this.css.itemContentNode}).inject(this.node);
         this.contentNode.set("text", this.getText());
 
@@ -1148,6 +1200,10 @@ MWF.xApplication.query.ViewDesigner.widget.ViewFilter.Item = new Class({
 
         this.deleteNode.addEvent("click", function(e){
             this.deleteItem(e);
+        }.bind(this));
+
+        this.upNode.addEvent("click", function(e){
+            this.upItem(e);
         }.bind(this));
     },
     getText: function(){
@@ -1190,6 +1246,9 @@ MWF.xApplication.query.ViewDesigner.widget.ViewFilter.Item = new Class({
             this.close();
         });
     },
+    upItem: function (e){
+        this.filter.moveUp(this, "restrict");
+    },
     destroy: function(){
         this.filter.deleteItem(this);
     }
@@ -1215,5 +1274,8 @@ MWF.xApplication.query.ViewDesigner.widget.ViewFilter.ItemCustom = new Class({
     getText: function(){
         var lp = this.app.lp.filter;
         return this.data.title+"("+this.data.path+")";
+    },
+    upItem: function (e){
+        this.filter.moveUp(this, "custom");
     }
 });

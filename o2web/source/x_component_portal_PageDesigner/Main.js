@@ -56,6 +56,7 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
 		if (callback) callback();
 	},
     addKeyboardEvents: function(){
+        if( !MWF.shortcut )MWF.require("MWF.xDesktop.shortcut");
         this.addEvent("copy", function(){
             this.copyModule();
         }.bind(this));
@@ -1352,6 +1353,9 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
             this.designNode.setStyle("height", ""+y+"px");
         }
 
+        if(this.designMobileNode){
+            this.designMobileNode.setStyle("height", ""+Math.min(y, 680)+"px");
+        }
 
         var titleSize = this.toolbarTitleNode.getSize();
         var titleMarginTop = this.toolbarTitleNode.getStyle("margin-top").toFloat();
@@ -1411,6 +1415,10 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
             var designMarginBottom = this.designNode.getStyle("margin-bottom").toFloat();
             y = y - designMarginTop - designMarginBottom;
             this.designNode.setStyle("height", ""+y+"px");
+        }
+
+        if(this.designMobileNode){
+            this.designMobileNode.setStyle("height", ""+Math.min(y, 680)+"px");
         }
 
         var titleSize = this.toolbarTitleNode.getSize();
@@ -1643,6 +1651,7 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
     },
 	savePage: function(){
         if (!this.isSave){
+            this.page.reloadCss();
             var pcData, mobileData;
             if (this.pcPage){
                 this.pcPage._getPageData();
@@ -1683,7 +1692,6 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
                 if (pcData) pcData.isNewPage = false;
                 if (mobileData) mobileData.isNewPage = false;
                 this.isSave = false;
-
             }.bind(this), function(xhr, text, error){
                 this.isSave = false;
 
@@ -1755,7 +1763,7 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
             "<input type=\"text\" style=\"width: 68%; height: 22px; border: 1px solid #cccccc\"/>"+"</td></tr>" +
 
             "<tr><td style=\"height: 40px;\">" +this.lp.templateDescription+"</td><td>"+
-            "<textarea type=\"text\" style=\"width: 98%; height: 44px; border: 1px solid #cccccc\">"+this.pcPage.json.description+"</textarea>"+"</td></tr>" +
+            "<textarea type=\"text\" style=\"width: 98%; height: 44px; border: 1px solid #cccccc\">"+o2.txt(this.pcPage.json.description)+"</textarea>"+"</td></tr>" +
 
             "<tr><td colSpan=\"2\" id=\"page_templatePreview\">" +
             "<div style=\"position: relative; width: 180px; height: 180px; margin: 20px auto 0px auto;  overflow: hidden\"></div>" +

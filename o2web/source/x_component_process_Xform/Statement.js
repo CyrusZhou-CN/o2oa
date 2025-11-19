@@ -53,10 +53,19 @@ MWF.xApplication.process.Xform.Statement = MWF.APPStatement =  new Class(
     },
 
     _loadUserInterface: function(){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+
         MWF.xDesktop.requireApp("query.Query", "Statement", null, false);
         this.node.empty();
     },
     _afterLoaded: function(){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
         if(!!this.json.statementType){
             this.loadView();
         }else if (this.json.queryStatement){
@@ -74,6 +83,7 @@ MWF.xApplication.process.Xform.Statement = MWF.APPStatement =  new Class(
             if (this.view.getViewRes && this.view.getViewRes.res) if (this.view.getViewRes.res.isRunning()) this.view.getViewRes.res.cancel();
         }
         this.node.empty();
+        this._loadReadEditAbeld();
         this.loadView( callback, true );
     },
     /**
@@ -82,6 +92,10 @@ MWF.xApplication.process.Xform.Statement = MWF.APPStatement =  new Class(
      * this.form.get("fieldId").active()
      */
     active: function( callback ){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
         if (this.view){
             if (!this.view.loadingAreaNode) this.view.loadView( callback );
         }else{
@@ -108,6 +122,10 @@ MWF.xApplication.process.Xform.Statement = MWF.APPStatement =  new Class(
         return {appName: appName, statementName: statementName, statementId: statementId};
     },
     loadView: function( callback, force ){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
         // if (!this.json.queryStatement) return "";
         var viewObj = this.getViewName();
         var appName = viewObj.appName, statementName = viewObj.statementName, statementId = viewObj.statementId;

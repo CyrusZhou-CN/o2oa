@@ -12,6 +12,7 @@ MWF.xApplication.Selector.LP = MWF.SelectorLP = {
     "selectFile": "选择资源文件",
     "selectAppliction": "选择流程应用",
     "selectProcess": "选择流程",
+    "selectWidget": "选择部件",
     "selectView": "选择视图",
     "selectStatement" : "选择查询",
     "selectTable": "选择数据表",
@@ -24,6 +25,10 @@ MWF.xApplication.Selector.LP = MWF.SelectorLP = {
     "selectDictionary" : "选择数据字典",
     "selectImportModel": "选择导入模型",
     "selectFieldProperty": "选择字段属性",
+    "selectPanFile": "选择网盘文件",
+
+    "personFile": "个人文件",
+    "unitFile": "企业文件",
 
     "searchDescription" : "搜索内容",
     "searchDescriptionFieldProperty": "展开过的表单可以搜索组件",
@@ -32,7 +37,8 @@ MWF.xApplication.Selector.LP = MWF.SelectorLP = {
     "selected" : "已选",
     "empty" : "清空",
     "remove": "移除",
-    "selected2": "已选择",
+    "selected2": "已选",
+    "searchResult": "搜索结果",
 
     "identity" : "身份",
     "person" : "个人",
@@ -46,14 +52,19 @@ MWF.xApplication.Selector.LP = MWF.SelectorLP = {
     "role" : "角色",
     "group" : "群组",
     "unit" : "组织",
+    "unitDuty" : "组织职务",
     "systemList" : "系统列表",
+    "processActivity" : "流程活动",
+    "activity" : "流程活动",
 
     "quantifier": {
         "person": "个人",
         "identity": "身份",
         "unit": "组织",
         "group": "群组",
-        "role": "角色"
+        "role": "角色",
+        "processActivity" : "流程活动",
+        "activity" : "流程活动",
     },
 
     "appType" : {

@@ -12,6 +12,7 @@ import com.x.base.core.container.EntityManagerContainer;
 import com.x.base.core.container.factory.EntityManagerContainerFactory;
 import com.x.base.core.entity.annotation.CheckPersistType;
 import com.x.base.core.entity.annotation.CheckRemoveType;
+import com.x.base.core.project.config.Config;
 import com.x.base.core.project.exception.ExceptionEntityNotExist;
 import com.x.base.core.project.http.ActionResult;
 import com.x.base.core.project.http.EffectivePerson;
@@ -26,6 +27,7 @@ import com.x.processplatform.core.entity.content.WorkProperties.GoBackStore;
 import com.x.processplatform.core.entity.element.ActivityType;
 import com.x.processplatform.core.entity.element.Manual;
 import com.x.processplatform.core.entity.element.ManualProperties;
+import com.x.processplatform.core.entity.ticket.Tickets;
 import com.x.processplatform.core.express.service.processing.jaxrs.work.V2GoBackWi;
 import com.x.processplatform.core.express.service.processing.jaxrs.work.V2GoBackWo;
 import com.x.processplatform.service.processing.Business;
@@ -45,7 +47,8 @@ class V2GoBack extends BaseAction {
 
 		Callable<ActionResult<Wo>> callable = new CallableImpl(id, param);
 
-		return ProcessPlatformKeyClassifyExecutorFactory.get(param.job).submit(callable).get(300, TimeUnit.SECONDS);
+		return ProcessPlatformKeyClassifyExecutorFactory.get(param.job).submit(callable)
+				.get(Config.processPlatform().getProcessingTimeout(), TimeUnit.SECONDS);
 
 	}
 
@@ -141,6 +144,10 @@ class V2GoBack extends BaseAction {
 				}
 				if (ListTools.isNotEmpty(param.distinguishedNameList)) {
 					work.setTickets(manual.identitiesToTickets(param.distinguishedNameList));
+					/*
+					 * 增加退回时 act=goBack标记
+					 */
+					work.getTickets().bubble().forEach(o -> o.act(Tickets.ACT_GOBACK));
 				}
 				removeTask(business, work);
 				emc.check(work, CheckPersistType.all);

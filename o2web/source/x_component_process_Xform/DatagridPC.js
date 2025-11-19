@@ -256,6 +256,7 @@ MWF.xApplication.process.Xform.DatagridPC = new Class(
 			return value || {};
 		},
 		getValue: function(){
+			if (!this.isReadable) return {};
 			return this._getValue();
 		},
 		_getDatagridTr: function(){
@@ -483,7 +484,7 @@ MWF.xApplication.process.Xform.DatagridPC = new Class(
 		},
 
 		_createAddLineAction: function(td){
-			var addLineAction = new Element("div", {
+			var addLineAction = new Element("div.addLineAction.ooicon-create", {
 				"styles": this.form.css.addLineAction,
 				"events": {
 					"click": function(e){
@@ -494,7 +495,7 @@ MWF.xApplication.process.Xform.DatagridPC = new Class(
 			addLineAction.inject(td);
 		},
 		_createDelLineAction: function(td){
-			var delLineAction = new Element("div", {
+			var delLineAction = new Element("div.delLineAction.ooicon-delete", {
 				"styles": this.form.css.delLineAction,
 				"events": {
 					"click": function(e){
@@ -505,7 +506,7 @@ MWF.xApplication.process.Xform.DatagridPC = new Class(
 			delLineAction.inject(td);
 		},
 		_createCompleteAction: function(td){
-			var completeAction = new Element("div", {
+			var completeAction = new Element("div.completeLineAction.ooicon-checkmark", {
 				"styles": this.form.css.completeLineAction,
 				"events": {
 					"click": function(e){
@@ -516,7 +517,7 @@ MWF.xApplication.process.Xform.DatagridPC = new Class(
 			completeAction.inject(td);
 		},
 		_createCancelAction: function(td){
-			var cancelAction = new Element("div", {
+			var cancelAction = new Element("div.cancelLineEditAction.ooicon-process-cancel", {
 				"styles": this.form.css.delLineAction,
 				"events": {
 					"click": function(e){
@@ -1641,24 +1642,31 @@ MWF.xApplication.process.Xform.DatagridPC = new Class(
 			return this._loadTotal();
 		},
 		createErrorNode: function(text){
-			var node = new Element("div");
-			var iconNode = new Element("div", {
-				"styles": {
-					"width": "20px",
-					"height": "20px",
-					"float": "left",
-					"background": "url("+"../x_component_process_Xform/$Form/default/icon/error.png) center center no-repeat"
-				}
-			}).inject(node);
-			var textNode = new Element("div", {
-				"styles": {
-					"line-height": "20px",
-					"margin-left": "20px",
+			node = new Element("div", {styles:{
+                "margin-top": "0.3em"  
+            }});
+            var iconNode = new Element("div.ooicon-error", {
+                "styles": {
+                    "width": "20px",
+                    "height": "1.2em",
+                    "float": "left",
+                    "display": "flex",
 					"color": "red",
-					"word-break": "keep-all"
-				},
-				"text": text
-			}).inject(node);
+                    "align-items": "center",
+                    "justify-content": "center"
+                    // "background": "url("+"../x_component_process_Xform/$Form/default/icon/error.png) center center no-repeat"
+                }
+            }).inject(node);
+            var textNode = new Element("div", {
+                "styles": {
+                    "height": "auto",
+                    "line-height": "1.2em",
+                    "margin-left": "20px",
+                    "color": "red",
+                    "word-break": "keep-all"
+                },
+                "text": text
+            }).inject(node);
 			return node;
 		},
 		notValidationMode: function(text){
@@ -1770,6 +1778,8 @@ MWF.xApplication.process.Xform.DatagridPC = new Class(
 			return true;
 		},
 		validation: function(routeName, opinion){
+			if (this.isReadonly() || this.json.showMode!=="disabled" || this.node?.isDisplayNone() || !this.isEditable) return true;
+			
 			if (this.isEdit){
 				if (!this.editValidation()){
 					return false;
@@ -2472,6 +2482,7 @@ MWF.xApplication.process.Xform.DatagridPC$Title =  new Class({
 MWF.xApplication.process.Xform.DatagridPC$Data =  new Class({
 	Extends: MWF.APP$Module,
 	_afterLoaded: function(){
+		debugger;
 		//this.form._loadModules(this.node);
 		this.dataGrid = this.node.retrieve("dataGrid");
 

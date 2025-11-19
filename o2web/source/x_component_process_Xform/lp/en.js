@@ -51,6 +51,7 @@ MWF.xApplication.process.Xform.LP={
 	"selectRollbackActivity": "Select the location of the file to be rollback to:",
 	"tryToProcess": "try to continue flow",
 	"in": " in ",
+	"select": "select ",
 	"andSoForth": "...",
 	"noIdentitySelectRange": "Cannot determine the range of identity selection",
 	"noIdentityDutySelectRange": "Unable to determine the range of duty selection",
@@ -309,6 +310,7 @@ MWF.xApplication.process.Xform.LP={
 		"resumeTitle": "Resume the task from pending",
 		"downloadAll": "Download",
 		"downloadAllTitle": "Download the form and all attachments",
+		"downloadAllText": "The form needs to be saved first. Do you want to continue?",
 		"monitor": "Process Monitor",
 		"monitorTitle": "Process Monitor",
 		"addTask": "Add Task",
@@ -331,6 +333,8 @@ MWF.xApplication.process.Xform.LP={
 		"excludeBranches": "Exclude existing branches",
 		"yes": "Yes",
 		"no": "No",
+		"printWork": "Print Preview",
+		"printWorkInfo": "No print form is set. The original form will be used to open.",
 		"readIdentity": "Identity",
 		"sendReadNotify": "Send a pending notification",
 		"reviewIdentity": "Identity",
@@ -414,6 +418,9 @@ MWF.xApplication.process.Xform.LP={
 	"importTooFewNotice": "{n1} pieces of data were imported this time, and at least {n2} pieces of data need to be retained",
 	"uploading": "Uploading attachment, please wait for the attachment upload to complete before performing this operation.",
 	"requiredHint": "Please fill in the {label} field",
-	"requiredHintField": "this"
+	"requiredHintField": "this",
+	"editDatatable": "Edit data table",
+	"editOk": "Editing completed",
+	"associatedFailureMessage": "{count} documents failed to be associated."
 }
 MWF.xApplication.process.Xform["lp."+o2.language] = MWF.xApplication.process.Xform.LP

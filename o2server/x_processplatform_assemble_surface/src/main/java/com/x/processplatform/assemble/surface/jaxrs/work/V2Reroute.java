@@ -52,7 +52,10 @@ class V2Reroute extends BaseAction {
 		reroute(param);
 		processing(param);
 		Record rec = this.recordWorkProcessing(Record.TYPE_REROUTE, param.routeName, param.opinion, param.work.getJob(),
-				param.workLog.getId(), param.identity, param.series);
+				param.workLog.getId(),
+				// record一定记录一个处理人
+				StringUtils.isEmpty(param.identity) ? effectivePerson.getDistinguishedName() : param.identity,
+				param.series);
 		Wo wo = Wo.copier.copy(rec);
 		result.setData(wo);
 		return result;
@@ -129,6 +132,7 @@ class V2Reroute extends BaseAction {
 		ProcessingAttributes req = new ProcessingAttributes();
 		req.setType(ProcessingAttributes.TYPE_REROUTE);
 		req.setSeries(param.series);
+		req.setForceJoinAtInquire(true);
 		ThisApplication.context().applications()
 				.putQuery(x_processplatform_service_processing.class,
 						Applications.joinQueryUri("work", param.work.getId(), "processing"), req, param.work.getJob())

@@ -41,6 +41,11 @@ MWF.xApplication.process.Xform.Sidebar = MWF.APPSidebar =  new Class(
             "moduleEvents": ["load", "queryLoad", "postLoad", "afterLoad"]
         },
     _loadUserInterface: function(){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+        
         this.node.setStyles(this.form.css.sidebar);
         this.node.setStyles({
            "min-width":"126px",
@@ -49,6 +54,7 @@ MWF.xApplication.process.Xform.Sidebar = MWF.APPSidebar =  new Class(
         });
         // this.node.setStyle("width", this.node.getSize().x+"px");
         this.toolbarNode = this.node.getFirst("div");
+        if(!this.toolbarNode)return;
         this.toolbarNode.empty();
 
         if (this.form.businessData.task){
@@ -473,7 +479,7 @@ MWF.xApplication.process.Xform.Sidebar = MWF.APPSidebar =  new Class(
         }
 
         if( this.getVisableOrgData( routeId ).length > 0 ){
-            this.form.processWork( routeId );
+            this.form.flowWork( routeId );
         }else{
             this.form.submitWork(route, opinion.opinion, opinion.medias)
         }
@@ -499,4 +505,4 @@ MWF.xApplication.process.Xform.Sidebar = MWF.APPSidebar =  new Class(
     printWork: function(){
         this.form.printWork();
     }
-}); 
+});

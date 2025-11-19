@@ -27,6 +27,9 @@ MWF.xApplication.Selector.IdentityWidthDutyCategoryByUnit = new Class({
     _init: function () {
         this.selectType = "identity";
         this.className = "IdentityWidthDutyCategoryByUnit";
+        if( !this.options.expandSubEnable ){
+            this.options.forceSearchInItem = true;
+        }
     },
     getUnitUniqueFormDn : function(dn){
         if(!dn)return "";
@@ -257,7 +260,6 @@ MWF.xApplication.Selector.IdentityWidthDutyCategoryByUnit = new Class({
         }.bind(this));
     },
     _listNestedUnitByIdentity: function (identityList, callback) {
-        debugger;
         //identityList = Array.unique(identityList);
         var key = this.options.dutyUnitLevelBy === "duty" ? "matchUnitLevelName" : "unitLevelName";
         //根据unitLevelName整合成组织树
@@ -642,7 +644,6 @@ MWF.xApplication.Selector.IdentityWidthDutyCategoryByUnit.ItemCategory = new Cla
         return this.data.name;
     },
     _addSelectAllSelectedCount: function (count, nested) {
-        debugger;
         var c = (this._getSelectAllSelectedCount() || 0) + count;
         this.selectedCount = c;
         this._checkCountAndStatus(c);
@@ -652,7 +653,6 @@ MWF.xApplication.Selector.IdentityWidthDutyCategoryByUnit.ItemCategory = new Cla
         }
     },
     _getSelectAllSelectedCount: function () {
-        debugger;
         if (typeOf(this.selectedCount) === "number") {
             return this.selectedCount;
         } else {

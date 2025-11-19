@@ -291,7 +291,7 @@ MWF.xApplication.Homepage.InforContent.AllInfor = new Class({
         o2.Actions.load("x_cms_assemble_control").DocumentAction.query_listWithFilterPaging(this.page, this.pageSize, {
             "orderField": "publishTime",
             "orderType": "DESC",
-            "readFlag": "UNREAD"
+            // "readFlag": "UNREAD"
         }, function(json){
             this.itemCount = json.count;
             if (json.data && json.data.length){
@@ -384,8 +384,8 @@ MWF.xApplication.Homepage.InforContent.AllInfor = new Class({
     loadHotpic: function(doc, html, i){
         var picNode = new Element("div.o2_homepage_infor_hotpicNode").inject(this.hotpicDocArea, "top");
         var bind = {
-            "title": doc.title,
-            "summary": doc.summary || doc.title,
+            "title": o2.txt(doc.title),
+            "summary": o2.txt(doc.summary || doc.title),
             "createTime": doc.createTime.toString().substr(0, 10),
             "url": MWF.xDesktop.getImageSrc(doc.picId)
         }
@@ -582,7 +582,7 @@ MWF.xApplication.Homepage.InforContent.Infor  = new Class({
         o2.Actions.load("x_cms_assemble_control").DocumentAction.query_listWithFilterPaging(this.page, this.pageSize, {
             "orderField": "publishTime",
             "orderType": "DESC",
-            "readFlag": "UNREAD",
+            // "readFlag": "UNREAD",
             "appIdList": [this.id]
         }, function(json){
             this.itemCount = json.count;

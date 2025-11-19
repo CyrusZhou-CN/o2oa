@@ -45,7 +45,9 @@ MWF.xApplication.process.Xform.ReadLog = MWF.APPReadLog =  new Class(
             "moduleEvents": ["load", "queryLoad", "postLoad", "postLoadData", "postLoadLine"]
         },
         load: function(){
+            this._queryLoaded();
             this.node.empty();
+
             if (!this.json.isDelay){
                 this.active();
             }
@@ -56,6 +58,10 @@ MWF.xApplication.process.Xform.ReadLog = MWF.APPReadLog =  new Class(
          * this.form.get("fieldId").active();
          */
         active: function(){
+            if (!this.isReadable){
+                this.node?.addClass('hide');
+                return '';
+            }
             this._loadModuleEvents();
             if (this.fireEvent("queryLoad")){
                 this._queryLoaded();
@@ -71,7 +77,7 @@ MWF.xApplication.process.Xform.ReadLog = MWF.APPReadLog =  new Class(
         },
         _loadUserInterface: function(){
             this.node.setStyle("-webkit-user-select", "text");
-            this.node.setStyles(this.form.css.logActivityNode_record);
+            this.node.setStyles(this.form.css.logActivityNode_read);
 
             this.form.app.action.getReadRecord(this.form.businessData.work.id, function(json){
                 this.readLog = json.data;

@@ -56,6 +56,8 @@ MWF.xApplication.Meeting.LP = {
     "rejected": "已拒绝会议邀请",
     "accept": "接受会议邀请",
     "reject": "拒绝会议邀请",
+    "accept1": "接受",
+    "reject1": "拒绝",
     "disagree": "驳回",
     "agree": "同意",
     "countMeetings": "场会议",
@@ -99,7 +101,7 @@ MWF.xApplication.Meeting.LP = {
     "meetingSubject": "会议标题",
     "meetingDescription": "会议描述",
 
-    "externalPerson": "外部参会人员",
+    "externalPerson": "外部人员",
 
 
     "meetingAttachment": "会议材料",
@@ -210,6 +212,7 @@ MWF.xApplication.Meeting.LP = {
     "delete_building_hasRoom" : "“{name}”下还有会议室，不能删除。",
     "delete_building": "您确定要删除“{name}”吗",
     "delete_room": "您确定要删除会议室“{name}”吗",
+    "add": "新增",
 
     "roomForm": {
         "name": "会议室名称",
@@ -231,6 +234,12 @@ MWF.xApplication.Meeting.LP = {
 
         },
         "save_success": "会议室保存成功！"
+    },
+    "status": {
+        "wait": "未开始",
+        "processing": "进行中",
+        "apply": "申请中",
+        "completed": "已结束"
     },
     "listNavi": {
         "myApply": "我的会议申请",
@@ -293,5 +302,7 @@ MWF.xApplication.Meeting.LP = {
     "needSignInPerson" : "签到人员",
     "printQrcode": "打印签到二维码",
     "weeklyViewTitle" : "{month}，第{week}周",
-    "onlineConfigNotJson": "线上会议配置未配置成正确的JSON格式"
+    "onlineConfigNotJson": "线上会议配置未配置成正确的JSON格式",
+    "invitation": "会议邀请",
+    "noInvitation": "当前无会议邀请"
 };

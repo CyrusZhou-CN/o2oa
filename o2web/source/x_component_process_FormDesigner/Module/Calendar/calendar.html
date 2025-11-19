@@ -64,6 +64,15 @@
                 <td class="editTableTitle">{{$.lp.valueFormat}}:</td>
                 <td class="editTableValue"><input type="text" name="valueFormat" value="text{$.valueFormat || $.format}" class="editTableInput"/></td>
             </tr>
+            <tr>
+                <td class="editTableTitle">{{$.lp.weekBegin}}:</td>
+                <td class="editTableValue">
+                    <div>
+                        <label><input type="radio" name="weekBegin" value="1" text{($.weekBegin==='1')?'checked':''}/>{{$.lp.weeks.arr[0]}}</label>
+                        <label><input type="radio" name="weekBegin" value="0" text{($.weekBegin!=='1')?'checked':''}/>{{$.lp.weeks.arr[$.lp.weeks.arr.length-1]}}</label>
+                    </div>
+                </td>
+            </tr>
 <!--		  <tr>-->
 <!--		    <td class="editTableTitle">选择范围:</td>-->
 <!--		     <td class="editTableValue">-->
@@ -222,6 +231,10 @@
         </div>
 
         <div id="text{$.pid}sectionMergeArea" class="MWFSectionMergeArea" style="display: text{($.section=='yes')?'none':''};"></div>
+    </div>
+
+    <div title="{{$.lp.power}}"  class="MWFTab">
+        <div class="MWFFieldPermission"></div>
     </div>
 	<div title="{{$.lp.event}}"  class="MWFTab">
 		<div class="MWFEventsArea" name="events"></div>

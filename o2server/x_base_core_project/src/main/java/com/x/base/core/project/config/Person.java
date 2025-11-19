@@ -1,5 +1,6 @@
 package com.x.base.core.project.config;
 
+import com.x.base.core.project.gson.GsonPropertyObject;
 import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,7 +23,7 @@ public class Person extends ConfigObject {
 	public static final Boolean DEFAULT_CAPTCHALOGIN = false;
 	public static final Boolean DEFAULT_CODELOGIN = true;
 	public static final Boolean DEFAULT_BINDLOGIN = true;
-	public static final Boolean DEFAULT_FACELOGIN = true;
+	public static final Boolean DEFAULT_FACELOGIN = false;
 	public static final Boolean DEFAULT_SUPERPERMISSION = true;
 	public static final Boolean DEFAULT_PERSONUNITORDERBYASC = true;
 
@@ -37,17 +38,17 @@ public class Person extends ConfigObject {
 
 	public static final String REGULAREXPRESSION_SCRIPT = "^\\((.+?)\\)$";
 
-	public static final String DEFAULT_PASSWORD = "(var v = person.getMobile();\\nreturn v.substring(v.length - 6);)";
+	public static final String DEFAULT_PASSWORD = "(return person.getMobile().slice(-6) + \"%o2\";)";
 	public static final Integer DEFAULT_PASSWORDPERIOD = 0;
 	public static final Integer DEFAULT_FAILUREINTERVAL = 10;
 	public static final Integer DEFAULT_FAILURECOUNT = 5;
 	public static final Integer DEFAULT_TOKENEXPIREDMINUTES = 60 * 24 * 15;
 	public static final Boolean DEFAULT_TOKENCOOKIEHTTPONLY = true;
 	public static final Boolean DEFAULT_TOKENCOOKIESECURE = false;
-	public static final Boolean DEFAULT_FIRSTLOGINMODIFYPWD = false;
+	public static final Boolean DEFAULT_FIRSTLOGINMODIFYPWD = true;
 
-	public static final String DEFAULT_PASSWORDREGEX = "((?=.*\\d)(?=.*\\D)|(?=.*[a-zA-Z])(?=.*[^a-zA-Z]))^.{6,}$";
-	public static final String DEFAULT_PASSWORDREGEXHINT = "6位以上,包含数字和字母.";
+	public static final String DEFAULT_PASSWORDREGEX = "^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{8,}$";
+	public static final String DEFAULT_PASSWORDREGEXHINT = "8位以上,包含数字、字母和特殊字符.";
 	public static final String DEFAULT_LANGUAGE = "zh-CN";
 	public static final String DEFAULT_CAPTCHAFONT = "";
 	public static final String DEFAULT_TOKENNAME = "x-token";
@@ -57,6 +58,7 @@ public class Person extends ConfigObject {
 	public static final String DEFAULT_ENCRYPTTYPE = "";
 
 	public Person() {
+		this.userPwdLogin = true;
 		this.captchaLogin = DEFAULT_CAPTCHALOGIN;
 		this.codeLogin = DEFAULT_CODELOGIN;
 		this.bindLogin = DEFAULT_BINDLOGIN;
@@ -77,6 +79,7 @@ public class Person extends ConfigObject {
 		this.enableSafeLogout = DEFAULT_ENABLESAFELOGOUT;
 		this.encryptType = DEFAULT_ENCRYPTTYPE;
 		this.xadminEnable = true;
+		this.personEncryptEnable = false;
 	}
 
 	public static Person defaultInstance() {
@@ -84,6 +87,9 @@ public class Person extends ConfigObject {
 	}
 
 	public static final Integer MAX_PASSWORDPERIOD = 365 * 10;
+
+	@FieldDescribe("是否启用用户名密码登录,默认值:true.")
+	private Boolean userPwdLogin;
 
 	@FieldDescribe("是否启用图片验证码登录,默认值:false.")
 	private Boolean captchaLogin;
@@ -100,7 +106,7 @@ public class Person extends ConfigObject {
 	@FieldDescribe("是否启用双因素认证登录,默认值:false.")
 	private Boolean twoFactorLogin;
 
-	@FieldDescribe("是否启用首次登陆修改密码,默认值:false")
+	@FieldDescribe("是否启用首次登陆修改密码,默认值:true")
 	private Boolean firstLoginModifyPwd;
 
 	@FieldDescribe("注册初始密码,使用()调用脚本生成初始密码,默认为:" + DEFAULT_PASSWORD)
@@ -159,6 +165,9 @@ public class Person extends ConfigObject {
 
 	@FieldDescribe("是否启用超级管理员（xadmin）账户.")
 	private Boolean xadminEnable;
+
+	@FieldDescribe("是否启用用户信息中用户名称和手机号加密存储.")
+	private Boolean personEncryptEnable;
 
 	public String getEncryptType() {
 		return StringUtils.isEmpty(this.encryptType) ? DEFAULT_ENCRYPTTYPE : this.encryptType;
@@ -225,6 +234,10 @@ public class Person extends ConfigObject {
 		}
 	}
 
+	public Boolean getUserPwdLogin() {
+		return BooleanUtils.isNotFalse(this.userPwdLogin);
+	}
+
 	public Boolean getCaptchaLogin() {
 		return BooleanUtils.isTrue(this.captchaLogin);
 	}
@@ -257,6 +270,10 @@ public class Person extends ConfigObject {
 		File file = new File(Config.base(), Config.PATH_CONFIG_PERSON);
 		FileUtils.write(file, XGsonBuilder.toJson(this), DefaultCharset.charset);
 		BaseTools.executeSyncFile(Config.PATH_CONFIG_PERSON);
+	}
+
+	public void setUserPwdLogin(Boolean userPwdLogin) {
+		this.userPwdLogin = userPwdLogin;
 	}
 
 	public void setCodeLogin(Boolean codeLogin) {
@@ -382,5 +399,13 @@ public class Person extends ConfigObject {
 
 	public void setXadminEnable(Boolean xadminEnable) {
 		this.xadminEnable = xadminEnable;
+	}
+
+	public Boolean getPersonEncryptEnable() {
+		return BooleanUtils.isTrue(personEncryptEnable);
+	}
+
+	public void setPersonEncryptEnable(Boolean personEncryptEnable) {
+		this.personEncryptEnable = personEncryptEnable;
 	}
 }

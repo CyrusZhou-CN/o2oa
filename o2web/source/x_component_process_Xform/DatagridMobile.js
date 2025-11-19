@@ -182,6 +182,7 @@ MWF.xApplication.process.Xform.DatagridMobile = new Class(
         return value || [];
     },
     getValue: function(){
+        if (!this.isReadable) return [];
         return this._getValue();
     },
 
@@ -1705,20 +1706,26 @@ MWF.xApplication.process.Xform.DatagridMobile = new Class(
         return this._loadTotal();
     },
     createErrorNode: function(text){
-        var node = new Element("div");
-        var iconNode = new Element("div", {
+        node = new Element("div", {styles:{
+            "margin-top": "0.3em"  
+        }});
+        var iconNode = new Element("div.ooicon-error", {
             "styles": {
                 "width": "20px",
-                "height": "20px",
+                "height": "1.2em",
                 "float": "left",
-                "background": "url("+"../x_component_process_Xform/$Form/default/icon/error.png) center center no-repeat"
+                "display": "flex",
+                "color": "red",
+                "align-items": "center",
+                "justify-content": "center"
+                // "background": "url("+"../x_component_process_Xform/$Form/default/icon/error.png) center center no-repeat"
             }
         }).inject(node);
         var textNode = new Element("div", {
             "styles": {
-                "line-height": "20px",
+                "height": "auto",
+                "line-height": "1.2em",
                 "margin-left": "20px",
-                "text-align": "left",
                 "color": "red",
                 "word-break": "keep-all"
             },
@@ -1835,6 +1842,8 @@ MWF.xApplication.process.Xform.DatagridMobile = new Class(
         return true;
     },
     validation: function(routeName, opinion){
+        if (this.isReadonly() || this.json.showMode!=="disabled" || this.node?.isDisplayNone() || !this.isEditable) return true;
+        
         if (this.isEdit){
             if (!this.editValidation()){
                 return false;

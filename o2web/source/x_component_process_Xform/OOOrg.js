@@ -4,14 +4,15 @@ MWF.xApplication.process.Xform.OOOrg = MWF.APPOOOrg = new Class({
     Extends: MWF.APPOrg,
     iconStyle: 'textFieldIcon',
     options: {
-        "moduleEvents": ["load", "queryLoad", "postLoad"]
-    },
-    isReadonly : function(){
-        return !!(this.readonly || this.json.isReadonly || this.form.json.isReadonly || this.json.showMode==="readmode" || this.isSectionMergeRead());
+        "moduleEvents": ["load", "queryLoad", "postLoad", "select", "removeItem"]
     },
     _loadNode: function () {
-        this._getOrgOptions();
-        this._loadNodeEdit();
+        if (!this.isReadable && !!this.isHideUnreadable){
+            this.node?.addClass('hide');
+        }else{
+            this._getOrgOptions();
+            this._loadNodeEdit();
+        }
     },
     loadDescription: function () {
         this.node.setAttribute('placeholder', this.json.description || '');
@@ -36,7 +37,11 @@ MWF.xApplication.process.Xform.OOOrg = MWF.APPOOOrg = new Class({
             'validity-blur': 'true',
             // "label-style": "width:6.2vw; min-width:5em; max-width:9em"
         });
-
+        if (o2.isMediaMobile() && !this.json.inDatatable){
+			this.node.setAttribute("skin-mode", 'mobile');
+		}else{
+            this.node.removeAttribute("skin-mode");
+        }
         if (this.json.label) {
             this.node.setAttribute('label', this.json.label);
         }
@@ -54,11 +59,15 @@ MWF.xApplication.process.Xform.OOOrg = MWF.APPOOOrg = new Class({
             this.node.setStyles(this.json.styles);
         }
 
+        if (this.json.inDatatable){
+            this.node.setAttribute('view-style', '');
+        }
+
         this.node.setAttribute('readonly', false);
         this.node.setAttribute('readmode', false);
         this.node.setAttribute('disabled', false);
 
-        if (!this.isReadonly()){
+        if (!this.isReadonly() && this.isEditable){
             if (this.json.showMode === 'readonlyMode') {
                 this.node.setAttribute('readonly', true);
             } else if (this.json.showMode === 'disabled') {
@@ -98,12 +107,31 @@ MWF.xApplication.process.Xform.OOOrg = MWF.APPOOOrg = new Class({
             this.validationMode();
             this.validation();
             this._setBusinessData(v);
-            this.fireEvent('change');
+            // this.fireEvent('change');
         }.bind(this));
 
         this.node.addEventListener('validity', (e) => {
             if (this.validationText) {
                 e.target.setCustomValidity(this.validationText);
+            }
+        });
+        this.node.addEventListener('invalid', (e)=>{
+            if (this.node._props.validity){
+                e.target.setCustomValidity(this.node._props.validity);
+            }else{
+                var label = this.json.label ? `“${this.json.label.replace(/　/g, '')}”` :  MWF.xApplication.process.Xform.LP.requiredHintField;
+                const o = {
+                    valueMissing: MWF.xApplication.process.Xform.LP.requiredHint.replace('{label}', label),
+                }
+                //通过 e.detail 获取 验证有效性状态对象：ValidityState
+                for (const k in o){
+                    if (e.detail[k]){
+                        if (o[k]){
+                            
+                            break;
+                        }
+                    }
+                }
             }
         });
 
@@ -118,11 +146,15 @@ MWF.xApplication.process.Xform.OOOrg = MWF.APPOOOrg = new Class({
 
 
     clickSelect: function( ev ){
-        if (this.isReadonly())return;
+        if (this.isReadonly() || !this.isEditable)return;
         if( layout.mobile ){
             setTimeout( function(){ //如果有输入法界面，这个时候页面的计算不对，所以等100毫秒
                 var options = this.getOptions();
                 if(options){
+                    if( !options.title && this.json.label ){
+                        var select = MWF.xApplication.process.Xform.LP.select;
+                        options.title = this.json.label.contains(select) ? this.json.label : (select+this.json.label);
+                    }
                     if( this.selector && this.selector.loading ) {
                     }else if( this.selector && this.selector.selector && this.selector.selector.active ){
                     }else{
@@ -134,14 +166,29 @@ MWF.xApplication.process.Xform.OOOrg = MWF.APPOOOrg = new Class({
                          * var selector = this.form.get("fieldId").selector.selector; //获取人员选择框对象
                          * var options = selector.options; //获取人员选择框的选项
                          */
-                        options.style = 'v10';
+                        //options.style = 'v10';
+                        // Object.assign(options, {
+                        //     style: "v10_mobile",
+                        //     tabStyle: "v10_mobile",
+                        //     useBreadcrumbs: true,
+                        //     contentUrl: "../x_component_Selector/$Selector/v10_mobile/selector.html",
+                        //     categoryUrl: "../x_component_Selector/$Selector/v10_mobile/category.html",
+                        //     categoryItemUrl: "../x_component_Selector/$Selector/v10_mobile/category_item.html",
+                        //     itemUrl: "../x_component_Selector/$Selector/v10_mobile/item.html",
+                        //     useO2Load: true,
+                        //     injectToBody: true
+                        // });
                         this.selector = new MWF.O2Selector(this.form.app.content, options);
                     }
                 }
-            }.bind(this), 100 )
+            }.bind(this), 100 );
         }else{
             var options = this.getOptions();
             if(options){
+                if( !options.title && this.json.label ){
+                    var select = MWF.xApplication.process.Xform.LP.select;
+                    options.title = this.json.label.contains(select) ? this.json.label : (select+this.json.label);
+                }
                 if( this.selector && this.selector.loading ) {
                 }else if( this.selector && this.selector.selector && this.selector.selector.active ){
                 }else {
@@ -201,9 +248,10 @@ MWF.xApplication.process.Xform.OOOrg = MWF.APPOOOrg = new Class({
     __setData: function(data, fireChange){
         var old = this.getInputData();
         this._setBusinessData(data);
-        debugger;
         this.node.value = data;
-        if (fireChange && old!==data) this.fireEvent("change");
+        if (fireChange && old!==data){
+            this.fireEvent("change");
+        }
         this.moduleValueAG = null;
     },
     __setValue: function (value) {
@@ -220,19 +268,70 @@ MWF.xApplication.process.Xform.OOOrg = MWF.APPOOOrg = new Class({
     },
 
     notValidationMode: function (text) {
-        this.validationText = text;
-        this.node.checkValidity();
+        if(!this.isNotValidationMode){
+            this.isNotValidationMode = true;
+            this.validationText = text;
+            this.node.checkValidity();
+        }
     },
     validationMode: function () {
-        this.validationText = '';
-        this.node.unInvalidStyle();
+        if(this.isNotValidationMode){
+            this.isNotValidationMode = false;
+            this.validationText = '';
+            this.node.unInvalidStyle();
+        }
     },
 
     _setValue: function(value){
-        var flag = false;
+        var values = [];
         if (typeOf(value)!=="array") value = (!!value) ? [value] : [];
-
-        this.__setValue(value);
-        return value;
-    }
+        if (value.some(function(e){ return (e && o2.typeOf(e.then)=="function") }) || this.json.asyncMode==="yes"){
+            return Promise.all(value).then(function(d){
+                var vIds = d.flat(Infinity).map(dd=>(dd?.distinguishedName || (dd || '')));
+                this.__setValue(vIds);
+                return vIds;
+            }.bind(this), function(){});
+        }else{
+            var vIds = value.flat(Infinity).map(dd=>(dd.distinguishedName || dd));
+            this.__setValue(vIds);
+            return vIds;
+        }
+    },
+    // _setValue: function(value){
+    //     debugger;
+    //     if (!!value && o2.typeOf(value.then)=="function"){
+    //         var p = Promise.resolve(value).then(function(v){
+    //             if (typeOf(v)!=="array") v = (!!v) ? [v] : [];
+    //             this.__setValue(v);
+    //         }.bind(this), function(){});
+    //         this.moduleValueAG = p;
+    //     }else{
+    //         this.moduleValueAG = null;
+    //         if (typeOf(value)!=="array") value = (!!value) ? [value] : [];
+    //         this.__setValue(value);
+    //     }
+    // },
+    isReadonly : function(){
+        var readonly = !!(!this.isEditable || this.readonly || this.form.json.isReadonly || this.json.showMode==="read");
+        if( readonly )return readonly;
+        if( this.json.isReadonly === "script" ){
+            if( this.json.readonlyScript && this.json.readonlyScript.code ){
+                readonly = this.form.Macro.exec(this.json.readonlyScript.code, this);
+            }
+        }else{
+            readonly = !!this.json.isReadonly
+        }
+        return readonly || !!this.isSectionMergeRead();
+    },
+    // addModuleEvent: function(key, fun){
+    //     if (this.options.moduleEvents.indexOf(key)!==-1){
+    //         this.addEvent(key, function(event){
+    //             return (fun) ? fun(this, event) : null;
+    //         }.bind(this));
+    //     }else{
+    //         this.node.addEvent(key, function(event){
+    //             return (fun) ? fun(this, event) : null;
+    //         }.bind(this));
+    //     }
+    // },
 });

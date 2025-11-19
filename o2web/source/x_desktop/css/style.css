@@ -1,19 +1,15 @@
-@CHARSET "UTF-8";
-/*@font-face {*/
-/*	font-family: 'o2font';*/
-/*	!*src:url('../font/alfont.eot');*!*/
-/*	src:*/
-/*			!*url('../font/alfont.eot?#iefix') format('embedded-opentype'),*!*/
-/*			!*url('../font/alfont.woff') format('woff'),*!*/
-/*			url('../font/alfont.ttf') format('truetype');*/
-/*			!*url('../font/alfont.otf') format('opentype');*!*/
-/*			!*url('../x_desktop/font/font.eot?#font-spider') format('embedded-opentype'),*!*/
+@charset "UTF-8";
 
-/*			!*url('/x_desktop/font/font.svg') format('svg');*!*/
-/*	font-weight: normal;*/
-/*	font-style: normal;*/
-/*}*/
-
+/* @font-face {
+    font-family: 'ooicon';
+    src:
+            url('./ooicon.ttf') format('truetype'),
+            url('.ooicon.woff') format('woff'),
+            url('.ooicon.svg') format('svg');
+    font-weight: normal;
+    font-style: normal;
+    font-display: block;
+} */
 html{
 	overflow: hidden;
 	height: 100%;
@@ -41,6 +37,12 @@ body {
 .o2_vue *{
 	box-sizing: border-box!important;
 }
+.start-process-area{
+	box-sizing: content-box!important;
+}
+.start-process-area *{
+	box-sizing: content-box!important;
+}
 *::-webkit-scrollbar {
 	width: 0.4rem;
 	height: 0.4rem;
@@ -63,11 +65,19 @@ body {
 .table-tr-selected {
 	background-color: #FFFFDD;
 }*/
-
 input,button,select,textarea{outline:none}
 
 select.script::-ms-expand { display: none; }
 ::-ms-clear, ::-ms-reveal{display: none;}
+
+
+/* span[mwfnodetype="MWFToolBarButton"]{
+	display: flex;
+    align-items: baseline;
+    margin: 4px;
+    padding: 2px 5px;
+    border-radius: 4px;
+} */
 
 /*.WordSection1 table{*/
 /*	border: 0 !important;*/
@@ -76,13 +86,13 @@ select.script::-ms-expand { display: none; }
 @media print {
 
 	@page:right{
-		@bottom-left {
-			margin: 10pt 0 30pt 0;
-			border-top: .25pt solid #666;
-			content: "Our Cats";
-			font-size: 9pt;
-			color: #333;
-		}
+		/*@bottom-left {*/
+		/*	margin: 10pt 0 30pt 0;*/
+		/*	border-top: .25pt solid #666;*/
+		/*	content: "Our Cats";*/
+		/*	font-size: 9pt;*/
+		/*	color: #333;*/
+		/*}*/
 		@bottom-right {
 			margin: 10pt 0 30pt 0;
 			border-top: .25pt solid #666;

@@ -3,6 +3,7 @@ MWF.xApplication.Minder = MWF.xApplication.Minder || {};
 MWF.xDesktop.requireApp("Template", "Explorer", null, false);
 MWF.xDesktop.requireApp("Template", "MPopupForm", null, false);
 MWF.xDesktop.requireApp("Template", "MTooltips", null, false);
+MWF.xDesktop.requireApp("Template", "MForm", null, false);
 MWF.require("MWF.widget.O2Identity", null, false);
 
 MWF.xApplication.Minder.FolderSelector = new Class({
@@ -11,7 +12,7 @@ MWF.xApplication.Minder.FolderSelector = new Class({
         style : "", //如果有style，就加载 style/css.wcss
         axis: "y",      //箭头在x轴还是y轴上展现
         position : { //node 固定的位置
-            x : "right", //x轴上left center right,  auto 系统自动计算
+            x : "left", //x轴上left center right,  auto 系统自动计算
             y : "auto" //y 轴上top middle bottom, auto 系统自动计算
         },
         event : "click", //事件类型，有target 时有效， mouseenter对应mouseleave，click 对应 container 的  click
@@ -175,7 +176,7 @@ MWF.xApplication.Minder.Tree.Node = new Class({
             })
         }
 
-        this.itemIconNode = new Element("div.treeItemIconNode", {
+        this.itemIconNode = new Element("div.ooicon-files", {
             "styles": this.css.treeItemIconNode
         }).inject(this.itemNode);
 
@@ -288,18 +289,18 @@ MWF.xApplication.Minder.Tree.Node = new Class({
     },
     expand: function(){
         if( this.options.isCurrent ){
-            this.itemExpendNode.setStyles( this.css.treeItemExpendNode_selected );
+            this.itemExpendNode.addClass('ooicon-drop_down').removeClass('ooicon-arrow_forward').setStyles( this.css.treeItemExpendNode_selected );
         }else{
-            this.itemExpendNode.setStyles( this.css.treeItemExpendNode );
+            this.itemExpendNode.addClass('ooicon-drop_down').removeClass('ooicon-arrow_forward').setStyles( this.css.treeItemExpendNode );
         }
         if( this.treeContentNode )this.treeContentNode.setStyle("display","");
         this.options.isExpanded = true;
     },
     collapse: function(){
         if( this.options.isCurrent ){
-            this.itemExpendNode.setStyles( this.css.treeItemCollapseNode_selected );
+            this.itemExpendNode.removeClass('ooicon-drop_down').addClass('ooicon-arrow_forward').setStyles( this.css.treeItemCollapseNode_selected );
         }else{
-            this.itemExpendNode.setStyles( this.css.treeItemCollapseNode );
+            this.itemExpendNode.removeClass('ooicon-drop_down').addClass('ooicon-arrow_forward').setStyles( this.css.treeItemCollapseNode );
         }
         if( this.treeContentNode )this.treeContentNode.setStyle("display","none");
         this.options.isExpanded = false;
@@ -428,33 +429,45 @@ MWF.xApplication.Minder.NewNameForm = new Class({
     },
     _createTableContent: function () {
 
-        var html = "<table width='100%' bordr='0' cellpadding='7' cellspacing='0' styles='formTable' style='margin-top: 20px; '>" +
-            "<tr><td styles='formTableTitle' lable='folder' width='25%'></td>" +
-            "    <td styles='formTableValue14' item='folder' colspan='3'></td></tr>" +
-            "<tr><td styles='formTableTitle' lable='name' width='25%'></td>" +
-            "    <td styles='formTableValue14' item='name' colspan='3'></td></tr>" +
+        if(layout.mobile){
+            this.formTableContainer.setStyles({
+                'margin-left': "20px", 'margin-right': '20px'
+            })
+        }
+
+        var currentFolderData = this.explorer.getCurrentFolderData ? this.explorer.getCurrentFolderData() : {};
+
+        var html = layout.mobile ?
+            "<table width='100%' bordr='0' cellpadding='7' cellspacing='0' styles='formTable'>" +
+            `<tr><td styles='formTableValue14' colspan='3' style='color:#999999;'>在“${currentFolderData.name}”下创建脑图：</td></tr>` +
+            "<tr><td styles='formTableValue14' item='name' colspan='3'></td></tr>" +
+            "</table>" :
+            "<table width='100%' bordr='0' cellpadding='7' cellspacing='0' styles='formTable' style='margin-top: 20px; '>" +
+            "<tr><td styles='formTableValue14' item='folder' colspan='3'></td></tr>" +
+            "<tr><td styles='formTableValue14' item='name' colspan='3'></td></tr>" +
             "</table>";
         this.formTableArea.set("html", html);
 
-        var currentFolderData = this.explorer.getCurrentFolderData ? this.explorer.getCurrentFolderData() : {};
         this.folderId = currentFolderData.id || "root";
         this.form = new MForm(this.formTableArea, this.data || {}, {
             isEdited: true,
-            style : "minder",
+            style : "v10", mvcStyle: "v10",
             hasColon : true,
             itemTemplate: {
-                folder: { text : "选择文件夹",  notEmpty : true, attr : { readonly : true }, defaultValue : currentFolderData.name || "根目录" },
-                name: { text : "脑图名称", notEmpty : true }
+                folder: { type: 'oo-input', text : "文件夹",  notEmpty : true, attr : { readonly : true }, defaultValue : currentFolderData.name || "根目录" },
+                name: { type: 'oo-input', text : "名称", notEmpty : true }
             }
         }, this.app);
         this.form.load();
-        this.loadFolderSelect();
+        if( !layout.mobile ){
+            this.loadFolderSelect();
+        }
     },
     _createBottomContent: function () {
 
         if (this.isNew || this.isEdited) {
 
-            this.okActionNode = new Element("button.inputOkButton", {
+            this.okActionNode = new Element("oo-button.inputOkButton", {
                 "styles": this.css.inputOkButton,
                 "text": "确定"
             }).inject(this.formBottomNode);
@@ -462,16 +475,30 @@ MWF.xApplication.Minder.NewNameForm = new Class({
             this.okActionNode.addEvent("click", function (e) {
                 this.save(e);
             }.bind(this));
+
+            if( layout.mobile ) {
+                this.okActionNode.setStyles({'width': '50%', 'height': '36px'});
+            }
         }
 
-        this.cancelActionNode = new Element("button.inputCancelButton", {
+        this.cancelActionNode = new Element("oo-button.inputCancelButton", {
             "styles": (this.isEdited || this.isNew || this.getEditPermission() ) ? this.css.inputCancelButton : this.css.inputCancelButton_long,
-            "text": "关闭"
+            "text": "关闭",
+            'type':'cancel'
         }).inject(this.formBottomNode);
 
         this.cancelActionNode.addEvent("click", function (e) {
             this.close(e);
         }.bind(this));
+
+        if( layout.mobile ) {
+            this.cancelActionNode.setStyles({'width': '50%', 'height': '36px'});
+            this.cancelActionNode.inject(this.okActionNode, 'before');
+        }
+
+        if( layout.mobile ) {
+            this.formatMobileButton(this.formBottomNode, this.formAreaNode);
+        }
 
     },
     save: function(){
@@ -488,18 +515,25 @@ MWF.xApplication.Minder.NewNameForm = new Class({
                     "isNew" : false
                 });
                 if(this.explorer.currentView)this.explorer.currentView.reload();
+                this.fireEvent('save');
                 this.close();
             }.bind(this));
         }
     },
     loadFolderSelect: function() {
-        this.folderSelect =  new MWF.xApplication.Minder.FolderSelector( this.app.content, this.form.getItem("folder").getElements()[0], this.app, {}, {
-            defaultNode : this.folderId,
-            onSelect : function( folderData ){
-                this.form.getItem("folder").setValue( folderData.name );
-                this.folderId = folderData.id;
-            }.bind(this)
-        } );
+        this.folderSelect =  new MWF.xApplication.Minder.FolderSelector(
+            this.app.content,
+            this.form.getItem("folder").getElements()[0],
+            this.app,
+            {},
+            {
+                defaultNode : this.folderId,
+                onSelect : function( folderData ){
+                    this.form.getItem("folder").setValue( folderData.name );
+                    this.folderId = folderData.id;
+                }.bind(this)
+            }
+        );
 
     }
 });
@@ -515,22 +549,32 @@ MWF.xApplication.Minder.FolderForm = new Class({
         "hasTop": true,
         "hasIcon": false,
         "draggable": true,
-        "title" : "新建目录"
+        "title" : "新建文件夹"
     },
     _createTableContent: function () {
 
-        var html = "<table width='100%' bordr='0' cellpadding='7' cellspacing='0' styles='formTable' style='margin-top: 20px; '>" +
-            "<tr><td styles='formTableTitle' lable='name' width='25%'></td>" +
-            "    <td styles='formTableValue14' item='name' colspan='3'></td></tr>" +
+        if(layout.mobile){
+            this.formTableContainer.setStyles({
+                'margin-left': "20px", 'margin-right': '20px'
+            })
+        }
+
+        var currentFolderData = this.explorer.getCurrentFolderData ? this.explorer.getCurrentFolderData() : {};
+
+        var html = layout.mobile ? "<table width='100%' bordr='0' cellpadding='7' cellspacing='0' styles='formTable'>" +
+            `<tr><td styles='formTableValue14' colspan='3' style='color:#999999;'>在“${currentFolderData.name}”下创建目录：</td></tr>` +
+            "<tr><td styles='formTableValue14' item='name' colspan='3'></td></tr>" +
+            "</table>" : "<table width='100%' bordr='0' cellpadding='7' cellspacing='0' styles='formTable' style='margin-top: 20px; '>" +
+            "<tr><td styles='formTableValue14' item='name' colspan='3'></td></tr>" +
             "</table>";
         this.formTableArea.set("html", html);
 
         this.form = new MForm(this.formTableArea, this.data || {}, {
             isEdited: true,
-            style : "minder",
+            style : "v10", mvcStyle: "v10",
             hasColon : true,
             itemTemplate: {
-                name: { text : "名称", notEmpty : true }
+                name: { type: 'oo-input', text : "名称", notEmpty : true }
             }
         }, this.app);
         this.form.load();
@@ -540,7 +584,7 @@ MWF.xApplication.Minder.FolderForm = new Class({
 
         if (this.isNew || this.isEdited) {
 
-            this.okActionNode = new Element("button.inputOkButton", {
+            this.okActionNode = new Element("oo-button.inputOkButton", {
                 "styles": this.css.inputOkButton,
                 "text": "确定"
             }).inject(this.formBottomNode);
@@ -548,16 +592,30 @@ MWF.xApplication.Minder.FolderForm = new Class({
             this.okActionNode.addEvent("click", function (e) {
                 this.save(e);
             }.bind(this));
+
+            if( layout.mobile ) {
+                this.okActionNode.setStyles({'width': '50%', 'height': '36px'});
+            }
         }
 
-        this.cancelActionNode = new Element("button.inputCancelButton", {
+        this.cancelActionNode = new Element("oo-button.inputCancelButton", {
             "styles": (this.isEdited || this.isNew || this.getEditPermission() ) ? this.css.inputCancelButton : this.css.inputCancelButton_long,
-            "text": "关闭"
+            "text": "关闭",
+            'type':'cancel'
         }).inject(this.formBottomNode);
 
         this.cancelActionNode.addEvent("click", function (e) {
             this.close(e);
         }.bind(this));
+
+        if( layout.mobile ) {
+            this.cancelActionNode.setStyles({'width': '50%', 'height': '36px'});
+            this.cancelActionNode.inject(this.okActionNode, 'before');
+        }
+
+        if( layout.mobile ) {
+            this.formatMobileButton(this.formBottomNode, this.formAreaNode);
+        }
 
     },
     save: function(){
@@ -565,7 +623,8 @@ MWF.xApplication.Minder.FolderForm = new Class({
         if( data ){
             if( this.isNew )data.parentId = this.explorer.getCurrentFolderId();
             this.app.restActions.saveFolder( data, function( json ){
-                this.explorer.tree.reload();
+                this.explorer?.tree?.reload();
+                this.fireEvent('save');
                 this.close();
             }.bind(this));
         }
@@ -614,6 +673,10 @@ MWF.xApplication.Minder.ReNameForm = new Class({
                 "text": "确定"
             }).inject(this.formBottomNode);
 
+            if( layout.mobile ) {
+                this.okActionNode.setStyle('width', 'calc(50% - 50px)');
+            }
+
             this.okActionNode.addEvent("click", function (e) {
                 this.save(e);
             }.bind(this));
@@ -623,6 +686,10 @@ MWF.xApplication.Minder.ReNameForm = new Class({
             "styles": (this.isEdited || this.isNew || this.getEditPermission() ) ? this.css.inputCancelButton : this.css.inputCancelButton_long,
             "text": "关闭"
         }).inject(this.formBottomNode);
+
+        if( layout.mobile ) {
+            this.cancelActionNode.setStyle('width', 'calc(50% - 50px)');
+        }
 
         this.cancelActionNode.addEvent("click", function (e) {
             this.close(e);
@@ -637,7 +704,8 @@ MWF.xApplication.Minder.ReNameForm = new Class({
                 d.name = data.name;
                 this.app.restActions.saveMind( d, function( json ){
                     this.app.notice("重命名成功");
-                    this.explorer.currentView.reload();
+                    this.explorer?.currentView?.reload();
+                    this.fireEvent('save');
                     this.close();
                 }.bind(this));
             }.bind(this))
@@ -665,25 +733,25 @@ MWF.xApplication.Minder.Toolbar = new Class({
         this.lp = explorer.app.lp;
         //this.css = explorer.app.css;
 
-        this.iconPath = "../x_component_Minder/$Common/"+this.options.style+"/icon_tool/";
         this.cssPath = "../x_component_Minder/$Common/"+this.options.style+"/css.wcss";
 
         this.setOptions(options);
+        var lp = this.lp.tool;
         this.tools = {
             createMinder : {
                 action : "createMinder",
-                text : "新建脑图",
-                icon : "createminder"
+                text : lp.createMinder,
+                icon : "ooicon-add-circle"
             },
             createFolder : {
                 action : "createFolder",
-                text : "新建目录",
-                icon : "createfolder"
+                text : lp.createFolder,
+                icon : "ooicon-file"
             },
             rename : {
                 action : "rename",
-                text : "重命名",
-                icon : "rename"
+                text : lp.rename,
+                icon : "ooicon-edit"
             },
             //import : {
             //    action : "import",
@@ -697,28 +765,28 @@ MWF.xApplication.Minder.Toolbar = new Class({
             //},
             recycle : {
                 action : "recycle",
-                text : "删除",
-                icon : "recycle"
+                text : lp.recycle,
+                icon : "ooicon-delete"
             },
             destroyFromRecycle : {
                 action : "destroyFromRecycle",
-                text : "彻底删除",
-                icon : "delete"
+                text : lp.destroyFromRecycle,
+                icon : "ooicon-delete"
             },
             delete : {
                 action : "delete",
-                text : "彻底删除",
-                icon : "delete"
+                text : lp.delete,
+                icon : "ooicon-delete"
             },
             share : {
                 action : "share",
-                text : "分享",
-                icon : "share"
+                text : lp.share,
+                icon : "ooicon-share"
             },
             restore : {
                 action : "restore",
-                text : "恢复",
-                icon : "restore"
+                text : lp.restore,
+                icon : "ooicon-retract"
             }
         }
     },
@@ -748,22 +816,25 @@ MWF.xApplication.Minder.Toolbar = new Class({
                 var tool = this.tools[ t ];
                 var toolNode = new Element( "div", {
                     styles : this.css[className],
-                    text : tool.text,
                     events : {
                         click : function( ev ){ this[tool.action]( ev ) }.bind(this),
                         mouseover : function( ev ){
-                            ev.target.setStyles( this.css.toolItemNode_over );
-                            ev.target.setStyle("background-image","url("+this.iconPath+ tool.icon +"_active.png)")
+                            toolNode.setStyles( this.css.toolItemNode_over ).addClass('mainColor_color').addClass('mainColor_bg_opacity');
+                            //ev.target.setStyle("background-image","url("+this.iconPath+ tool.icon +"_active.png)")
                         }.bind(this),
                         mouseout : function( ev ){
-                            ev.target.setStyles( this.css.toolItemNode_normal );
-                            ev.target.setStyle("background-image","url("+this.iconPath+ tool.icon +".png)")
+                            toolNode.setStyles( this.css.toolItemNode_normal ).removeClass('mainColor_color').removeClass('mainColor_bg_opacity');
+                            //ev.target.setStyle("background-image","url("+this.iconPath+ tool.icon +".png)")
                         }.bind(this)
                     }
                 }).inject( toolgroupNode );
-                toolNode.setStyle("background-image", "url("+this.iconPath+ tool.icon +".png)")
-
-            }.bind(this))
+                // toolNode.setStyle("background-image", "url("+this.iconPath+ tool.icon +".png)")
+                var iconNode = new Element(`div.${tool.icon}`).inject( toolNode );
+                var textNode = new Element("div", {
+                    styles: this.css.toolItemTextNode,
+                    text : tool.text
+                }).inject( toolNode );
+            }.bind(this));
         }.bind(this));
 
         this.loadRightNode()
@@ -913,12 +984,12 @@ MWF.xApplication.Minder.Toolbar = new Class({
             "styles": this.css.searchBarInputNode
         }).inject(this.searchBarInputBoxNode);
 
-        this.searchBarResetActionNode = new Element("div", {
+        this.searchBarResetActionNode = new Element("div.ooicon-close", {
             "styles": this.css.searchBarResetActionNode
         }).inject(this.searchBarInputBoxNode);
         this.searchBarResetActionNode.setStyle("display","none");
 
-        this.searchBarActionNode = new Element("div", {
+        this.searchBarActionNode = new Element("div.ooicon-search", {
             "styles": this.css.searchBarActionNode
         }).inject(this.searchBarNode);
 
@@ -943,29 +1014,31 @@ MWF.xApplication.Minder.Toolbar = new Class({
         return this.viewType || this.options.viewType
     },
     loadListType : function(){
-        this.listViewTypeNode = new Element("div", {
-            "styles": this.css[ this.options.viewType == "list" ?  "listViewTypeNode_active" : "listViewTypeNode"],
+        this.listViewTypeNode = new Element("div.ooicon-jiadian", {
+            styles: this.css.listViewTypeNode,
             events : {
                 click : function(){
                     this.viewType = "list";
-                    this.listViewTypeNode.setStyles( this.css.listViewTypeNode_active );
-                    this.tileViewTypeNode.setStyles( this.css.tileViewTypeNode );
+                    this.listViewTypeNode.addClass('mainColor_color');
+                    this.tileViewTypeNode.removeClass('mainColor_color');
                     this.explorer.loadList( this.explorer.currentView.filterData );
                 }.bind(this)
             }
         }).inject(this.toolabrRightNode);
 
-        this.tileViewTypeNode = new Element("div", {
-            "styles": this.css[ this.options.viewType != "list" ?  "tileViewTypeNode_active" : "tileViewTypeNode"],
+        this.tileViewTypeNode = new Element("div.ooicon-app-center", {
+            styles: this.css.tileViewTypeNode,
             events : {
                 click : function(){
                     this.viewType = "tile";
-                    this.listViewTypeNode.setStyles( this.css.listViewTypeNode );
-                    this.tileViewTypeNode.setStyles( this.css.tileViewTypeNode_active );
+                    this.listViewTypeNode.removeClass('mainColor_color');
+                    this.tileViewTypeNode.addClass('mainColor_color');
                     this.explorer.loadList( this.explorer.currentView.filterData );
                 }.bind(this)
             }
         }).inject(this.toolabrRightNode);
+
+        this.options.viewType === "list" ? this.listViewTypeNode.addClass('mainColor_color') : this.tileViewTypeNode.addClass('mainColor_color')
     },
     search : function(){
         var value = this.searchBarInputNode.get("value");
@@ -1061,11 +1134,11 @@ MWF.xApplication.Minder.List = new Class({
                 if( this.selectedAll ){
                     this.selectAllCheckbox_custom( false );
                     this.selectedAll = false;
-                    selectAll.setStyles( this.css.tileSelectAllNode );
+                    selectAll.removeClass('ooicon-check_outline').addClass('ooicon-radio-unchecked').removeClass('mainColor_color');
                 }else{
                     this.selectAllCheckbox_custom( true );
                     this.selectedAll = true;
-                    selectAll.setStyles( this.css.tileSelectAllNode_selected );
+                    selectAll.addClass('ooicon-check_outline').removeClass('ooicon-radio-unchecked').addClass('mainColor_color');
                 }
             }.bind(this))
         }
@@ -1155,10 +1228,12 @@ MWF.xApplication.Minder.Document = new Class({
         var select = this.node.getElement("[item=select]");
         if( !flag ){
             this.selected = false;
-            select.setStyles( this.css.tileItemSelectNode )
+            select.setStyles(this.css.tileItemSelectNode);
+            select.removeClass('ooicon-check_outline').addClass('ooicon-radio-unchecked').removeClass('mainColor_color');
         }else{
             this.selected = true;
-            select.setStyles( this.css.tileItemSelectNode_selected )
+            select.setStyles(this.css.tileItemSelectNode_selected);
+            select.addClass('ooicon-check_outline').removeClass('ooicon-radio-unchecked').addClass('mainColor_color');
         }
     },
     open: function (e) {

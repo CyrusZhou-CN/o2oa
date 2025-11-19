@@ -29,6 +29,12 @@ MWF.xApplication.process.Xform.OfdView = MWF.APPOfdView =  new Class({
         this.node.empty();
     },
     _afterLoaded: function(){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+        if (!this.isEditable)  this.mode  = "read";
+        
         if(this.mode !== "read"){
             this.createUpload();
         }
@@ -116,7 +122,6 @@ MWF.xApplication.process.Xform.OfdView = MWF.APPOfdView =  new Class({
         this._setBusinessData(data);
     },
     loadOfdView: function(){
-        debugger
         this.iframeNode = new Element("div").inject(this.node);
         this.iframeNode.setStyles({
             "height": "100%"

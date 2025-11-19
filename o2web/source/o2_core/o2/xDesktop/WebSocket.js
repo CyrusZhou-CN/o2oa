@@ -17,7 +17,7 @@ MWF.xDesktop.WebSocket = new Class({
 
         this.reConnect = true;
         this.checking = false;
-        this.heartTimeout = 30000;
+        this.heartTimeout = 20000;
         this.checkingTimeout = 4000;
         this.heartMsg = "heartbeat";
         this.maxErrorCount = 10;
@@ -41,6 +41,7 @@ MWF.xDesktop.WebSocket = new Class({
         //this.ws = this.ws+"?x-token="+encodeURIComponent(Cookie.read("x-token"))+"&authorization="+encodeURIComponent(Cookie.read("x-token"));
 
         this.connect();
+        debugger;
     },
 
     connect: function(){
@@ -87,11 +88,9 @@ MWF.xDesktop.WebSocket = new Class({
             try{
                 if (e.data===this.heartMsg){
                     this.heartbeat();
-                    //console.log("get heartbeat...");
                     return true;
                 }
                 var data = JSON.decode(e.data);
-                debugger;
                 switch (data.category){
                     case "dialog":
                         switch (data.type){
@@ -102,6 +101,7 @@ MWF.xDesktop.WebSocket = new Class({
                         }
                         break;
                     default:
+                        layout.desktop.fireEvent("wsmessage", [data]);
                         switch (data.type){
                             case "task":
                             case "task_create":
@@ -184,6 +184,8 @@ MWF.xDesktop.WebSocket = new Class({
                                 this.receivBBSReplyCreateMessage(data);
                                 break;
                             default:
+                                this.receiveDefaultMessage(data);
+                                break;
                         }
                 }
             }catch(e){}
@@ -244,7 +246,8 @@ MWF.xDesktop.WebSocket = new Class({
             this.webSocket.send(msg);
             this.checkRetry();
         }catch(e){
-            //console.log("send heartbeat error !!!");
+            console.log("send heartbeat error !!!");
+            console.log(e);
             if (this.serverCheck) window.clearTimeout(this.serverCheck);
             this.retry();
             //this.initialize();
@@ -347,6 +350,27 @@ MWF.xDesktop.WebSocket = new Class({
             this.openWork(read.work || read.workCompleted,e);
         }.bind(this));
     },
+    receiveDefaultMessage: function(data){
+        var text =  o2.typeOf(data.body) === "string" ? data.body : data.title;
+        var title;
+        if( data.description ){
+            var str = data.description;
+            if( str[str.length - 1] === '.' ){
+                str = str.substring(0, str.length - 1);
+            }
+            title = str;
+        }else if( text.contains(':') ){
+            title = text.split(':')[0];
+        }else{
+            title = MWF.LP.desktop.messsage.customMessageTitle;
+        }
+        var msg = {
+            "subject": o2.txt(title),
+            "content": o2.txt(text)
+        };
+        var messageItem = layout.desktop.message.addMessage(msg);
+        var tooltipItem = layout.desktop.message.addTooltip(msg);
+    },
     receiveCustomMessage: function(data){
         var text =  o2.typeOf(data.body) === "string" ? data.body : data.title;
         var content = "<font style='color: #333; font-weight: bold'>"+MWF.LP.desktop.messsage.customMessage+"：</font>"+o2.txt(text);
@@ -383,9 +407,9 @@ MWF.xDesktop.WebSocket = new Class({
             return;
         }
         // im_create 暂时不变
-        if (data.type == "im_create") {
+        if (data.type === "im_create") {
             // 系统消息提示
-            if (layout.desktop.message && data.person !== layout.session.user.distinguishedName) {
+            if (layout.desktop.message) {
                 var jsonBody = imBody.body;
                 var conversationId = imBody.conversationId;
                 var body = JSON.parse(jsonBody);
@@ -904,7 +928,6 @@ MWF.xDesktop.WebSocket = new Class({
         });
     },
     receivBBSReplyCreateMessage: function (data) {
-        debugger;
         var content = MWF.LP.desktop.messsage.bbsReplyCreate;
         content = content.replace(/{title}/g, (data.body.createPerson||"").split("@")[0] + o2.txt(data.title));
 

@@ -53,10 +53,20 @@ MWF.xApplication.process.Xform.View = MWF.APPView =  new Class(
     },
 
     _loadUserInterface: function(){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+
         MWF.xDesktop.requireApp("query.Query", "Viewer", null, false);
         this.node.empty();
     },
     _afterLoaded: function(){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+
         if(!!this.json.viewType){
             this.loadView();
         }else if (this.json.queryView){
@@ -73,6 +83,7 @@ MWF.xApplication.process.Xform.View = MWF.APPView =  new Class(
     },
     /**
      * @summary 重新加载视图
+     * @param callback {Function} 刷新后的回调.
      * @example
      * this.form.get("fieldId").reload()
      */
@@ -82,6 +93,7 @@ MWF.xApplication.process.Xform.View = MWF.APPView =  new Class(
             if (this.view.getViewRes && this.view.getViewRes.res) if (this.view.getViewRes.res.isRunning()) this.view.getViewRes.res.cancel();
         }
         this.node.empty();
+        this._loadReadEditAbeld();
         this.loadView( callback, true );
     },
     /**
@@ -90,6 +102,11 @@ MWF.xApplication.process.Xform.View = MWF.APPView =  new Class(
      * this.form.get("fieldId").active()
      */
     active: function( callback ){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+
         if (this.view){
             if (!this.view.loadingAreaNode) this.view.loadView( callback );
         }else{
@@ -113,6 +130,11 @@ MWF.xApplication.process.Xform.View = MWF.APPView =  new Class(
         return {appName: appName, viewName: viewName};
     },
     loadView: function( callback, force ){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+
         var viewObj = this.getViewName();
         var appName = viewObj.appName, viewName = viewObj.viewName;
         if( !appName || !viewName ){
@@ -185,6 +207,11 @@ MWF.xApplication.process.Xform.View = MWF.APPView =  new Class(
     },
 
     loadPrcessView: function(){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+
         var filter = null;
         if (this.json.filterList && this.json.filterList.length){
             filter = [];
@@ -215,6 +242,11 @@ MWF.xApplication.process.Xform.View = MWF.APPView =  new Class(
         }.bind(this));
     },
     loadCMSView: function(){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+        
         var filter = null;
         if (this.json.filterList && this.json.filterList.length){
             filter = [];

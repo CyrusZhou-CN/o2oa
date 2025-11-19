@@ -736,6 +736,31 @@ MWF.xApplication.query.ViewDesigner.View = new Class({
             if (callback) callback();
         }.bind(this));
     },
+    checkColumnRepeat: function(){
+        var columnNames = [];
+        var repeatColumns = [];
+        this.json.data.selectList.each(function ( column, i ) {
+            if(column.column){
+                if( columnNames.contains(column.column) ){
+                    repeatColumns.push( column );
+                }else{
+                    columnNames.push( column.column );
+                }
+            }
+        });
+        if( repeatColumns.length ){
+            this.designer.notice( this.designer.lp.notice.columnNameRepeat.replace('{column}', repeatColumns.map(function (c){
+                var displayName = this.json.data.selectList.filter(function (item){
+                    return item.column === c.column;
+                }).map(function (item){
+                    return item.displayName;
+                }).join('、');
+                return c.column + "("+displayName+")";
+            }.bind(this)).join("；")), "error" , this.node, {"x": "left", "y": "bottom"});
+            return false;
+        }
+        return true;
+    },
     save: function(callback){
         //if (this.designer.tab.showPage==this.page){
             if (!this.data.name){
@@ -777,7 +802,11 @@ MWF.xApplication.query.ViewDesigner.View = new Class({
             }
         }
 
-        debugger;
+        if( !this.checkColumnRepeat() ){
+            return false;
+        }
+
+
             // var list;
             // if( this.data.data && this.data.data.where ){
             //     if( this.data.data.where.creatorIdentityList ){
@@ -801,7 +830,7 @@ MWF.xApplication.query.ViewDesigner.View = new Class({
             // }
 
         this.designer.actions.saveView(this.data, function(json){
-            this.designer.notice(this.designer.lp.notice.save_success, "success", this.node, {"x": "left", "y": "bottom"});
+            this.designer.notice(this.designer.lp.notice.save_success, "success", null, {"x": "left", "y": "bottom"});
             this.isNewView = false;
             this.data.id = json.data.id;
             //this.page.textNode.set("text", this.data.name);
@@ -913,9 +942,35 @@ MWF.xApplication.query.ViewDesigner.View = new Class({
         // this.setPropertiesOrStyles("properties");
         this.setCustomStyles();
         this.reloadMaplist();
+        this.reloadStyleMaplist();
     },
     reloadMaplist: function(){
-        if (this.property) Object.each(this.property.maplists, function(map, name){ map.reload(this.json[name]);}.bind(this));
+        if (this.property) Object.each(this.property.maplists, function(map, name){
+            var json = this.getDataByPath(this.json, name);
+            map.reload(json);
+        }.bind(this));
+    },
+    reloadStyleMaplist: function(){
+        if (this.property) Object.each(this.property.styleMaplists, function(map, name){
+            map.reload(this.json.data.viewStyles[name]);
+        }.bind(this));
+    },
+    getDataByPath: function (obj, path) {
+        var pathList = path.split(".");
+        for (var i = 0; i < pathList.length; i++) {
+            var p = pathList[i];
+            if ((/(^[1-9]\d*$)/.test(p))) p = p.toInt();
+            if (obj[p]) {
+                obj = obj[p];
+            } else if(obj[p] === undefined || obj[p] === null) {
+                obj = "";
+                break;
+            } else {
+                obj = obj[p];
+                break;
+            }
+        }
+        return obj
     },
     // setPropertiesOrStyles: function(name){
     //     if (name=="styles"){
@@ -1063,6 +1118,7 @@ MWF.xApplication.query.ViewDesigner.View = new Class({
         if (styles.tableProperties) this.copyStyles(styles.tableProperties, "tableProperties");
     },
     switchTemplateStyles : function( oldTemplateStyles ){
+        debugger;
         if (oldTemplateStyles["view"]) this.clearTemplateStyles(oldTemplateStyles["view"]);
         if (this.templateStyles["view"]) this.setTemplateStyles(this.templateStyles["view"]);
         this.setAllStyles();
@@ -1297,6 +1353,12 @@ MWF.xApplication.query.ViewDesigner.View.$Module = MWF.QV$Module = new Class({
         this.setPropertiesOrStyles("inputStyles");
         this.setPropertiesOrStyles("properties");
         this.reloadMaplist();
+    },
+    destroyProperty: function (){
+        if( this.property && this.property.propertyContent ){
+            this.property.propertyContent.destroy();
+        }
+        this.property = null;
     },
     showProperty: function(){
         if (!this.property){
@@ -1648,7 +1710,12 @@ MWF.xApplication.query.ViewDesigner.View.Column = new Class({
         this._hideActions();
         this.hideProperty();
     },
-
+    destroyProperty: function (){
+        if( this.property && this.property.propertyContent ){
+            this.property.propertyContent.destroy();
+        }
+        this.property = null;
+    },
     showProperty: function(){
         if (!this.property){
             this.property = new MWF.xApplication.query.ViewDesigner.Property(this, this.view.designer.propertyContentArea, this.view.designer, {
@@ -1677,16 +1744,31 @@ MWF.xApplication.query.ViewDesigner.View.Column = new Class({
         if (this.property) this.property.hide();
     },
     _setEditStyle: function(name, input, oldValue){
-        if (name=="displayName") this.resetTextNode();
+        if (name=="displayName") {
+            this.resetTextNode();
+            this.view.setViewWidth();
+            this.node.scrollIntoView({ behavior: "instant", block: "end", inline: "start" });
+        }
         if (name=="selectType") this.resetTextNode();
         if (name=="attribute") this.resetTextNode();
         if (name=="path") this.resetTextNode();
         if( name==="isSwitchOrder" || name==="orderType" )this.resetTextNode();
         if (name=="column"){
-            this.view.json.data.orderList.each(function(order){
-                if (order.column==oldValue) order.column = this.json.column
+            var flag = true;
+            this.view.json.data.selectList.each(function(column){
+                if( column !== this.json && column.column === this.json.column){
+                    flag = false;
+                }
             }.bind(this));
-            if (this.view.json.data.group.column == oldValue) this.view.json.data.group.column = this.json.column;
+            if( flag ){
+                this.view.json.data.orderList.each(function(order){
+                    if (order.column==oldValue) order.column = this.json.column
+                }.bind(this));
+                if (this.view.json.data.group.column == oldValue) this.view.json.data.group.column = this.json.column;
+            }else{
+                this.view.designer.notice(MWF.APPDVD.LP.notice.columnNameExist, "error", this.node, {"x": "left", "y": "bottom"});
+                //this.json.column = oldValue;
+            }
         }
     },
     resetTextNode: function(){
@@ -1696,13 +1778,19 @@ MWF.xApplication.query.ViewDesigner.View.Column = new Class({
         this.textNode.set("text", this.json.displayName);
 
         if( this.json.isSwitchOrder || this.isSortedType(this.json.orderType) ){
-            this.textNode.setStyles({
-                "display": "flex",
-                "align-items": "center",
-                "cursor": "pointer"
-            })
+            // this.textNode.setStyles({
+            //     "display": "flex",
+            //     "align-items": "center",
+            //     "cursor": "pointer"
+            // })
             this.sortNode = new Element("div", {
-                styles: { "padding-left": "10px", 'font-size': "12px" }
+                styles: {
+                    "padding-left": "10px",
+                    'font-size': "12px",
+                    "display": "inline-flex",
+                    "flex-direction": "column",
+                    "vertical-align": "middle"
+                }
             }).inject(this.textNode);
             new Element("div.o2-up.ooicon-icon_arrow_up").inject(this.sortNode);
             new Element("div.o2-down.ooicon-drop_down").inject(this.sortNode);
@@ -1828,13 +1916,15 @@ MWF.xApplication.query.ViewDesigner.View.Column = new Class({
         delete this;
     },
     _destroy: function(){},
-    addColumn: function(e, data){
+    addColumn: function(e, data, keepName){
         MWF.require("MWF.widget.UUID", function(){
             var json;
             if (data){
                 json = Object.clone(data);
-                json.id = (new MWF.widget.UUID).id;
-                json.column = (new MWF.widget.UUID).id;
+                if( !keepName ){
+                    json.id = (new MWF.widget.UUID).id;
+                    json.column = (new MWF.widget.UUID).id;
+                }
             }else{
                 var id = (new MWF.widget.UUID).id;
                 json = {
@@ -1993,6 +2083,12 @@ MWF.xApplication.query.ViewDesigner.View.Actionbar = new Class({
             this._load()
         }
     },
+    reload: function(){
+        debugger;
+        this.node.destroy();
+        this.load();
+        if(this.property)this.property.reload();
+    },
     _load : function(){
         this.json.moduleName = this.moduleName;
         this._createNode();
@@ -2028,6 +2124,8 @@ MWF.xApplication.query.ViewDesigner.View.Actionbar = new Class({
         this.json.customIconStyle = styles.customIconStyle;
         this.json.customIconOverStyle = styles.customIconOverStyle || "";
         this.json.forceStyles = styles.forceStyles || "";
+        this.json.iconType = styles.iconType || "";
+        this.json.styles = styles.styles || "";
     },
     clearTemplateStyles: function(styles){
         this.json.style = "form";
@@ -2035,10 +2133,14 @@ MWF.xApplication.query.ViewDesigner.View.Actionbar = new Class({
         this.json.iconOverStyle = "";
         this.json.customIconStyle = "";
         this.json.customIconOverStyle = "";
+        this.json.iconType = "";
         this.json.forceStyles = "";
+        this.json.styles = "";
     },
     setAllStyles: function(){
+        this.json.actionStyles = null;
         this._resetActionbar();
+        this.destroyProperty();
     },
     setEvent: function(){
         this.node.addEvents({
@@ -2255,16 +2357,29 @@ MWF.xApplication.query.ViewDesigner.View.Actionbar = new Class({
         }.bind(this));
     },
     setToolbars: function(tools, node){
+        var imgUrl, overImgUrl;
+        var path = "";
+        if( this.json.customIconStyle ){
+            path = this.json.customIconStyle+ "/";
+        }
         tools.each(function(tool){
+            if( tool.customImg ){
+                imgUrl =  this.imagePath_custom+""+this.options.customImageStyle +"/custom/"+path+tool.img;
+                overImgUrl = this.imagePath_custom+""+this.options.customImageStyle +"/custom/"+this.json.customIconOverStyle+ "/" +tool.img;
+            }else{
+                imgUrl = this.imagePath_default+""+this.options.style+"/actionbar/"+( this.json.iconStyle || "default" )+"/"+tool.img;
+                overImgUrl = this.imagePath_default+""+this.options.style+"/actionbar/"+this.json.iconOverStyle+"/"+tool.img;
+            }
             var actionNode = new Element("div", {
                 "MWFnodetype": tool.type,
-                "MWFButtonImage": this.imagePath_default+""+this.options.style+"/actionbar/"+( this.json.iconStyle || "default" )+"/"+tool.img,
+                "MWFButtonImage": this.json.iconType==="font" ? "" : imgUrl,
+                "MWFButtonIcon": tool.icon,
                 "title": tool.title,
                 "MWFButtonAction": tool.action,
                 "MWFButtonText": tool.text
             }).inject(node);
             if( this.json.iconOverStyle ){
-                actionNode.set("MWFButtonImageOver" , this.imagePath_default+""+this.options.style+"/actionbar/"+this.json.iconOverStyle+"/"+tool.img );
+                actionNode.set("MWFButtonImageOver" , overImgUrl );
             }
             this.systemTools.push(actionNode);
             if (tool.sub){
@@ -2274,6 +2389,7 @@ MWF.xApplication.query.ViewDesigner.View.Actionbar = new Class({
         }.bind(this));
     },
     setCustomToolbars: function(tools, node){
+        debugger;
         //var style = (this.json.style || "default").indexOf("red") > -1 ? "red" : "blue";
         var path = "";
         if( this.json.customIconStyle ){
@@ -2283,7 +2399,8 @@ MWF.xApplication.query.ViewDesigner.View.Actionbar = new Class({
         tools.each(function(tool){
             var actionNode = new Element("div", {
                 "MWFnodetype": tool.type,
-                "MWFButtonImage": this.imagePath_custom+""+this.options.customImageStyle +"/custom/"+path+tool.img,
+                "MWFButtonImage": this.json.iconType==="font" ? "" : (this.imagePath_custom+""+this.options.customImageStyle +"/custom/"+path+tool.img),
+                "MWFButtonIcon": tool.icon,
                 "title": tool.title,
                 "MWFButtonAction": tool.action,
                 "MWFButtonText": tool.text

@@ -274,6 +274,8 @@ o2.LP.desktop = {
         "title": "用户登录",
         "loginButton": "登　录",
 
+        "loginAgain": "请重新登录",
+
         "mobileDownload": "手机扫描二维码安装",
 
         "inputUsernamePassword": "请输入用户名和密码...",
@@ -289,7 +291,9 @@ o2.LP.desktop = {
         "camera_loginSuccess": "{name}您好，正在为您登录 ...",
         "camera_loginError": "无法验证您的身份，请通过其他方式登录 ...",
         "camera_loginError2": "登录失败，请通过其他方式登录 ...",
-        "camera_loginError_camera": "无法打开摄像头，可能已经在使用中 ..."
+        "camera_loginError_camera": "无法打开摄像头，可能已经在使用中 ...",
+
+        "tokenWillExpire": "您的登录状态即将过期，请尽快保存信息 ...",
     },
 
     "action": {
@@ -332,6 +336,11 @@ o2.LP.widget = {
     "editAtt" : "编辑",
     "replace": "替换",
     "select": "选择",
+    "selectFromDriver": '从企业网盘选择',
+    "collect": "收藏夹",
+    "noCollect": "收藏夹中还没有文件",
+    "deleteCollectTitle": "删除确认",
+    "deleteCollectInfor": "确定要删除该手写文件？",
 
     "download": "下载",
     "share": "分享",
@@ -375,6 +384,7 @@ o2.LP.widget = {
     "open": "打开",
     "choiceWork": "请选择一个文档打开",
     "workcompleted": "流转完成",
+    "noWork": "未找到文档或您没有权限查看",
 
     "months": ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"],
     "days_abbr": ["日", "一", "二", "三", "四", "五", "六"],
@@ -435,8 +445,8 @@ o2.LP.widget = {
     "pen": "笔画",
     "thickness" : "粗细",
     "color" : "颜色",
-    "insertImage" : "插入图片",
-    "imageClipper" : "裁剪图片",
+    "insertImage" : "插入",
+    "imageClipper" : "裁剪",
     "fontSize": "字体大小",
     "fontFamily": "字体",
 

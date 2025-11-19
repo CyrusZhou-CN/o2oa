@@ -1,5 +1,8 @@
 package com.x.organization.assemble.control.jaxrs.person;
 
+import com.x.base.core.project.config.Config;
+import com.x.base.core.project.tools.Crypto;
+import com.x.organization.core.entity.enums.PersonStatusEnum;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -133,6 +136,11 @@ class ActionListLike extends BaseAction {
         p = cb.or(p,
                 cb.like(cb.lower(root.get(Person_.distinguishedName)), "%" + str + "%",
                         StringTools.SQL_ESCAPE_CHAR));
+        if(BooleanUtils.isTrue(Config.person().getPersonEncryptEnable())){
+            String enStr = Crypto.base64Encode(wi.getKey());
+            p = cb.or(p, cb.like(root.get(Person_.name), "%" + enStr + "%", StringTools.SQL_ESCAPE_CHAR));
+            p = cb.or(p, cb.like(root.get(Person_.mobile), "%" + enStr + "%", StringTools.SQL_ESCAPE_CHAR));
+        }
         if (ListTools.isNotEmpty(personIds)) {
             p = cb.and(p, root.get(Person_.id).in(personIds));
         } else {
@@ -142,6 +150,8 @@ class ActionListLike extends BaseAction {
         }
         if (!BooleanUtils.isTrue(wi.getMultipleOrgTop())) {
             p = cb.and(p, business.personPredicateWithTopUnit(effectivePesron, false));
+        } else{
+            p = cb.and(p, cb.or(cb.isNull(root.get(Person_.status)), cb.notEqual(root.get(Person_.status), PersonStatusEnum.BAN.getValue())));
         }
         List<String> ids = em.createQuery(cq.select(root.get(Person_.id)).where(p)).getResultList()
                 .stream().distinct()

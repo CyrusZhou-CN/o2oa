@@ -41,6 +41,13 @@
                     <input type="text" name="label" value="text{$.label}" class="editTableInput"/>
                 </td>
             </tr>
+            <tr>
+                <td class="editTableTitle">{{$.lp.allowSelectInput}}:</td>
+                <td class="editTableValue">
+                    <input type="radio" name="allowInput" value="true" text{($.allowInput==true)?'checked':''}/>{{$.lp.yes}}
+                    <input type="radio" name="allowInput" value="false" text{($.allowInput!=true)?'checked':''}/>{{$.lp.no}}
+                </td>
+            </tr>
 
 		  <tr>
 		    <td class="editTableTitle">{{$.lp.options}}:</td>
@@ -225,6 +232,8 @@
         <div class="MWFValidation" name="validationConfig"></div>
         <div class="MWFScriptArea" name="validation" title="{{$.lp.verificationScript}} (S)"></div>
 
+        <div class="MWFHtmlEditorArea" name="innerHTML" title="{{$.lp.innerHtml}} (H)"></div>
+
 	</div>
     <div title="{{$.lp.section}}" class="MWFTab">
         <table width="100%" border="0" cellpadding="5" cellspacing="0" class="editTable">
@@ -262,6 +271,9 @@
         </div>
 
         <div id="text{$.pid}sectionMergeArea" class="MWFSectionMergeArea" style="display: text{($.section=='yes')?'none':''};"></div>
+    </div>
+    <div title="{{$.lp.power}}"  class="MWFTab">
+        <div class="MWFFieldPermission"></div>
     </div>
 	<div title="{{$.lp.event}}"  class="MWFTab">
 		<div class="MWFEventsArea" name="events"></div>

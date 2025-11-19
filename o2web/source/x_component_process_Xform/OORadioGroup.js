@@ -12,10 +12,15 @@ MWF.xApplication.process.Xform.OORadioGroup = MWF.APPOORadioGroup = new Class({
         // if (this.isReadonly() || this.json.showMode==="read"){
         //     this._loadNodeRead();
         // }else{
-        this._loadNodeEdit();
+            if (!this.isReadable && !!this.isHideUnreadable){
+                this.node?.addClass('hide');
+            }else{
+                this._loadNodeEdit();
+            }
         // }
     },
     getValue: function(){
+        if (!this.isReadable) return '';
         if (this.moduleValueAG) return this.moduleValueAG;
         var value = this._getBusinessData();
         if (!value) value = this._computeValue();
@@ -29,7 +34,11 @@ MWF.xApplication.process.Xform.OORadioGroup = MWF.APPOORadioGroup = new Class({
         }).inject(this.node, 'before');
         this.node.destroy();
         this.node = node;
-
+        if (o2.isMediaMobile() && !this.json.inDatatable){
+			this.node.setAttribute("skin-mode", 'mobile');
+		}else{
+            this.node.removeAttribute("skin-mode");
+        }
         if (this.json.properties) {
             this.node.set(this.json.properties);
         }
@@ -46,7 +55,11 @@ MWF.xApplication.process.Xform.OORadioGroup = MWF.APPOORadioGroup = new Class({
             this.node.setAttribute('col', this.json.countPerline);
         }
 
-        if (!this.isReadonly()){
+        if (this.json.inDatatable){
+            this.node.setAttribute('view-style', '');
+        }
+
+        if (!this.isReadonly() && this.isEditable){
             if (this.json.showMode === 'disabled') {
                 this.node.setAttribute('disabled', true);
             } else if (this.json.showMode === 'read') {
@@ -93,6 +106,26 @@ MWF.xApplication.process.Xform.OORadioGroup = MWF.APPOORadioGroup = new Class({
             }
         });
 
+        this.node.addEventListener('invalid', (e)=>{
+            if (this.node._props.validity){
+                e.target.setCustomValidity(this.node._props.validity);
+            }else{
+                var label = this.json.label ? `“${this.json.label.replace(/　/g, '')}”` :  MWF.xApplication.process.Xform.LP.requiredHintField;
+                const o = {
+                    valueMissing: MWF.xApplication.process.Xform.LP.requiredHint.replace('{label}', label),
+                }
+                //通过 e.detail 获取 验证有效性状态对象：ValidityState
+                for (const k in o){
+                    if (e.detail[k]){
+                        if (o[k]){
+                            
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+
         this.setOptions();
     },
     addModuleEvent: function(key, fun){
@@ -128,15 +161,17 @@ MWF.xApplication.process.Xform.OORadioGroup = MWF.APPOORadioGroup = new Class({
                     var tmps = item.split("|");
                     var text = tmps[0];
                     var value = tmps[1] || text;
-                    var value = tmps[1] || text;
 
                     var radio = new Element(this.options.itemTag, {
                         "type": "radio",
                         "name": (this.json.properties && this.json.properties.name) ? this.json.properties.name : flag + this.json.id,
                         "value": value,
-                        "text": text,
+                        // "text": text,
                         "styles": this.json.buttonStyles
                     }).inject(this.node);
+                    radio.setAttribute('text', text);
+
+
 
                 }.bind(this));
             }
@@ -172,7 +207,7 @@ MWF.xApplication.process.Xform.OORadioGroup = MWF.APPOORadioGroup = new Class({
     },
 
     getText: function(){
-        return this.node.text;
+        return this.node.text || '';
     },
     getInputData: function(){
         return this.node.value;
@@ -215,11 +250,17 @@ MWF.xApplication.process.Xform.OORadioGroup = MWF.APPOORadioGroup = new Class({
     // },
 
     notValidationMode: function (text) {
-        this.validationText = text;
-        this.node.checkValidity();
+        if(!this.isNotValidationMode){
+            this.isNotValidationMode = true;
+            this.validationText = text;
+            this.node.checkValidity();
+        }
     },
     validationMode: function () {
-        this.validationText = '';
-        this.node.unInvalidStyle();
+        if(this.isNotValidationMode){
+            this.isNotValidationMode = false;
+            this.validationText = '';
+            this.node.unInvalidStyle();
+        }
     }
 });

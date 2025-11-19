@@ -69,7 +69,9 @@ MWF.xApplication.query.ViewDesigner.LP = {
 
         "selectProcess": "请选择应用或者流程",
         "selectCMS": "请选择内容管理栏目或者分类",
-        "selectDateRange": "时段类型为范围，请选择开始日期和结束日期"
+        "selectDateRange": "时段类型为范围，请选择开始日期和结束日期",
+        "columnNameExist": "列名已存在",
+        "columnNameRepeat": "列名不能重复:{column}。"
     },
     "actionbar": {
         "readhide": "设置阅读时是否显示",
@@ -226,6 +228,9 @@ MWF.xApplication.query.ViewDesigner.LP = {
         "orderNumber":"排序号",
         "viewStyles":"视图样式",
         "expandView":"展开分类",
+        "fulltextSearch":"全文检索",
+        "enabled":"启用",
+        "disabled":"禁用",
         "showSequence":"显示序号",
         "maxRow":"最大行数",
         "pageSize":"每页行数",
@@ -338,6 +343,12 @@ MWF.xApplication.query.ViewDesigner.LP = {
         "to":"到",
         "input":"输入",
         "selectable":"可选",
+        "orgRange":"选择范围",
+        "org_unit":"组织",
+        "org_person":"人员",
+        "org_identity":"身份",
+        "org_role":"角色",
+        "org_group":"群组",
         "selectOptionScriptNotice":"return [\"选项文本|选项值\"]",
         "selectOptionScript":"选项脚本",
         "defaultFilterCondition":"默认过滤条件",

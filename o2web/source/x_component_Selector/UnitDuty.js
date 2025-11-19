@@ -84,7 +84,7 @@ MWF.xApplication.Selector.UnitDuty = new Class({
     },
 
     _getItem: function(callback, failure, id, async){
-        this.orgAction.getIdentity(function(json){
+        this.orgAction.getUnitduty(function(json){
             if (callback) callback.apply(this, [json]);
         }.bind(this), failure, ((typeOf(id)==="string") ? id : id.distinguishedName), async);
     },
@@ -109,7 +109,6 @@ MWF.xApplication.Selector.UnitDuty.Item = new Class({
         return this.data.name;
     },
     _getTtiteText: function(){
-        debugger;
         return this.data.name+((this.data.unitLevelName) ? "("+this.data.unitLevelName+")" : "");
     },
     _setIcon: function(){
@@ -137,8 +136,14 @@ MWF.xApplication.Selector.UnitDuty.Item = new Class({
 });
 MWF.xApplication.Selector.UnitDuty.SearchItem = new Class({
     Extends: MWF.xApplication.Selector.UnitDuty.Item,
+    _init: function (){
+        this.clazz = "SearchItem";
+    },
     _getShowName: function(){
         return this.data.name+((this.data.unitLevelName) ? "("+this.data.unitLevelName+")" : "");
+    },
+    _getDescription: function () {
+        return this.data.unitLevelName || '';
     }
 });
 
@@ -164,6 +169,9 @@ MWF.xApplication.Selector.UnitDuty.ItemSelected = new Class({
     },
     _getShowName: function(){
         return this.data.name+((this.data.unitLevelName) ? "("+this.data.unitLevelName+")" : "");
+    },
+    _getDescription: function () {
+        return this.data.unitLevelName || '';
     },
     _getTtiteText: function(){
         return this.data.name+((this.data.unitLevelName) ? "("+this.data.unitLevelName+")" : "");

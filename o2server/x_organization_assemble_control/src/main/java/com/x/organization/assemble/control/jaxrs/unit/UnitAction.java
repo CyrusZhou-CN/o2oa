@@ -337,6 +337,22 @@ public class UnitAction extends StandardJaxrsAction {
         asyncResponse.resume(ResponseFactory.getEntityTagActionResultResponse(request, result));
     }
 
+    @JaxrsMethodDescribe(value = "列示可管理的顶层组织.", action = ActionListTopController.class)
+    @GET
+    @Path("list/control/top")
+    @Produces(HttpMediaType.APPLICATION_JSON_UTF_8)
+    public void listControlTop(@Suspended final AsyncResponse asyncResponse, @Context HttpServletRequest request) {
+        ActionResult<List<ActionListTopController.Wo>> result = new ActionResult<>();
+        EffectivePerson effectivePerson = this.effectivePerson(request);
+        try {
+            result = new ActionListTopController().execute(effectivePerson);
+        } catch (Exception e) {
+            logger.error(e, effectivePerson, request, null);
+            result.error(e);
+        }
+        asyncResponse.resume(ResponseFactory.getEntityTagActionResultResponse(request, result));
+    }
+
     @JaxrsMethodDescribe(value = "通过type属性值搜索顶层组织.", action = ActionListTopWithType.class)
     @GET
     @Path("list/top/type/{type}")
@@ -552,5 +568,21 @@ public class UnitAction extends StandardJaxrsAction {
             result.error(e);
         }
         asyncResponse.resume(ResponseFactory.getEntityTagActionResultResponse(request, result, jsonElement));
+    }
+
+    @JaxrsMethodDescribe(value = "获取根组织.", action = ActionGetRoot.class)
+    @GET
+    @Path("get/root")
+    @Produces(HttpMediaType.APPLICATION_JSON_UTF_8)
+    public void getRoot(@Suspended final AsyncResponse asyncResponse, @Context HttpServletRequest request) {
+        ActionResult<ActionGetRoot.Wo> result = new ActionResult<>();
+        EffectivePerson effectivePerson = this.effectivePerson(request);
+        try {
+            result = new ActionGetRoot().execute(effectivePerson);
+        } catch (Exception e) {
+            logger.error(e, effectivePerson, request, null);
+            result.error(e);
+        }
+        asyncResponse.resume(ResponseFactory.getEntityTagActionResultResponse(request, result));
     }
 }

@@ -102,22 +102,29 @@ MWF.xApplication.process.Xform.Elselect = MWF.APPElselect =  new Class(
         if (!this.json.loading) this.json.loading = false;
         if (!this.json.options) this.json.options = [];
 
+        this._setPopperClass();
+
         this._loadOptions();
 
         if (this.json.multiple===true) if (!this.json[this.json.$id] || !this.json[this.json.$id].length) this.json[this.json.$id] = [];
+
+        this.isSearching = false;
+        this.isFilted = false;
     },
     appendVueMethods: function(methods){
         if (this.json.filterMethod && this.json.filterMethod.code){
             var fn = this.form.Macro.exec(this.json.filterMethod.code, this);
             methods.$filterMethod = function(){
+                this.isFilted = true;
                 fn.apply(this, arguments);
             }.bind(this)
         }
         if (this.json.remoteMethod && this.json.remoteMethod.code){
             var fn = this.form.Macro.exec(this.json.remoteMethod.code, this);
             methods.$remoteMethod = function(){
+                this.isSearching = true;
                 fn.apply(this, arguments);
-            }.bind(this)
+            }.bind(this);
         }
     },
 
@@ -314,10 +321,27 @@ MWF.xApplication.process.Xform.Elselect = MWF.APPElselect =  new Class(
                         }, 200);
                     }
                 }
+
                 if (this.json.events && this.json.events[k] && this.json.events[k].code){
                     this.form.Macro.fire(this.json.events[k].code, this, arguments);
                 }
                 if( flag )this.fireEvent(k, arguments);
+
+                if( k === 'change' ){
+                    this.isSearching = false;
+                }else if(k === 'visible-change'){
+                    var visible = arguments && arguments.length && arguments && arguments[0];
+                    if (!visible) {
+                        this.isSearching = false;
+
+                        var input = this.node.getElement('.el-input__inner');
+                        if( input ){
+                            window.setTimeout(function(){
+                                input.blur();
+                            }, 100);
+                        }
+                    }
+                }
             }.bind(this);
         },
         _afterLoaded: function (){
@@ -360,7 +384,7 @@ MWF.xApplication.process.Xform.Elselect = MWF.APPElselect =  new Class(
         var text = [];
         options.forEach(function(op){
             if (op.value){
-                if (values.indexOf(op.value)!=-1) text.push(op.label || op.value);
+                if (values.indexOf(op.value)!=-1) text.push(op.label || op.text || op.value);
             }else if (op.options && op.options.length){
                 text = text.concat(this.__getOptionsText(op.options, values));
             }
@@ -382,7 +406,7 @@ MWF.xApplication.process.Xform.Elselect = MWF.APPElselect =  new Class(
             var value = [];
             options.forEach(function(op){
                 if (op.value){
-                    if (texts.indexOf(op.label || op.value)!=-1) value.push(op.value);
+                    if (texts.indexOf(op.label || op.value || op.text )!=-1) value.push(op.value);
                 }else if (op.options && op.options.length){
                     value = value.concat(this._getDataByText(op.options, texts));
                 }
@@ -390,52 +414,107 @@ MWF.xApplication.process.Xform.Elselect = MWF.APPElselect =  new Class(
             return value;
         },
 
+        getDataByValue: function (value){
+            var opt = this.json.options;
+            if( !opt )return "";
+            if( o2.typeOf(opt.then)==="function" ){
+                return Promise.resolve(opt).then(function(options){
+                    return this._getDataByValue(options, value);
+                }.bind(this));
+            }else{
+                return this._getDataByValue(opt, value);
+            }
+        },
+        _getDataByValue: function(options, values){
+            var value = [];
+            options.forEach(function(op){
+                if (op.value){
+                    if (values.indexOf( op.value )!=-1) value.push(op.value);
+                }else if (op.options && op.options.length){
+                    value = value.concat(this._getDataByValue(op.options, values));
+                }
+            }.bind(this));
+            return value;
+        },
+
         /**
-         * @summary 获取选中项的text。
+         * @summary 获取选中项的text或promise。
          * @return {String|String[]} 返回选中项的text或数组，返回类型依赖是否为多选
          * @example
          * var texts = this.form.get('fieldId').getText(); //获取选中项的文本或数组
          */
         getText: function(){
-            var d = this.getTextData();
-            if( typeOf(d.then) === "function" ){
-                return d.then(function( d1 ){
-                    var texts = d1.text;
+            if( this.isSearching || this.isFilted ){
+                return this._getTextWhenSearch();
+            }else{
+                var d = this.getTextData();
+                if( typeOf(d.then) === "function" ){
+                    return d.then(function( d1 ){
+                        var texts = d1.text;
+                        var ts = (texts && texts.length) ? texts : [];
+                        return this.json.multiple ? ts : (ts[0] || "");
+                    }.bind(this));
+                }else{
+                    var texts = d.text;
                     var ts = (texts && texts.length) ? texts : [];
                     return this.json.multiple ? ts : (ts[0] || "");
-                }.bind(this));
-            }else{
-                var texts = d.text;
-                var ts = (texts && texts.length) ? texts : [];
-                return this.json.multiple ? ts : (ts[0] || "");
+                }
             }
+
+        },
+        _getTextWhenSearch: function(){
+            return this.__getOptionsText(this.vm.options, this._getBusinessData());
         },
 
-        getExcelData: function(){
+        // getText: function(){
+        //     var data = this._getBusinessData();
+        //     var options = this.json.$options || this.json.options || this.moduleSelectAG;
+        //     if( typeOf(options.then) === 'function' ){
+        //         return options.then(function(opt){
+        //             var values = (o2.typeOf(data) !== "array") ? [data] : data;
+        //             return this.__getOptionsText(opt, values);
+        //         });
+        //     }else{
+        //         var values = (o2.typeOf(data) !== "array") ? [data] : data;
+        //         return this.__getOptionsText(options, values);
+        //     }
+        // },
+
+        getExcelData: function(type){
             var data = this.json[this.json.$id];
             if( !data )return "";
+            if( type === 'value' ){
+                return typeOf(data) === "array" ? data.join(", ") : (data || "");
+            }
             if( !this.json.options )this._loadOptions();
             var text, opt = this.json.options;
             if( !opt )return "";
             if( o2.typeOf(opt.then)==="function" ){
                 return Promise.resolve(opt).then(function(options){
                     text = this.__getOptionsText(options, data);
-                    return typeOf(text) === "array" ? text.join(", ") : (text || "");
+                    var result = typeOf(text) === "array" ? text.join(", ") : (text || "");
+                    (!result && this.json.allowCreate) && (result = data || "");
+                    return result;
                 }.bind(this));
             }else{
                 text = this.__getOptionsText(opt, data);
-                return typeOf(text) === "array" ? text.join(", ") : (text || "");
+                var result = typeOf(text) === "array" ? text.join(", ") : (text || "");
+                (!result && this.json.allowCreate) && (result = data || "");
+                return result;
             }
         },
-        setExcelData: function(d){
+        setExcelData: function(d, type){
             this._loadOptions();
-            this.moduleExcelAG = Promise.resolve( this.json.options || this.moduleSelectAG ).then(function(options){
+            this.moduleExcelAG = Promise.resolve( this.moduleSelectAG ).then(function(options){
                 var arr = this.stringToArray(d);
                 this.excelData = arr;
                 arr = arr.map(function (a) {
                     return a.contains("/") ? a.split("/") : a;
                 });
-                var data = this.getDataByText( arr );
+                var data = type === 'value' ? this.getDataByValue(arr) : this.getDataByText( arr );
+                if( data.length === 0 || !data[0]){
+                    !!this.json.allowCreate && (data = arr);
+                }
                 this.setData( this.json.multiple ? data : data[0], true);
                 this.moduleExcelAG = null;
             }.bind(this))

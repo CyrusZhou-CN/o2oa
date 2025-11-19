@@ -660,11 +660,15 @@ MWF.xApplication.query.StatementDesigner.Statement = new Class({
             o2.require("o2.widget.JavascriptEditor", function () {
                 this.jpqlEditor = new o2.widget.JavascriptEditor(this.jpqlEditorNode, {
                     "title": "JPQL",
-                    "option": {"mode": "sql"}
+                    "option": {"mode": "sql"},
+                    "onSave": function () {
+                        this.designer.saveStatement();
+                    }.bind(this)
                 });
                 this.jpqlEditor.load(function () {
                     this.jpqlEditor.editor.setValue(this.json.data);
                     this.jpqlEditor.addEditorEvent("change", function () {
+                        debugger;
                         this.data.data = this.jpqlEditor.getValue();
                         // this.checkStatementType();
                     }.bind(this));
@@ -690,19 +694,24 @@ MWF.xApplication.query.StatementDesigner.Statement = new Class({
         }
     },
     _loadJpqlCountEditor : function(){
-        o2.require("o2.widget.JavascriptEditor", function () {
-            this.jpqlCountEditor = new o2.widget.JavascriptEditor(this.jpqlCountEditorNode, {
-                "title": "JPQL",
-                "option": {"mode": "sql"}
-            });
-            this.jpqlCountEditor.load(function () {
-                this.jpqlCountEditor.editor.setValue(this.json.countData);
+        if( !this.jpqlCountEditor ){
+            o2.require("o2.widget.JavascriptEditor", function () {
+                this.jpqlCountEditor = new o2.widget.JavascriptEditor(this.jpqlCountEditorNode, {
+                    "title": "JPQL",
+                    "option": {"mode": "sql"},
+                    "onSave": function () {
+                        this.designer.saveStatement();
+                    }.bind(this)
+                });
+                this.jpqlCountEditor.load(function () {
+                    this.jpqlCountEditor.editor.setValue(this.json.countData);
 
-                this.jpqlCountEditor.addEditorEvent("change", function () {
-                    this.data.countData = this.jpqlCountEditor.getValue();
+                    this.jpqlCountEditor.addEditorEvent("change", function () {
+                        this.data.countData = this.jpqlCountEditor.getValue();
+                    }.bind(this));
                 }.bind(this));
-            }.bind(this));
-        }.bind(this), false);
+            }.bind(this), false);
+        }
     },
 
     loadSqlEditor: function () {
@@ -740,7 +749,10 @@ MWF.xApplication.query.StatementDesigner.Statement = new Class({
             o2.require("o2.widget.JavascriptEditor", function () {
                 this.sqlEditor = new o2.widget.JavascriptEditor(this.sqlEditorNode, {
                     "title": "SQL",
-                    "option": {"mode": "sql"}
+                    "option": {"mode": "sql"},
+                    "onSave": function () {
+                        this.designer.saveStatement();
+                    }.bind(this)
                 });
                 this.sqlEditor.load(function () {
                     this.sqlEditor.editor.setValue(this.json.sql);
@@ -776,7 +788,10 @@ MWF.xApplication.query.StatementDesigner.Statement = new Class({
             o2.require("o2.widget.JavascriptEditor", function () {
                 this.sqlCountEditor = new o2.widget.JavascriptEditor(this.sqlCountEditorNode, {
                     "title": "SQL",
-                    "option": {"mode": "sql"}
+                    "option": {"mode": "sql"},
+                    "onSave": function () {
+                        this.designer.saveStatement();
+                    }.bind(this)
                 });
                 this.sqlCountEditor.load(function () {
                     this.sqlCountEditor.editor.setValue(this.json.sqlCount);
@@ -790,7 +805,6 @@ MWF.xApplication.query.StatementDesigner.Statement = new Class({
 
     loadJpqlScriptEditor: function () {
         if (!this.jpqlScriptEditor) {
-            debugger;
             o2.require("o2.widget.ScriptArea", function () {
                 this.jpqlScriptEditor = new o2.widget.ScriptArea(this.jpqlScriptArea, {
                     "isbind": false,
@@ -936,10 +950,14 @@ MWF.xApplication.query.StatementDesigner.Statement = new Class({
 
     },
     loadStatementRunner: function () {
+        if(this.jsonEditor)return;
         o2.require("o2.widget.JavascriptEditor", function () {
             this.jsonEditor = new o2.widget.JavascriptEditor(this.runJsonNode, {
                 "title": "parameter",
-                "option": {"mode": "json"}
+                "option": {"mode": "json"},
+                "onSave": function () {
+                    this.designer.saveStatement();
+                }.bind(this)
             });
             this.jsonEditor.load(function () {
                 debugger;
@@ -950,7 +968,10 @@ MWF.xApplication.query.StatementDesigner.Statement = new Class({
 
             this.filterListEditor = new o2.widget.JavascriptEditor(this.runFilterNode, {
                 "title": "filterList",
-                "option": {"mode": "json"}
+                "option": {"mode": "json"},
+                "onSave": function () {
+                    this.designer.saveStatement();
+                }.bind(this)
             });
             this.filterListEditor.load(function () {
                 var json = JSON.parse( this.data.testParameters || "{}" );
@@ -1488,6 +1509,33 @@ MWF.xApplication.query.StatementDesigner.Statement = new Class({
         }.bind(this))
     },
 
+    checkColumnRepeat: function (){
+        if( !this.view )return true;
+        var columnNames = [];
+        var repeatColumns = [];
+        this.view.json.data.selectList.each(function ( column, i ) {
+            if(column.column){
+                if( columnNames.contains(column.column) ){
+                    repeatColumns.push( column );
+                }else{
+                    columnNames.push( column.column );
+                }
+            }
+        });
+        if( repeatColumns.length ){
+            this.designer.notice( this.designer.lp.notice.columnNameRepeat.replace('{column}', repeatColumns.map(function (c){
+                var displayName = this.view.json.data.selectList.filter(function (item){
+                    return item.column === c.column;
+                }).map(function (item){
+                    return item.displayName;
+                }).join('、');
+                return c.column + "("+displayName+")";
+            }.bind(this)).join("；")), "error", this.node, {"x": "left", "y": "bottom"});
+            return false;
+        }
+        return true;
+    },
+
     save: function (callback) {
         if (!this.data.name) {
             this.designer.notice(this.designer.lp.inputStatementName, "error");
@@ -1495,6 +1543,10 @@ MWF.xApplication.query.StatementDesigner.Statement = new Class({
         }
 
         if( !this.checkViewFilter() ){
+            return false;
+        }
+
+        if( !this.checkColumnRepeat() ){
             return false;
         }
 
@@ -1512,7 +1564,7 @@ MWF.xApplication.query.StatementDesigner.Statement = new Class({
         this.data.testParameters = JSON.stringify(textJson);
 
         this.designer.actions.saveStatement(this.data, function (json) {
-            this.designer.notice(this.designer.lp.save_success, "success", this.node, {"x": "left", "y": "bottom"});
+            this.designer.notice(this.designer.lp.save_success, "success", null, {"x": "left", "y": "bottom"});
 
             this.data.id = json.data.id;
             if (this.lisNode) {
@@ -2497,13 +2549,15 @@ MWF.xApplication.query.StatementDesigner.View.Column = new Class({
             this.view.autoAddColumnsNode.show();
         }
     },
-    addColumn: function(e, data){
+    addColumn: function(e, data, keepName){
         MWF.require("MWF.widget.UUID", function(){
             var json;
             if (data){
                 json = Object.clone(data);
-                json.id = (new MWF.widget.UUID).id;
-                json.column = (new MWF.widget.UUID).id;
+                if( !keepName ){
+                    json.id = (new MWF.widget.UUID).id;
+                    json.column = (new MWF.widget.UUID).id;
+                }
             }else{
                 var id = (new MWF.widget.UUID).id;
                 json = {

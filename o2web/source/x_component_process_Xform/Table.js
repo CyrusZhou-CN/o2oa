@@ -17,6 +17,11 @@ MWF.xApplication.process.Xform.Table = MWF.APPTable =  new Class(
 {
 	Extends: MWF.APP$Module,
 	_afterLoaded: function(){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+
         /**
          * @summary table，DOM对象
          * @member {Element} table
@@ -122,12 +127,6 @@ MWF.xApplication.process.Xform.Table = MWF.APPTable =  new Class(
  */
 MWF.xApplication.process.Xform.Table$Td = MWF.APPTable$Td =  new Class({
 	Extends: MWF.APP$Module,
-    _queryLoaded: function(){
-
-    },
-    _afterLoaded: function(){
-        //this.form._loadModules(this.node);
-    },
     _loadStyles: function(){
 
         var addStyles = {};
@@ -141,7 +140,7 @@ MWF.xApplication.process.Xform.Table$Td = MWF.APPTable$Td =  new Class({
             addStyles = this.table.json.layoutTdStyles;
         }
         Object.each(addStyles, function(value, key){
-            if ((value.indexOf("x_processplatform_assemble_surface")!==-1 || value.indexOf("x_portal_assemble_surface")!==-1)){
+            if ((value.indexOf("x_processplatform_assemble_surface")!==-1 || value.indexOf("x_portal_assemble_surface")!==-1) && !value.includes("../")){
                 var host1 = MWF.Actions.getHost("x_processplatform_assemble_surface");
                 var host2 = MWF.Actions.getHost("x_portal_assemble_surface");
                 if (value.indexOf("/x_processplatform_assemble_surface")!==-1){
@@ -164,7 +163,7 @@ MWF.xApplication.process.Xform.Table$Td = MWF.APPTable$Td =  new Class({
 
 
         Object.each(this.json.styles, function(value, key){
-            if ((value.indexOf("x_processplatform_assemble_surface")!==-1 || value.indexOf("x_portal_assemble_surface")!==-1)){
+            if ((value.indexOf("x_processplatform_assemble_surface")!==-1 || value.indexOf("x_portal_assemble_surface")!==-1) && !value.includes("../")){
                 var host1 = MWF.Actions.getHost("x_processplatform_assemble_surface");
                 var host2 = MWF.Actions.getHost("x_portal_assemble_surface");
                 if (value.indexOf("/x_processplatform_assemble_surface")!==-1){
@@ -180,6 +179,7 @@ MWF.xApplication.process.Xform.Table$Td = MWF.APPTable$Td =  new Class({
                 value = o2.filterUrl(value);
             }
             this.node.setStyle(key, value);
+           
         }.bind(this));
 
         //table的 _loadBorderStyle 会忽略当前单元格的边框

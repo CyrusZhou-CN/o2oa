@@ -4,7 +4,7 @@ MWF.xDesktop.requireApp("Meeting", "MeetingView", null, false);
 MWF.xDesktop.requireApp("Meeting", "Common", null, false);
 MWF.xDesktop.requireApp("Template", "MDomItem", null, false);
 MWF.xApplication.Meeting.options.multitask = false;
-MWF.xApplication.Meeting.Main = new Class({
+MWF.xApplication.Meeting.MainPc = new Class({
     Extends: MWF.xApplication.Common.Main,
     Implements: [Options, Events],
 
@@ -18,6 +18,7 @@ MWF.xApplication.Meeting.Main = new Class({
         "isMax": true,
         "sideBarEnable" : true,
         "settingEnable" : true,
+        "meeting": '', //立即打开的会议id
         "title": MWF.xApplication.Meeting.LP.title
     },
     onQueryLoad: function(){
@@ -31,6 +32,9 @@ MWF.xApplication.Meeting.Main = new Class({
         //if (!this.personActions) this.personActions = new MWF.xAction.org.express.RestActions();
     },
     loadApplication: function(callback) {
+
+        this.content.loadCssText('*{ box-sizing: content-box !important; }');
+
         MWF.UD.getDataJson("meetingConfig", function(json){
             this.meetingConfig = json || {};
 
@@ -82,7 +86,7 @@ MWF.xApplication.Meeting.Main = new Class({
     },
     loadLayout: function(){
 
-        this.content.loadCss("../x_component_Meeting/$Main/default/style.css");
+        // this.content.loadCss("../x_component_Meeting/$Main/default/style.css");
 
         if( this.status && this.status.action ){
             this.defaultAction = this.status.action;
@@ -101,6 +105,9 @@ MWF.xApplication.Meeting.Main = new Class({
         this.loadTopMenus();
         if( this.options.sideBarEnable ){
             this.loadSideBar();
+        }
+        if(this.options.meeting){
+            this.openMeeting(this.options.meeting);
         }
         //this.loadBottomMenus();
 
@@ -124,6 +131,11 @@ MWF.xApplication.Meeting.Main = new Class({
     },
     isAutoCreateOnlineRoom: function(){
         return this.meetingConfig.enableOnline && this.meetingConfig.onlineProduct === "好视通"
+    },
+    openMeeting: function(meeting){
+        this.form = new MWF.xApplication.Meeting.MeetingForm(this, {id: meeting}, {}, {app:this});
+        this.form.view = this;
+        this.form.open();
     },
     isCopyEnable: function(){
         return Promise.resolve(false);
@@ -193,14 +205,14 @@ MWF.xApplication.Meeting.Main = new Class({
     loadTopMenus_right: function(){
         this.topMenuRight = new Element("div", {"styles": this.css.topMenuRight }).inject(this.topMenu);
 
-        this.createTopMenu_right(this.lp.addMeeting, "o2icon-create", "addMeeting");
-        if (this.isManager)this.createTopMenu_right(this.lp.addRoom, "o2icon-icon_newhuiyishi", "addRoom");
+        this.createTopMenu_right(this.lp.addMeeting, "ooicon-add-circle", "addMeeting");
+        if (this.isManager)this.createTopMenu_right(this.lp.addRoom, "ooicon-home_zd", "addRoom");
 
         //var refreshNode = this.createTopMenu_right(this.lp.refresh, "refresh", "refresh");
         //refreshNode.setStyle("float", "right");
 
         if( this.options.settingEnable ){
-            var configNode = this.createTopMenu_right(this.lp.setting, "o2icon-config", "config");
+            var configNode = this.createTopMenu_right(this.lp.setting, "ooicon-config", "config");
             configNode.setStyle("float", "right");
         }
     },
@@ -235,12 +247,12 @@ MWF.xApplication.Meeting.Main = new Class({
         return actionNode;
     },
     loadTopMenus: function(){
-        this.createTopMenu(this.lp.myMeeting, "o2icon-person", "toMyMeeting");
-        this.createTopMenu(this.lp.month, "o2icon-month", "toMonth");
-        this.createTopMenu(this.lp.week, "o2icon-week", "toWeek");
-        this.createTopMenu(this.lp.day, "o2icon-day", "toDay");
-        this.createTopMenu(this.lp.list, "o2icon-list", "toList");
-        this.createTopMenu(this.lp.room, "o2icon-home", "toRoom");
+        this.createTopMenu(this.lp.myMeeting, "ooicon-meeting", "toMyMeeting");
+        this.createTopMenu(this.lp.month, "ooicon-calendar", "toMonth");
+        this.createTopMenu(this.lp.week, "ooicon-weekly", "toWeek");
+        this.createTopMenu(this.lp.day, "ooicon-clock", "toDay");
+        this.createTopMenu(this.lp.list, "ooicon-list-alt", "toList");
+        this.createTopMenu(this.lp.room, "ooicon-home", "toRoom");
         this.loadTopMenus_right();
     },
     isViewAvailable : function( action ){
@@ -760,8 +772,302 @@ MWF.xApplication.Meeting.Main = new Class({
 
     }
 });
+const O2_MEETING_FORMAT_DATE = '%Y-%m-%d';
+const O2_MEETING_FORMAT_MONTH = '%Y-%m';
+const O2_MEETING_FORMAT_TIME = '%H:%M';
+MWF.xApplication.Meeting.MainMobile = new Class({
+    Extends: MWF.xApplication.Meeting.MainPc,
+    options: {
+        "style": "mobile",
+        "baseDate": ''
+    },
+    createNode: function (){},
+    loadLayout: function(){
+        if( !this.options.baseDate ){
+            this.options.baseDate = new Date().format(O2_MEETING_FORMAT_DATE);
+        }
+        this.content.setStyle("overflow", "hidden");
+        this.node = new Element("div", {
+            "styles": {"width": "100%", "height": "100%", "overflow": "hidden"}
+        }).inject(this.content);
+        this.node.loadCss(`../x_component_Meeting/$Main/${this.options.style}/style.css`);
+        this.loadView();
+    },
+    reload: function(){
+        this.node.empty();
+        this.loadView();
+    },
+    loadView: function (){
+        this.isMeetingViewer( (isAll )=>{
+            this._isMeetingViewer = isAll;
+            this._loadView();
+        });
+    },
+    _loadView: function(){
+        this.node.loadHtml(
+            `../x_component_Meeting/$Main/${this.options.style}/main.html`,
+            {
+                module: this,
+                bind: {
+                    lp: this.lp,
+                    weekBegin: this.meetingConfig.weekBegin || 1,
+                    defaultDate: this.currentDate || this.options.baseDate
+                }
+            },
+            ()=>{
+                this.loadFlags();
+                this.loadMeetings(this.currentDate || this.options.baseDate);
+            }
+        );
+    },
+    handleViewChange: function(e){
+        const detail = e.detail;
+        if( detail.view === 'date'){
+            const els = this.calendar.querySelectorAll('.event-flag');
+            els.forEach(el=>el.destroy());
+            this.loadFlags(null, e);
+        }
+    },
+    loadFlags: function( callback, e ){
+        var range = e ? e.detail.range : this.calendar.viewStatus.range;
+        var method = o2.Actions.load('x_meeting_assemble_control').MeetingAction[ this._isMeetingViewer ? 'listOnMonthAll' : 'listOnMonth'];
+        var ps = this.getMonthRange(e).map((obj)=>{
+            return method(obj.year, obj.month);
+        });
+        return Promise.all(ps).then(function(result){
+           const data = [];
+           result.forEach(json=>data.push(...json.data));
 
+            data.forEach((ev) => {
+                const start = new Date(ev.startTime);
+                this.setFlag(start.format( O2_MEETING_FORMAT_DATE ));
+            });
 
+        }.bind(this));
+    },
+    getMonthRange: function (e) {
+        const detail = e ? e.detail : this.calendar.viewStatus;
+        const months = [];
+        let date = new Date(`${detail.year}-${detail.month+1}-01`);
+
+        const getObj = (date)=>{
+            return {
+                year: date.getFullYear(),
+                month: date.getMonth()+1
+            };
+        };
+
+        date.increment('month', -1); //上月
+        months.push( getObj(date) );
+        date.increment('month', 1); //本月
+        months.push( getObj(date) );
+        date.increment('month', 1); //下月
+        months.push( getObj(date) );
+
+        return months;
+    },
+    setFlag: function (name) {
+        const flat = this.calendar.querySelector('div[slot="' + name + '"]');
+        if (!flat) {
+            const point = new Element('div.ooicon-pentagram_fill.event-flag', { 'slot': name });
+            this.calendar.appendChild(point);
+        }
+    },
+    handleDateChange: function (e){
+        this.currentDate = e.detail.value;
+        this.loadMeetings(e.detail.value);
+    },
+    loadMeetings: function( dateString ){
+        const method = o2.Actions.load('x_meeting_assemble_control').MeetingAction[this._isMeetingViewer ? 'listOnDayAll' : 'listOnDay'];
+        const [y, m, d] = dateString.split('-');
+
+        function intersection(arr1, arr2) {
+            return arr1.some(item => arr2.includes(item));
+        }
+
+        const p = method(y, m, d).then((json)=>{
+            const now = new Date();
+            json.data = json.data.map((d)=>{
+                return this._parseMeetingData(d);
+            });
+            return json;
+        });
+        p.then( (json) => {
+            this.meetingArea.empty();
+            this.meetingArea.loadHtml(
+                `../x_component_Meeting/$Main/${this.options.style}/list.html`,
+                {
+                    module: this,
+                    bind: {
+                        date: this.currentDate || this.options.baseDate,
+                        lp: this.lp,
+                        data: json.data
+                    }
+                }
+            );
+        });
+    },
+    _parseMeetingData: function (d){
+        if( o2.typeOf( d.myWaitAccept ) !== "boolean" ){
+            const {distinguishedName, id} = layout.desktop.session.user;
+            const user = [distinguishedName, id];
+            if( intersection(d.invitePersonList, user) ){
+                d.myWaitAccept = !intersection(d.acceptPersonList, user) && !intersection(d.rejectPersonList, user);
+            }
+        }
+
+        if (d.status === 'wait' && d.myWaitAccept) {
+            //会议邀请
+            d.meetingStatus = 'invite';
+        }else if (d.status === 'wait' && d.myReject) {
+            //会议拒绝
+            d.meetingStatus = 'reject';
+        } else {
+            d.meetingStatus = d.status;
+        }
+
+        const names = o2.name.cns(d.inviteMemberList);
+        if (names.length>4){
+            const someNames = names.slice(0, 4);
+            d.names = someNames.join(', ')+ ' 等'+names.length+'人';
+        }else{
+            d.names = names.join(', ');
+        }
+
+        return d;
+    },
+    createMeeting: function (e) {
+        const date = this.currentDate || this.options.baseDate;
+        this.openMeeting(e, {}, true, {
+            startTime : Date.parse( date + " 08:00") ,
+            endTime : Date.parse( date + " 09:00")
+        });
+    },
+    handleMeetingClick: function (e, meetingData){
+        this.actions.getMeeting( meetingData.id, function (json) {
+            this.openMeeting(e, json.data, false);
+        }.bind(this))
+    },
+    openMeeting: function (e, meetingData, create, options={}){
+        var form = new MWF.xApplication.Meeting.MeetingForm(this, meetingData, {
+            ...options,
+            style: 'v10_mobile',
+            hasTop: false,
+            height: '100%',
+            width: '100%'
+        }, {
+            app: this,
+            container: $(document.body)
+        });
+        form.view = this;
+        !!create ?
+            form.create() : form.open();
+    },
+    loadInvitation: function (e){
+        this.node.empty();
+        var invitation = new MWF.xApplication.Meeting.InvitationMobile(this, this.node);
+        invitation.load();
+    },
+
+    reject: function(e, data, callback){
+        var _self = this;
+        var text = this.lp.reject_confirm.replace(/{name}/g, data.subject);
+        this.confirm("infor", e, this.lp.reject_confirm_title, text, 300, 120, function(){
+            _self.rejectMeeting(data, callback);
+            this.close();
+        }, function(){
+            this.close();
+        });
+    },
+    rejectMeeting: function(data, callback){
+        this.actions.rejectMeeting(data.id, function(){
+            !!callback ?
+                callback() :
+                this.loadMeetings(this.currentDate || this.options.baseDate);
+        }.bind(this));
+    },
+
+    accept: function(e, data, callback){
+        var _self = this;
+        var text = this.lp.accept_confirm.replace(/{name}/g, data.subject);
+        this.confirm("infor", e, this.lp.accept_confirm_title, text, 300, 120, function(){
+            _self.acceptMeeting(data, callback);
+            this.close();
+        }, function(){
+            this.close();
+        });
+    },
+    acceptMeeting: function(data, callback){
+        this.actions.acceptMeeting(data.id, function(){
+            !!callback ?
+                callback() :
+                this.loadMeetings(this.currentDate || this.options.baseDate);
+        }.bind(this));
+    },
+});
+
+MWF.xApplication.Meeting.InvitationMobile = new Class({
+    Implements: [Options, Events],
+    options : {
+        style: 'mobile'
+    },
+    initialize: function(app, node, options){
+        this.setOptions(options);
+        this.app = app;
+        this.lp = this.app.lp;
+        this.node = $(node);
+    },
+    load: function(){
+        this.listInvitation((data)=>{
+            this.node.loadHtml(
+                `/x_component_Meeting/$Main/${this.options.style}/invitation.html`,
+                {
+                    module: this,
+                    bind: {
+                        lp: this.lp,
+                        data: data
+                    }
+                }
+            );
+        }, true);
+    },
+    listInvitation: function (callback){
+        return o2.Actions.load('x_meeting_assemble_control').MeetingAction.listWaitAccept( (json)=>{
+            json.data = json.data.map((d)=>{
+                return this.app._parseMeetingData(d);
+            })
+            if(callback)callback(json.data);
+        });
+    },
+    reload: function (){
+        this.node.empty();
+        this.load();
+    },
+    handleItemClick: function (e, calendarData){
+        this.app.actions.getCalendar( calendarData.id, function( json ){
+            this.openCalendar(e, json.data, false);
+        }.bind(this))
+    },
+    toMain: function (){
+        this.app.reload();
+    },
+    reject: function(e, data){
+        this.app.reject(e, data, ()=>{
+            this.reload();
+        })
+    },
+    accept: function(e, data){
+        this.app.accept(e, data, ()=>{
+            this.reload();
+        })
+    },
+});
+
+if ((layout.mobile || COMMON.Browser.Platform.isMobile)){
+    MWF.xApplication.Meeting.Main = MWF.xApplication.Meeting.MainMobile;
+}else{
+    MWF.xApplication.Meeting.Main = MWF.xApplication.Meeting.MainPc;
+}
 
 MWF.xApplication.Meeting.Config = new Class({
     Implements: [Events],
@@ -966,7 +1272,7 @@ MWF.xApplication.Meeting.Config = new Class({
                 "   <div class='onlineConfigArea' style='display: "+( d.onlineProduct === "好视通" ? "" : "none" )+"'>"+
                 "       <div class='configTitle' style='margin-top:15px;'>"+ this.lp.config.hstUrl +"</div>" +
                 "       <div style='"+ viewStyle2 +"'>" +
-                "           <input type='text' name='hstUrl' value='" + (d.onlineConfig.hstUrl || "") + "' style='width:calc(100% - 10px); border:1px solid #ccc'>"+
+                "           <input type='text' name='hstUrl' value='" + o2.txt(d.onlineConfig.hstUrl || "") + "' style='width:calc(100% - 10px); border:1px solid #ccc'>"+
                 "       </div>"+
 
                 "       <div class='configTitle' style='margin-top:15px;'>"+ this.lp.config.hstKey +"</div>" +

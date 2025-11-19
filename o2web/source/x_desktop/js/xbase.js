@@ -77,7 +77,8 @@ o2.xDesktop.requireApp = function (module, clazz, callback, async) {
             var body = {
                 type: "openO2Work",
                 data: {
-                    title : options.title || ""
+                    title : options.title || "",
+                    formid: options.formid || ""
                 }
             };
             if (options.workId) {
@@ -107,6 +108,7 @@ o2.xDesktop.requireApp = function (module, clazz, callback, async) {
                     "work": options.workId,
                     "workCompleted": "",
                     "draftId": options.draftId,
+                    "formid": options.formid || "",
                     "title": options.title || ""
                 });
             } else if (options.workCompletedId) {
@@ -114,6 +116,7 @@ o2.xDesktop.requireApp = function (module, clazz, callback, async) {
                     "work": "",
                     "workCompleted": options.workCompletedId,
                     "draftId": options.draftId,
+                    "formid": options.formid || "",
                     "title": options.title || ""
                 });
             }
@@ -236,6 +239,33 @@ o2.xDesktop.requireApp = function (module, clazz, callback, async) {
         }
     };
 
+    var _openPortal = function (appNames, options, statusObj) {
+        if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
+            const body = {
+                type: "navigation.openInnerApp",
+                data: {
+                    appKey: 'portal',
+                    portalFlag: options.portalId,
+                    portalPage: options.pageId,
+                }
+            }
+            window.flutter_inappwebview.callHandler('o2mUtil', JSON.stringify(body));
+        } else if (window.o2mUtil && window.o2mUtil.postMessage) {
+            const body = {
+                type: "navigation.openInnerApp",
+                data: {
+                    appKey: 'portal',
+                    portalFlag: options.portalId,
+                    portalPage: options.pageId,
+                }
+            }
+            window.o2mUtil.postMessage(JSON.stringify(body));
+        } else {
+            var par = "app=" + encodeURIComponent(appNames) + "&status=" + encodeURIComponent((statusObj) ? JSON.encode(statusObj) : "") + "&option=" + encodeURIComponent((options) ? JSON.encode(options) : "");
+            window.location = o2.filterUrl("../x_desktop/appMobile.html?" + par + ((layout.debugger) ? "&debugger" : ""));
+        }
+    };
+
     var _openApplicationMobile = function (appNames, options, statusObj) {
         switch (appNames) {
             case "process.Work":
@@ -255,6 +285,9 @@ o2.xDesktop.requireApp = function (module, clazz, callback, async) {
                 break;
             case "process.TaskCenter":
                 _openTaskCenter(appNames, options, statusObj);
+                break;
+            case "portal.Portal":
+                _openPortal(appNames, options, statusObj);
                 break;
             default:
                 var optionsStr, statusStr;

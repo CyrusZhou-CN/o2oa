@@ -28,6 +28,8 @@ public class Control extends GsonPropertyObject {
 	private Boolean allowAddSplit;
 	// 是否可以召回
 	private Boolean allowRetract;
+	// 是否可以召回V3
+	private Boolean allowV3Retract;
 	// 是否可以回滚
 	private Boolean allowRollback;
 	// 是否可以提醒
@@ -45,6 +47,7 @@ public class Control extends GsonPropertyObject {
 	 * 权限必须要查的，下面两个字段不用二次查询 工作标题
 	 */
 	private String workTitle;
+	private String creatorPerson;
 	// 工作的job
 	private String workJob;
 
@@ -136,6 +139,14 @@ public class Control extends GsonPropertyObject {
 		this.allowRetract = allowRetract;
 	}
 
+	public Boolean getAllowV3Retract() {
+		return allowV3Retract;
+	}
+
+	public void setAllowV3Retract(Boolean allowV3Retract) {
+		this.allowV3Retract = allowV3Retract;
+	}
+
 	public Boolean getAllowRollback() {
 		return allowRollback;
 	}
@@ -198,5 +209,13 @@ public class Control extends GsonPropertyObject {
 
 	public void setWorkJob(String workJob) {
 		this.workJob = workJob;
+	}
+
+	public String getCreatorPerson() {
+		return creatorPerson;
+	}
+
+	public void setCreatorPerson(String creatorPerson) {
+		this.creatorPerson = creatorPerson;
 	}
 }

@@ -36,16 +36,32 @@ MWF.xApplication.process.Xform.Stat = MWF.APPStat =  new Class(
         this.node.empty();
     },
     _afterLoaded: function(){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+
         this.node.setStyle("min-height", "100px");
         this.loadStat();
     },
     active: function(){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+        
         if (this.stat) this.stat.loadStatData();
     },
     reload: function(){
+        this._loadReadEditAbeld();
 	    this.active();
     },
     loadStat: function( json ){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+
         var viewJson = Object.merge(this.getDefaultJson(), json || {});
 	    if ( viewJson.application && viewJson.statName ){
             MWF.xDesktop.requireApp("query.Query", "Statistician", function(){

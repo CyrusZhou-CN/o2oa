@@ -49,12 +49,18 @@ MWF.xApplication.process.Xform.Eldropdown = MWF.APPEldropdown =  new Class(
         }
     },
     _loadNode: function(){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
         if (this.isReadonly()) this.json.disabled = true;
         this._loadNodeEdit();
     },
     _loadNodeEdit: function(){
         var id = (this.json.id.indexOf("..")!==-1) ? this.json.id.replace(/\.\./g, "_") : this.json.id;
         id = (id.indexOf("@")!==-1) ? id.replace(/@/g, "_") : id;
+        id = (id.indexOf("（")!==-1) ? id.replace(/（/g, "_") : id;
+        id = (id.indexOf("）")!==-1) ? id.replace(/）/g, "_") : id;
         this.json["$id"] = (id.indexOf("-")!==-1) ? id.replace(/-/g, "_") : id;
          this.node.appendHTML(this._createElementHtml(), "before");
         var input = this.node.getPrevious();

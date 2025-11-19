@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>net.o2oa</groupId>
 	<artifactId>o2server</artifactId>
-	<version>9.2</version>
+	<version>9.5</version>
 	<packaging>pom</packaging>
 	<description>O2OA企业应用开发平台 OpenSource OA Platform</description>
 	<url>https://github.com/o2oa/o2oa</url>
@@ -35,12 +35,16 @@
 		<project.reporting.outputEncoding>UTF-8
 		</project.reporting.outputEncoding>
 		<graalvm.version>22.3.4</graalvm.version>
+		<tika.version>2.9.2</tika.version>
+		<pdfbox.version>2.0.31</pdfbox.version>
+		<lucene.version>9.4.2</lucene.version>
 	</properties>
 	<modules>
 		<module>x_base_core_project</module>
 		<!-- 顺序 -->
 		<module>x_query_core_entity</module>
 		<module>x_attendance_core_entity</module>
+		<module>x_ai_core_entity</module>
 		<module>x_bbs_core_entity</module>
 		<module>x_calendar_core_entity</module>
 		<module>x_cms_core_entity</module>
@@ -61,6 +65,7 @@
 		<module>x_query_core_express</module>
 		<module>x_processplatform_core_express</module>
 		<module>x_correlation_core_express</module>
+		<module>x_ai_assemble_control</module>
 		<module>x_bbs_assemble_control</module>
 		<module>x_calendar_assemble_control</module>
 		<module>x_cms_core_express</module>
@@ -234,6 +239,14 @@
 		<dependency>
 			<groupId>org.apache.tika</groupId>
 			<artifactId>tika-parsers-standard-package</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox-tools</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.maven</groupId>
@@ -681,7 +694,7 @@
 			<dependency>
 				<groupId>org.apache.commons</groupId>
 				<artifactId>commons-vfs2-jackrabbit2</artifactId>
-				<version>2.9.0</version>
+				<version>2.10.0</version>
 				<exclusions>
 					<exclusion>
 						<groupId>org.apache.hadoop</groupId>
@@ -752,12 +765,12 @@
 			<dependency>
 				<groupId>org.apache.ftpserver</groupId>
 				<artifactId>ftpserver-core</artifactId>
-				<version>1.2.0</version>
+				<version>1.2.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.ftpserver</groupId>
 				<artifactId>ftplet-api</artifactId>
-				<version>1.2.0</version>
+				<version>1.2.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.cxf</groupId>
@@ -842,12 +855,12 @@
 			<dependency>
 				<groupId>org.apache.tika</groupId>
 				<artifactId>tika-core</artifactId>
-				<version>2.9.2</version>
+				<version>${tika.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.tika</groupId>
 				<artifactId>tika-parsers-standard-package</artifactId>
-				<version>2.9.2</version>
+				<version>2.9.3</version>
 				<exclusions>
 					<exclusion>
 						<groupId>xerces</groupId><!--排除xml-apis-->
@@ -856,9 +869,25 @@
 				</exclusions>
 			</dependency>
 			<dependency>
+				<groupId>org.apache.pdfbox</groupId>
+				<artifactId>pdfbox</artifactId>
+				<version>${pdfbox.version}</version> <!-- 强制使用pdfbox2-->
+			</dependency>
+			<dependency>
+				<groupId>org.apache.pdfbox</groupId>
+				<artifactId>pdfbox-tools</artifactId>
+				<version>${pdfbox.version}</version> <!-- 强制使用pdfbox2 -->
+			</dependency>
+			<dependency>
 				<groupId>net.sourceforge.tess4j</groupId>
 				<artifactId>tess4j</artifactId>
 				<version>5.13.0</version>
+				<exclusions>
+					<exclusion>
+						<groupId>*</groupId>
+						<artifactId>*</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>io.github.classgraph</groupId>
@@ -913,27 +942,27 @@
 			<dependency>
 				<groupId>org.apache.lucene</groupId>
 				<artifactId>lucene-core</artifactId>
-				<version>9.4.1</version>
+				<version>${lucene.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.lucene</groupId>
 				<artifactId>lucene-queryparser</artifactId>
-				<version>9.4.2</version>
+				<version>${lucene.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.lucene</groupId>
 				<artifactId>lucene-highlighter</artifactId>
-				<version>9.4.2</version>
+				<version>${lucene.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.lucene</groupId>
 				<artifactId>lucene-grouping</artifactId>
-				<version>9.4.2</version>
+				<version>${lucene.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.lucene</groupId>
 				<artifactId>lucene-luke</artifactId>
-				<version>9.4.1</version>
+				<version>${lucene.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.vandermeer</groupId>
@@ -1048,127 +1077,132 @@
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_base_core_project</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_attendance_core_entity</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_bbs_core_entity</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_calendar_core_entity</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_cms_core_entity</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_cms_core_express</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_component_core_entity</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_file_core_entity</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_general_core_entity</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_hotpic_core_entity</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_meeting_core_entity</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_message_core_entity</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_mind_core_entity</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_organization_core_entity</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_jpush_core_entity</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_organization_core_express</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_portal_core_entity</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_processplatform_core_entity</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_processplatform_core_express</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_query_core_entity</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
+			</dependency>
+			<dependency>
+				<groupId>net.o2oa</groupId>
+				<artifactId>x_ai_core_entity</artifactId>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_correlation_core_entity</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_correlation_core_express</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_query_core_express</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_program_center</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.o2oa</groupId>
 				<artifactId>x_program_center_core_entity</artifactId>
-				<version>9.2</version>
+				<version>9.5</version>
 			</dependency>
 			<dependency>
 				<groupId>net.lingala.zip4j</groupId>

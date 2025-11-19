@@ -98,9 +98,12 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
         }
     },
     validation: function (routeName, opinion) {
-        if (!this.isReadonly() && this.json.showMode!=="disabled"){
+        if (!this.isReadonly() && this.json.showMode!=="disabled" && !this.node?.isDisplayNone()){
             if (this.getInputData){
                 this._setBusinessData(this.getInputData("change"));
+            }
+            if (this.node.checkValidity){
+                if (!this.node.checkValidity()) return false;
             }
             if (this.validationFormat){
                 if (!this.validationFormat()) return false;
@@ -257,7 +260,7 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
         return null;
     },
     isReadonly : function(){
-        return !!(this.readonly || this.json.isReadonly || this.form.json.isReadonly || this.json.showMode==="read" || this.isSectionMergeRead());
+        return !!(!this.isEditable || this.readonly || this.json.isReadonly || this.form.json.isReadonly || this.json.showMode==="read" || this.isSectionMergeRead());
     },
     isAllSectionShow: function(){
         return this.json.showAllSection && this.json.section === "yes" && this.isSectionData();
@@ -301,7 +304,7 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
             case "person":
                 return layout.desktop.session.user.id;
             case "unit":
-                return (this.form.businessData.task) ? this.form.businessData.task.unit : "";
+                return (this.form.businessData.task) ? (this.form.businessData.task.unitDn || this.form.businessData.task.unit) : "";
             case "activity":
                 return (this.form.businessData.work) ? this.form.businessData.work.activity : "";
             case "splitValue":
@@ -368,6 +371,15 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
         }
     },
     _loadMergeReadNode: function(keepHtml, position) {
+        if( this.json.type.startsWith('OO')){
+            var node = new Element('div', {
+                styles: this.form.css.mergedReadOOModule
+            }).inject(this.node, 'before');
+            this.node.destroy();
+            this.node = node;
+            this.node.setStyles( this._parseStyles( this.json.styles ) );
+            this.node.setStyles( this._parseStyles( this.json.recoveryStyles ) );
+        }
         if (!keepHtml) {
             this.node.empty();
             this.node.set({
@@ -375,22 +387,47 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
                 "MWFType": this.json.type
             });
         }
+        var contentNode;
+        if( this.json.type.startsWith('OO')){
+            var labelNode = new Element('div', {
+                text: this.json.label || '',
+                styles: this.form.css.mergedReadOOModuleLabel
+            }).inject(this.node);
+            contentNode = new Element('div',
+                { styles: this.form.css.mergedReadOOModuleContent }
+            ).inject(this.node);
+
+
+            var styleText, properties = this.json.properties;
+            if( properties['label-Align'] || properties['label-align'] ){
+                styleText = labelNode.getAttribute('style');
+                labelNode.setAttribute( 'style', styleText + ";" + (properties['label-Align'] || properties['label-align']) );
+            }
+            if( properties['label-style'] ){
+                styleText = labelNode.getAttribute('style');
+                labelNode.setAttribute('style', styleText + ";" + properties['label-style']);
+            }
+            if( properties['view-style'] ){
+                styleText = contentNode.getAttribute('style');
+                contentNode.setAttribute('style', styleText + ";" + properties['view-style']);
+            }
+        }
         switch (this.json.mergeTypeRead) {
             case "htmlScript":
-                this._loadMergeReadNodeByHtml();
+                this._loadMergeReadNodeByHtml(contentNode);
                 break;
             case "dataScript":
-                this._loadMergeReadNodeByData();
+                this._loadMergeReadNodeByData(contentNode);
                 break;
             default:
-                this._loadMergeReadNodeByDefault(position);
+                this._loadMergeReadNodeByDefault(position, contentNode);
                 break;
         }
     },
-    _loadMergeReadNodeByHtml: function(){
+    _loadMergeReadNodeByHtml: function(content){
         if (this.json.sectionMergeReadHtmlScript && this.json.sectionMergeReadHtmlScript.code) {
             var html = this.form.Macro.exec(this.json.sectionMergeReadHtmlScript.code, this);
-            this.node.set("html", html);
+            (content || this.node).set("html", html);
         }
     },
     _loadMergeReadNodeByData: function(){
@@ -399,7 +436,7 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
 
         }
     },
-    _loadMergeReadNodeByDefault: function( position ){
+    _loadMergeReadNodeByDefault: function( position, content ){
         var data = this.getSortedSectionData();
         var sectionNodeStyles = this._parseStyles(this.json.sectionNodeStyles);
         var sectionKeyStyles = this._parseStyles(this.json.sectionKeyStyles);
@@ -407,7 +444,7 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
         data.each(function(d){
             var node = new Element("div.mwf_sectionnode", {
                 styles : sectionNodeStyles
-            }).inject(this.node, position || "bottom");
+            }).inject(content || this.node, position || "bottom");
 
             if( this.json.showSectionKey ){
                 var keyNode = new Element("div.mwf_sectionkey", {
@@ -495,8 +532,250 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
             }
         }
     },
+    reload: function(){
+        this._loadReadEditAbeld();
+        this._loadUserInterface();
+    },
+
+    _queryLoaded: function(){
+        this._loadReadEditAbeld();
+    },
+    _afterLoaded: function(){},
+    
+    _loadReadEditAbeld: function(){
+        this.node?.removeClass('hide');
+        this._loadPoweer();
+        this.isReadable = this._isReadable();
+        this.isEditable = !this.isReadable ? false : this._isEditable();
+        this.isHideUnreadable = this._isHideUnreadable();
+    },
+    _isEditable: function () {
+        //如果可编辑判定是no，则一定不可编辑
+        if (this.editable==='no') return false;
+
+        //如果当前可编辑判定不是no，则需要查找父元素，以便确定是否可编辑。
+        let p = this.getParentModule();
+        while (p) {
+            //如果父元素可编辑判定是no，则当前元素也不可编辑
+            if (p.editable=== 'no') return false;
+            p = p.getParentModule();
+        }
+
+        //剩下的情况是，父元素的可编辑判定不为no，当前元素的可编辑判定也不为no，则只要当前元素可读，即可编辑
+        return this.readable!=='no';
+    },
+    _isReadable: function () {
+        //如果可读判定是no，则一定不可读
+        if (this.readable==='no') return false;
+
+        //如果当前可读判定不是no，则需要查找父元素，以便确定是否可读。
+        let p = this.getParentModule();
+        while (p) {
+            //如果父元素可读判定是no，则当前元素也不可读
+            if (p.readable=== 'no') return false;
+            p = p.getParentModule();
+        }
+
+        //剩下的情况是，父元素的可读判定不为no，当前元素的可读判定也不为no，则当前元素可读
+        return true;
+    },
+    _isHideUnreadable: function(){
+        if (this.json.hideCannotRead === 'no') return false;
+        if (this.json.hideCannotRead === 'yes') return true;
+        let p = this.getParentModule();
+        while (p) {
+            if (p.json.hideCannotRead === 'yes') return true;
+            if (p.json.hideCannotRead === 'no') return false;
+            p = p.getParentModule();
+        }
+        return false;
+    },
+    _loadPoweer: function () {
+        this.editable = this._checkEditAbled();
+        if (this.editable==='yes'){
+            //如果可编辑已设置，并判断为yes，则readable一定为yes，忽略可读配置。
+            this.readable = 'yes';
+        }else{
+            this.readable = this._checkReadAbled();
+            //如果可编辑已设置，并判断为script_yes，则readable为yes，才可编辑。
+            if (this.editable==='script_yes'){
+                this.editable = (this.readable==='no') ? 'no' : 'yes';
+            }
+            // this.editable = (this.editable==='script_yes' && this.readable==='no') ? 'no' : 'yes';
+        }
+    },
+    _checkReadAbled: function () {
+        return this._checkpowerAbled('readByActivity', 'readByOrg', 'readByScript', 'readByActivityValue', 'readByOrgValue', 'readByScriptValue', 'readActivityList', 'readerList', 'excludeReadActivityList', 'excludeReaderList');
+    },
+    _checkEditAbled: function () {
+        return this._checkpowerAbled('editByActivity', 'editByOrg', 'editByScript', 'editByActivityValue', 'editByOrgValue', 'editByScriptValue', 'editActivityList', 'editorList', 'excludeEditActivityList', 'excludeEditorList');
+    },
+    /**
+     * 判断一个字符串是否可以转换为一个整数
+     * @param {string} str
+     * @returns {boolean}
+     */
+    _isIntegerString: function(str) {
+        return typeof str === "string" && /^-?\d+$/.test(str);
+    },
+
+    _getActivityId: function(){
+        if (this.form.businessData.review){
+            return {uid: this.form.businessData.review.activityUnique}
+        }else{
+            return {uid: this.form.businessData.activity?.unique, aid: this.form.businessData.activity?.id}
+        }
+    },
+    _checkpowerAbled: function (activity, org, script, activityValue, orgValue, scriptValue, processActivity, processOrg, unProcessActivity, unProcessOrg) {
+        const accessList = this.form.businessData?.control?.itemAccessList;
+        const ids = this.json.id.split(/\.\./g);
+        const id = ids.map(i=> (/^-?\d+$/.test(i) ? '*' : i) ).join('.')
+        const access = accessList?.find((acc)=>{
+            return acc.path === id;
+        });
+        
+        if (access){
+            const hasByActivity = (access[processActivity] && access[processActivity].length) || (access[unProcessActivity] && access[unProcessActivity].length);
+            const hasByOrg = (access[processOrg] && access[processOrg].length) || (access[unProcessOrg] && access[unProcessOrg].length);
+            const hasByScript = this.json[script] && this.json[script].includes('true') && (this.json[scriptValue]?.code || this.json[scriptValue]);
+
+            if (hasByActivity || hasByOrg || hasByScript){
+                const {uid, aid} = this._getActivityId();
+                if (hasByActivity && access[unProcessActivity]?.length){
+                    const n = access[unProcessActivity].findIndex((act)=>{                      
+                        return o2.typeOf(act)==="object" ? (act.unique === uid || act.id === aid) : act === uid;
+                    });
+                    if (n!==-1) return 'no';
+                }
+                if (hasByOrg && access[unProcessOrg]?.length){
+                    const n = access[unProcessOrg].findIndex((org)=>{
+                        const dn = org.distinguishedName || org;
+                        return layout.session.userDetail.distinguishedName === dn || layout.session.userDetail.list.includes(dn);
+                    });
+                    if (n!==-1) return 'no';
+                }
+
+
+                if (hasByActivity){
+                    const i = access[processActivity].findIndex((act)=>{                      
+                        return o2.typeOf(act)==="object" ? (act.unique === uid || act.id === aid) : act === uid;
+                    });
+                    if (i!==-1) return 'yes';
+                }
+
+                if (hasByOrg){
+                    const i = access[processOrg].findIndex((org)=>{
+                        const dn = org.distinguishedName || org;
+                        return layout.session.userDetail.distinguishedName === dn || layout.session.userDetail.list.includes(dn);
+                    });
+                    if (i!==-1) return 'yes';
+                }
+
+                if (hasByScript){
+                    var flag = this.form.Macro.exec((this.json[scriptValue]?.code || this.json[scriptValue]), this);
+                    return !!flag ? 'script_yes' : 'no';
+                }
+                return (!access[processActivity]?.length && !access[processOrg]?.length) ? 'unset' : 'no';
+            }
+
+        }else{
+            const hasByActivity = this.json[activity] && this.json[activity].includes('true') && this.json[activityValue] && this.json[activityValue].length;
+            const hasByOrg = this.json[org] && this.json[org].includes('true') && this.json[orgValue] && this.json[orgValue].length;
+            const hasByScript = this.json[script] && this.json[script].includes('true') && (this.json[scriptValue]?.code || this.json[scriptValue]);
+
+            if (hasByActivity || hasByOrg || hasByScript){
+                if (hasByActivity){
+                    let {uid, aid} = this._getActivityId();
+                    // let uid = this.form.businessData.activity && this.form.businessData.activity.unique;
+                    // let aid = this.form.businessData.activity && this.form.businessData.activity.id;
+                    if (!uid){
+                        uid = this.form.businessData.document && this.form.businessData.document.docStatus;
+                    }
+                    // if (activityId){
+                        const i = this.json[activityValue].findIndex((act)=>{                      
+                            return o2.typeOf(act)==="object" ? (act.unique === uid || act.id === aid) : act === uid;
+                        });
+                        if (i!==-1) return 'yes';
+                    // }
+                }
+                if (hasByOrg){
+                    const i = this.json[orgValue].findIndex((org)=>{
+                        const dn = org.distinguishedName || org;
+                        return layout.session.userDetail.distinguishedName === dn || layout.session.userDetail.list.includes(dn);
+                    });
+                    if (i!==-1) return 'yes';
+                }
+                if (hasByScript){
+                    var flag = this.form.Macro.exec((this.json[scriptValue]?.code || this.json[scriptValue]), this);
+                    return !!flag ? 'yes' : 'no';
+                }
+                return 'no';
+            }
+        }
+        return 'unset'
+    },
+    
     _loadUserInterface: function(){
         //	this.node = this.node;
+    },
+    addRelated: function(path){
+        if (!this.form.relatedModules) this.form.relatedModules = {};
+        if (!this.form.relatedModules[path]) this.form.relatedModules[path] = new Set();
+        this.form.relatedModules[path].add(this);
+    },
+
+    /**
+         * 给当前组件增加一个显示关联数据，当这个数据改变时，刷新当前组件的可见状态.
+         * @param {String|Array<String>} [path] 要关联的数据路径。
+         * @param {Function} [cb] 提供一个返回布尔值的函数，用于检查当前组件是否可显示，返回true表示当前组件可见，返回false则隐藏当前组件
+         * @example
+         * //在组件的load事件中，添加下面的代码：
+         * this.target.addRelatedDisplay('dataType', ()=>{
+         *  return this.data.dataType==='1'
+         * });
+         * 
+         * //加入以上代码后，只要 “dataType” 的值改变，就会检查当前组件是否隐藏或显示。当 dataType 值为 “1” 时，当前组件显示，否则隐藏当前组件。
+         */
+    addRelatedDisplay: function(path, cb){
+        if (cb){
+            const ps = Array.isArray(path) ? path : [path];
+            ps.forEach((p)=>{
+                if (!this.form.relatedDisplayModules) this.form.relatedDisplayModules = {};
+                if (!this.form.relatedDisplayModules[p]) this.form.relatedDisplayModules[p] = new Set();
+                this.form.relatedDisplayModules[p].add({
+                    module: this,
+                    display: cb
+                });
+            }); 
+            this._checkDisplay(cb);
+        }
+    },
+
+    /**
+         * 给当前组件增加一个值关联数据，当这个数据改变时，刷新当前组件的值.
+         * @param {String|Array<String>} [path] 要关联的数据路径。
+         * @param {Function} [cb] 提供一个函数，当关联数据发生改变时，执行此函数，返回的值更新为当前组件的值。
+         * @example
+         * //在field类的组件（如文本框）的load事件中，添加下面的代码：
+         * this.target.addRelatedValue(['price', 'count'], ()=>{
+         *  return this.data.price * this.data.count;
+         * });
+         * 
+         * //加入以上代码后，只要 price 或 count 的值改变，就会计算当前组件的值，其值是 price 乘以 count。
+         */
+    addRelatedValue: function(path, cb){
+        if (cb){
+            const ps = Array.isArray(path) ? path : [path];
+            ps.forEach((p)=>{
+                if (!this.form.relatedValueModules) this.form.relatedValueModules = {};
+                if (!this.form.relatedValueModules[p]) this.form.relatedValueModules[p] = new Set();
+                this.form.relatedValueModules[p].add({
+                    module: this,
+                    value: cb
+                });
+            }); 
+            this._checkValue(cb);
+        }
     },
 
     _loadStyles: function(){
@@ -530,8 +809,9 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
     },
     _parseStyles: function( styles ){
         var s = {};
-        Object.each(styles || {}, function(value, key){
-            if ((value.indexOf("x_processplatform_assemble_surface")!=-1 || value.indexOf("x_portal_assemble_surface")!=-1 || value.indexOf("x_cms_assemble_control")!=-1)){
+        Object.each(styles || {}, function(v, key){
+            var value = v.toString();
+            if ((value.indexOf("x_processplatform_assemble_surface")!=-1 || value.indexOf("x_portal_assemble_surface")!=-1 || value.indexOf("x_cms_assemble_control")!=-1) && !value.includes("../")){
                 var host1 = MWF.Actions.getHost("x_processplatform_assemble_surface");
                 var host2 = MWF.Actions.getHost("x_portal_assemble_surface");
                 var host3 = MWF.Actions.getHost("x_cms_assemble_control");
@@ -649,7 +929,7 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
         // var dataObj = this.form.businessData.data[this.json.id];
         var dataObj = this.getBusinessDataById(null, id);
         if (!dataObj) return "";
-        var key = (this.form.businessData.task) ? this.form.businessData.task.unit : "";
+        var key = (this.form.businessData.task) ? (this.form.businessData.task.unitDn || this.form.businessData.task.unit) : "";
         if (key) this.form.sectionListObj[id||this.json.id] = key;
         return (key) ? (dataObj[key] || "") : "";
     },
@@ -698,7 +978,7 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
                 this._setEnvironmentSectionDataByKey(key, v);
                 break;
             case "unit":
-                var key = (this.form.businessData.task) ? this.form.businessData.task.unit : "";
+                var key = (this.form.businessData.task) ? (this.form.businessData.task.unitDn || this.form.businessData.task.unit) : "";
                 this._setEnvironmentSectionDataByKey(key, v);
                 break;
             case "activity":
@@ -779,8 +1059,25 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
         return evdata;
     },
 
+    _checkDisplay: function(display){
+        if (display){
+            return Promise.resolve(display(this)).then((dsp)=>{
+                dsp ? this.node.removeClass('hide') : this.node.addClass('hide');
+                return dsp;
+            });
+        }
+    },
+    _checkValue: function(value){
+        if (value){
+            return Promise.resolve(value(this)).then((value)=>{
+                this.setData?.(value);
+                return value;
+            });
+        }
+    },
     _setBusinessData: function(v, id){
         //if (o2.typeOf(v)==="string") v = o2.txt(v);
+        if (!this.isEditable) return;
         if (this.json.section=="yes"){
             this._setBusinessSectionData(v, id);
         }else {
@@ -788,8 +1085,30 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
                 this._setBusinessSectionDataByPerson(v, id);
             }else{
                 this.setBusinessDataById(v, id);
-                if (this.json.isTitle) this.form.businessData.data.$work.title = v;
+                if (this.json.isTitle && this.json.moduleName !== "associatedDocument") this.form.businessData.data.$work.title = v;
             }
+        }
+
+        const mid = (id || this.json.id);
+        // const dataId = mid.split('..').map((s)=>{
+        //     return /^\d+$/.test(s) ? '*' : s
+        // }).join('.');
+        const dataId = mid.split('..').join('.');
+
+        if (this.form.relatedModules && this.form.relatedModules[dataId]){
+            this.form.relatedModules[dataId].forEach((module)=>{
+                module?.reload();
+            })
+        }
+        if (this.form.relatedDisplayModules && this.form.relatedDisplayModules[dataId]){
+            this.form.relatedDisplayModules[dataId].forEach((o)=>{
+                o.module?._checkDisplay(o.display);
+            })
+        }
+        if (this.form.relatedValueModules && this.form.relatedValueModules[dataId]){
+            this.form.relatedValueModules[dataId].forEach((o)=>{
+                o.module?._checkValue(o.value);
+            })
         }
     },
     _setBusinessSectionData: function(v, id){
@@ -818,7 +1137,7 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
         this._setBusinessSectionDataByKey(key, v, id);
     },
     _setBusinessSectionDataByUnit: function(v, id){
-        var key = (this.form.businessData.task) ? this.form.businessData.task.unit : "";
+        var key = (this.form.businessData.task) ? (this.form.businessData.task.unitDn || this.form.businessData.task.unit) : "";
         this._setBusinessSectionDataByKey(key, v, id);
     },
     _setBusinessSectionDataByActivity: function(v, id){
@@ -931,8 +1250,149 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
         return evdata;
     },
 
-    _queryLoaded: function(){},
-    _afterLoaded: function(){},
+
+    getOriginalDataById: function(d, id){
+        var data = d || this.form.businessData.originalData;
+        var thisId = id || this.json.id;
+        //对id类似于 xx..0..xx 的字段进行拆分
+        if(thisId.indexOf("..") < 1){
+            return data[thisId];
+        }else{
+            var idList = thisId.split("..");
+            idList = idList.map( function(d){ return d.test(/^\d+$/) ? d.toInt() : d; });
+
+            var lastIndex = idList.length - 1;
+
+            for(var i=0; i<=lastIndex; i++){
+                var id = idList[i];
+                if( !id && id !== 0 )return null;
+                if( ["object","array"].contains(o2.typeOf(data)) ){
+                    if( i === lastIndex ){
+                        return data[id];
+                    }else{
+                        data = data[id];
+                    }
+                }else{
+                    return null;
+                }
+            }
+        }
+    },
+    setOriginalDataById: function(v, id){
+        //对id类似于 xx..0..xx 的字段进行拆分
+        var data = this.form.businessData.originalData;
+        var thisId = id || this.json.id;
+        if(thisId.indexOf("..") < 1){
+            data[thisId] = v;
+        }else{
+            var idList = thisId.split("..");
+            idList = idList.map( function(d){ return d.test(/^\d+$/) ? d.toInt() : d; });
+
+            //var data = this.form.businessData.data;
+            var lastIndex = idList.length - 1;
+
+            for(var i=0; i<=lastIndex; i++){
+                var id = idList[i];
+                if( !id && id !== 0 )return;
+
+                if( i === lastIndex ){
+                    data[id] = v;
+                }else{
+                    var nexId = idList[i+1];
+                    if(o2.typeOf(nexId) === "number"){ //下一个ID是数字
+                        if( !data[id] && o2.typeOf(data[id]) !== "array" ){
+                            data[id] = [];
+                        }
+                        if( nexId > data[id].length ){ //超过了最大下标，丢弃
+                            return;
+                        }
+                    }else{ //下一个ID是字符串
+                        if( !data[id] || o2.typeOf(data[id]) !== "object"){
+                            data[id] = {};
+                        }
+                    }
+                    data = data[id];
+                }
+            }
+        }
+    },
+
+    saveDataById: function(id, data){
+        var appName = this.form.app.options.name;
+        if( !['process.Work', 'cms.Document'].includes(appName) ){
+            return;
+        }
+        if(appName === 'process.Work' && this.form.isDraftWork()){
+            return;
+        }
+        var originalData = this.form.businessData.originalData || {};
+        var thisId = id || this.json.id;
+        if(o2.typeOf(data) === "null"){
+            data = this.getBusinessDataById();
+        }
+        if(thisId.indexOf("..") < 1){
+            this._saveDataByPath([thisId], data, ()=>{
+                originalData[thisId] = data;
+            });
+        }else{
+            var idList = thisId.split("..");
+            idList = idList.map( function(d){ return d.test(/^\d+$/) ? d.toInt() : d; });
+
+            var lastIndex = idList.length - 1;
+            var preOriginalData;
+
+            for(var i=0; i<=lastIndex; i++){
+                var id = idList[i];
+                if( !id && id !== 0 )return;
+
+                var exist = originalData && originalData.hasOwnProperty(id);
+                if( !exist || i === 8 ) { //originalData不包含中间路径，且路径长多最多支持8，多余的获取后续整体数据进行保存
+                    var paths = idList.slice(0, i);
+                    var pathData = this.getBusinessDataById(null, paths.join('..'));
+                    this._saveDataByPath(paths, pathData, ()=>{
+                        !!preOriginalData && (preOriginalData[idList[i-1]] = pathData);
+                    });
+                    return;
+                }else if( i === lastIndex ) {
+                    this._saveDataByPath(idList, data, ()=>{
+                        originalData[id] = data;
+                    });
+                }else{
+                    preOriginalData = originalData;
+                    originalData = originalData[id];
+                }
+            }
+        }
+    },
+    _saveDataByPath: function(paths, data, success){
+        if (paths.length > 8) {
+            throw new Error(`路径层级超过限制(8级)，当前: ${paths.length}`);
+        }
+        var hasPath = paths.length > 0;
+        var action, methodName, args;
+        switch (this.form.app.options.name){
+            case 'process.Work':
+                action = o2.Actions.load('x_processplatform_assemble_surface').DataAction;
+                methodName = hasPath ? `updateWithWorkPath${paths.length-1}` : 'updateWithWork';
+                args = [this.form.businessData.work.id];
+                break;
+            case 'cms.Document':
+                action = o2.Actions.load('x_cms_assemble_control').DataAction;
+                methodName = hasPath ? `updateWithDocumentWithPath${paths.length-1}` : 'updateWithDocument';
+                args = [this.form.businessData.document.id];
+                break;
+            default:
+                return;
+        }
+        paths = paths.map(p => p.toString());
+
+        if (hasPath) {
+            args = args.concat(paths);
+        }
+        args = args.concat([data, success, null, false]);
+
+        return action[methodName](...args);
+    },
 
     setValue: function(){
     },

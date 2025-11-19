@@ -9,11 +9,11 @@ o2.xDesktop.Dialog = o2.DDL = new Class({
 //
 //		if (this.options.mark){
 //			if (!this.markNode){
-//				
+//
 //				this.markNode = new Element("div", {
 //					styles: this.css.mark
 //				}).inject($(document.body));
-//				
+//
 //			}
 ////			if (this.options.markNode){
 ////				var size = this.options.markNode.getComputedSize();
@@ -35,7 +35,7 @@ o2.xDesktop.Dialog = o2.DDL = new Class({
 //					"height": "0px"
 //				});
 ////			}
-//			
+//
 //			this.markNode.setStyle("display", "block");
 //		}
 //	},
@@ -109,7 +109,7 @@ o2.xDesktop.Dialog = o2.DDL = new Class({
             this.titleAction = null;
         }
 
-		if (this.title) this.setTitleEvent(); 
+		if (this.title) this.setTitleEvent();
 	//	if (this.titleText) this.getTitle();
 		if (this.content) this.getContent();
 		if (this.titleAction) this.getAction();
@@ -120,17 +120,31 @@ o2.xDesktop.Dialog = o2.DDL = new Class({
         if (this.backAction)this.backAction.addEvent("click", this.close.bind(this))
 	},
     getButton: function(){
-        for (i in this.options.buttons){
+        Object.each(this.options.buttons, function (fun, i){
             var button = new Element("input", {
                 "type": "button",
                 "value": i,
                 "styles": this.css.button,
                 "class": "mainColor_bg",
                 "events": {
-                    "click": this.options.buttons[i].bind(this)
+                    "click": function (e){
+                        this.deounceButton(button);
+						fun.call(this, this, e);
+					}.bind(this)
                 }
             }).inject(this.button);
-        }
+        }.bind(this));
+        // for (i in this.options.buttons){
+        //     var button = new Element("input", {
+        //         "type": "button",
+        //         "value": i,
+        //         "styles": this.css.button,
+        //         "class": "mainColor_bg",
+        //         "events": {
+        //             "click": this.options.buttons[i].bind(this)
+        //         }
+        //     }).inject(this.button);
+        // }
         if (this.options.buttonList){
             this.options.buttonList.each(function(bt){
                 var styles = this.css.button;
@@ -161,7 +175,10 @@ o2.xDesktop.Dialog = o2.DDL = new Class({
                         "styles": styles,
                         "class": (bt.type!=="cancel") ? "mainColor_bg" : "",
                         "events": {
-                            "click": function(e){bt.action.call(this, this, e)}.bind(this)
+                            "click": function(e){
+                                this.deounceButton(button);
+                                bt.action.call(this, this, e);
+                            }.bind(this)
                         }
                     })
                 }else{
@@ -312,14 +329,17 @@ o2.xDesktop.Dialog = o2.DDL = new Class({
             size.y = parseInt(this.options.positionHeight);
         }
 
-        var container = $(document.body);
-        if( this.options.positionNode && this.options.positionNode.getSize().y<$(document.body).getSize().y ){
-            container = this.options.positionNode;
-        }else if (layout.desktop.currentApp){
-            container = layout.desktop.currentApp.content;
+        var container = layout.desktop.currentApp ? layout.desktop.currentApp.content : $(document.body);
+        var bodySize = container.getSize();
+        if( this.options.positionNode ){
+            var positionNodeSize = this.options.positionNode.getSize();
+            if(positionNodeSize.y<bodySize.y || positionNodeSize.x < bodySize.x){
+                container = this.options.positionNode;
+            }
         }else{
             if (this.options.container){
-                if (this.options.container.getSize().y<$(document.body).getSize().y){
+                var cSize = this.options.container.getSize();
+                if (cSize.y<bodySize.y || cSize.x<bodySize.x){
                     container = this.options.container;
                 }
             }

@@ -136,7 +136,7 @@ MWF.xApplication.process.Xform.Org = MWF.APPOrg =  new Class(
 
     iconStyle: "orgIcon",
     isReadonly : function(){
-        var readonly = !!(this.readonly || this.form.json.isReadonly);
+        var readonly = !!(!this.isEditable || this.readonly || this.form.json.isReadonly);
         if( readonly )return readonly;
         if( this.json.isReadonly === "script" ){
             if( this.json.readonlyScript && this.json.readonlyScript.code ){
@@ -220,17 +220,21 @@ MWF.xApplication.process.Xform.Org = MWF.APPOrg =  new Class(
         }
     },
     _loadNode: function(){
-        this.field = true;
-        if (this.isReadonly()){
-            this._loadNodeRead();
+        if (!this.isReadable && !!this.isHideUnreadable){
+            this.node?.addClass('hide');
         }else{
-            this._getOrgOptions();
-            if (this.json.isInput){
-                this._loadNodeInputEdit();
+            this.field = true;
+            if (this.isReadonly()){
+                this._loadNodeRead();
             }else{
-                this._loadNodeEdit();
-            }
+                this._getOrgOptions();
+                if (this.json.isInput){
+                    this._loadNodeInputEdit();
+                }else{
+                    this._loadNodeEdit();
+                }
 
+            }
         }
     },
     _loadMergeReadContentNode: function(contentNode, data){
@@ -1266,7 +1270,7 @@ MWF.xApplication.process.Xform.Org = MWF.APPOrg =  new Class(
                                 var pp = this.getOrgAction()[this.getValueMethod(dd)](function(json){
                                     return MWF.org.parseOrgData(json.data, true, simple);
                                 }.bind(this), null, dd, true).catch(function(e){
-                                    console.log("error:" + e);
+                                    // console.log("error:" + e);
                                     console.log(e);
                                 });
                                 ags.push(pp);

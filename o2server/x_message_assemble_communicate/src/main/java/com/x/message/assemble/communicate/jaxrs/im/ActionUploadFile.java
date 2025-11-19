@@ -1,12 +1,5 @@
 package com.x.message.assemble.communicate.jaxrs.im;
 
-import java.util.Date;
-import java.util.Objects;
-
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-
 import com.x.base.core.container.EntityManagerContainer;
 import com.x.base.core.container.factory.EntityManagerContainerFactory;
 import com.x.base.core.entity.annotation.CheckPersistType;
@@ -17,9 +10,19 @@ import com.x.base.core.project.http.EffectivePerson;
 import com.x.base.core.project.jaxrs.WoId;
 import com.x.base.core.project.logger.Logger;
 import com.x.base.core.project.logger.LoggerFactory;
-import com.x.base.core.project.tools.DefaultCharset;
+import com.x.base.core.project.tools.FileTools;
 import com.x.message.assemble.communicate.ThisApplication;
 import com.x.message.core.entity.IMMsgFile;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.glassfish.jersey.media.multipart.FormDataBodyPart;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
 /**
  * Created by fancyLou on 2020-06-15. Copyright © 2020 O2. All rights reserved.
@@ -27,64 +30,68 @@ import com.x.message.core.entity.IMMsgFile;
 public class ActionUploadFile extends BaseAction {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ActionUploadFile.class);
-
 	public ActionResult<Wo> execute(EffectivePerson effectivePerson, String conversationId, String type,
-			String fileName, byte[] bytes, FormDataContentDisposition disposition) throws Exception {
+			String fileName,  FormDataBodyPart filePart) throws Exception {
 
 		LOGGER.debug("execute:{}, conversationId:{}, type:{}, fileName:{}.", effectivePerson::getDistinguishedName,
 				() -> conversationId, () -> type, () -> Objects.toString(fileName));
-
+		ActionResult<Wo> result = new ActionResult<>();
+		StorageMapping mapping = ThisApplication.context().storageMappings().random(IMMsgFile.class);
+		if (null == mapping) {
+			throw new ExceptionAllocateStorageMaaping();
+		}
+		final File file = filePart.getValueAs(File.class);
+		final Wo wo = new Wo();
 		try (EntityManagerContainer emc = EntityManagerContainerFactory.instance().create()) {
-			ActionResult<Wo> result = new ActionResult<>();
-			StorageMapping mapping = ThisApplication.context().storageMappings().random(IMMsgFile.class);
-			if (null == mapping) {
-				throw new ExceptionAllocateStorageMaaping();
-			}
-
 			String name = fileName;
-			/** 文件名编码转换 */
 			if (StringUtils.isEmpty(name)) {
-				try {
-					name = new String(disposition.getFileName().getBytes(DefaultCharset.charset_iso_8859_1),
-							DefaultCharset.charset);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+				name = this.fileName(filePart.getFormDataContentDisposition());
 			}
 			name = FilenameUtils.getName(name);
 			if (StringUtils.isEmpty(name)) {
 				throw new ExceptionFileNameEmpty();
 			}
-			/** 禁止不带扩展名的文件上传 */
 			if (StringUtils.isEmpty(FilenameUtils.getExtension(name))) {
 				throw new ExceptionEmptyExtension(name);
 			}
-			if (bytes == null) {
-				throw new ExceptionAttachmentNone(name);
-			}
-			IMMsgFile file = new IMMsgFile();
-			file.setName(name);
-			file.setStorage(mapping.getName());
-			file.setPerson(effectivePerson.getDistinguishedName());
-			Date now = new Date();
-			file.setCreateTime(now);
-			file.setLastUpdateTime(now);
-			file.setExtension(StringUtils.lowerCase(FilenameUtils.getExtension(name)));
-			file.setConversationId(conversationId);
-			file.setType(type);
+			FileTools.verifyConstraint(1, name, null);
 
-			emc.check(file, CheckPersistType.all);
-			file.saveContent(mapping, bytes, name);
+			IMMsgFile imMsgFile = new IMMsgFile();
+			imMsgFile.setName(name);
+			imMsgFile.setStorage(mapping.getName());
+			imMsgFile.setPerson(effectivePerson.getDistinguishedName());
+			Date now = new Date();
+			imMsgFile.setCreateTime(now);
+			imMsgFile.setLastUpdateTime(now);
+			imMsgFile.setExtension(StringUtils.lowerCase(FilenameUtils.getExtension(name)));
+			imMsgFile.setConversationId(conversationId);
+			imMsgFile.setType(type);
+			emc.check(imMsgFile, CheckPersistType.all);
+
 			emc.beginTransaction(IMMsgFile.class);
-			emc.persist(file);
+			emc.persist(imMsgFile);
 			emc.commit();
-			Wo wo = new Wo();
-			wo.setId(file.getId());
-			wo.setFileExtension(file.getExtension());
+
+			wo.setId(imMsgFile.getId());
+			wo.setFileExtension(imMsgFile.getExtension());
 			wo.setFileName(name);
 			result.setData(wo);
-			return result;
+
 		}
+		LOGGER.info("消息模块异步上传附件：{}, 大小：{}", wo.getFileName(), (file.length() / 1024)+"k");
+		CompletableFuture.runAsync(() -> {
+			try (EntityManagerContainer emc = EntityManagerContainerFactory.instance().create()) {
+				IMMsgFile imMsgFile = emc.find(wo.getId(), IMMsgFile.class);
+				imMsgFile.saveContent(mapping, new FileInputStream(file), imMsgFile.getName());
+				emc.beginTransaction(IMMsgFile.class);
+				emc.commit();
+			} catch (Exception e) {
+				LOGGER.warn("im附件上传异常：");
+				LOGGER.error(e);
+			}
+		});
+
+		return result;
 	}
 
 	public static class Wo extends WoId {

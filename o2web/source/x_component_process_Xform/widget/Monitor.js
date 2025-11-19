@@ -29,7 +29,6 @@ MWF.xApplication.process.Xform.widget.Monitor = new Class({
     load: function(){
         this.logProcessChartNode = new Element("div", {"styles": this.css.logProcessChartNode}).inject(this.container);
         this.logPathChartNode = new Element("div", {"styles": this.css.logPathChartNode}).inject(this.container);
-
         this.checkMonitorOpen();
     },
 
@@ -90,6 +89,145 @@ MWF.xApplication.process.Xform.widget.Monitor = new Class({
                 this.loadPaper();
                 this.bindTabEvent();
             }.bind(this));
+        }
+    },
+    setTouchEvent: function (){
+        if( !layout.mobile )return;
+        if( this.isUserScalableEnabled() )return;
+        const MIN_SCALE = 0.4;
+        const MAX_SCALE = 4;
+        //手势缩放
+        // 获取目标元素
+        var div = this.paperInNode;
+        var container = div.getParent();
+
+        // 初始化变量
+        var initialDistance = 0;
+        var currentScale = 1;
+        var startScrollLeft = 0;
+        var startScrollTop = 0;
+        var startCenterX = 0;
+        var startCenterY = 0;
+
+        var containerOffsetX = 0;
+        var containerOffsetY = 0;
+
+        // 处理触摸开始事件
+        div.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+
+                var coords = container.getCoordinates(document.body);
+                containerOffsetX = coords.left;
+                containerOffsetY = coords.top;
+
+                // 计算初始两点距离
+                var touch1 = e.touches[0];
+                var touch2 = e.touches[1];
+                initialDistance = Math.hypot(
+                    touch2.clientX - touch1.clientX,
+                    touch2.clientY - touch1.clientY
+                );
+
+                // 记录初始滚动位置
+                startScrollLeft = container.scrollLeft;
+                startScrollTop = container.scrollTop;
+
+                // 计算中心点相对于div的位置
+                var centerX = (touch1.clientX + touch2.clientX) / 2;
+                var centerY = (touch1.clientY + touch2.clientY) / 2;
+
+                // 转换为相对于div内容的坐标
+                startCenterX = centerX + startScrollLeft - containerOffsetX;
+                startCenterY = centerY + startScrollTop - containerOffsetY;
+
+                // 阻止默认行为防止页面滚动
+                e.preventDefault();
+            }
+        });
+
+        // 处理触摸移动事件
+        div.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2) {
+                // 计算当前两点距离
+                var touch1 = e.touches[0];
+                var touch2 = e.touches[1];
+                var currentDistance = Math.hypot(
+                    touch2.clientX - touch1.clientX,
+                    touch2.clientY - touch1.clientY
+                );
+
+                // 计算缩放比例
+                var newScale = currentDistance / initialDistance * currentScale;
+
+                newScale = Math.max( MIN_SCALE, Math.min(newScale, MAX_SCALE));
+
+                // 应用缩放
+                div.style.transform = `scale(${newScale})`;
+                div.style.transformOrigin = 'left top';
+
+                // 计算新的中心点位置
+                var centerX = (touch1.clientX + touch2.clientX) / 2;
+                var centerY = (touch1.clientY + touch2.clientY) / 2;
+
+                // 计算新的滚动位置以保持中心点不变
+                var scaleChange = newScale / currentScale;
+
+                var newScrollLeft = startCenterX * scaleChange - (centerX - containerOffsetX);
+                var newScrollTop = startCenterY * scaleChange - (centerY - containerOffsetY);
+
+                // 应用滚动位置
+                container.scrollLeft = newScrollLeft;
+                container.scrollTop = newScrollTop;
+
+                // 阻止默认行为防止页面滚动
+                e.preventDefault();
+            }
+        });
+
+        // 处理触摸结束事件
+        div.addEventListener('touchend', () => {
+            if (div.style.transform) {
+                // 更新当前缩放比例
+                var match = div.style.transform.match(/scale\(([^)]+)\)/);
+                if (match) {
+                    currentScale = parseFloat(match[1]);
+                }
+            }
+        });
+    },
+    isUserScalableEnabled: function () {
+        //html是否默认启用缩放
+        try {
+            // 获取viewport meta标签
+            var metaViewport = document.querySelector('meta[name="viewport"]');
+
+            // 如果没有viewport meta标签，返回默认状态
+            if (!metaViewport) {
+                return true;
+            }
+
+            var content = metaViewport.getAttribute('content') || '';
+            var params = new URLSearchParams(content.replace(/,/g, '&'));
+
+            // 检查user-scalable参数
+            if (params.has('user-scalable')) {
+                var value = params.get('user-scalable').toLowerCase();
+                return value === 'yes' || value === '1';
+            }
+
+            // 检查minimum-scale和maximum-scale参数
+            if (params.has('minimum-scale') && params.has('maximum-scale')) {
+                var minScale = parseFloat(params.get('minimum-scale'));
+                var maxScale = parseFloat(params.get('maximum-scale'));
+
+                if (minScale >= maxScale) {
+                    return false;
+                }
+            }
+
+            return true;
+        } catch (error) {
+            return true;
         }
     },
     loadToolbar: function(){
@@ -243,36 +381,6 @@ MWF.xApplication.process.Xform.widget.Monitor = new Class({
         var scrollBottom = scrollSize.y + scrollTop;
         var scrollRight = scrollSize.x + scrollLeft;
 
-        // console.log(JSON.stringify({
-        //     rectTop: rectTop,
-        //     rectLeft: rectLeft,
-        //     rectRight: rectRight,
-        //     rectBottom: rectBottom,
-        //     rectHeight: rectHeight,
-        //     rectWidth: rectWidth,
-        //     scrollTop: scrollTop,
-        //     scrollLeft:scrollLeft,
-        //     scrollBottom: scrollBottom,
-        //     scrollRight:scrollRight,
-        //     scrollSizeX: scrollSize.x,
-        //     scrollSizeY: scrollSize.y
-        // }, null, 2));
-
-        if( layout.mobile ){
-            // rectTop = rectTop / this.mobileScale;
-            // rectLeft = rectLeft / this.mobileScale;
-            // rectHeight = rectHeight / this.mobileScale;
-            // rectWidth = rectWidth / this.mobileScale;
-            // rectBottom = (rectTop + rectHeight) / this.mobileScale;
-            // rectRight = (rectLeft + rectWidth) / this.mobileScale;
-            // scrollTop = scrollTop / this.mobileScale;
-            // scrollLeft = scrollLeft / this.mobileScale;
-            // scrollBottom = scrollBottom / this.mobileScale;
-            // scrollRight = scrollRight / this.mobileScale;
-            // scrollSize.x = scrollSize.x * this.mobileScale;
-            // scrollSize.y = scrollSize.y * this.mobileScale;
-        }
-
         // 检查是否需要垂直滚动
         if (rectTop < scrollTop) {
             // 矩形顶部在视口上方，需要向上滚动
@@ -371,6 +479,10 @@ MWF.xApplication.process.Xform.widget.Monitor = new Class({
                         }
 
                         this.loadWorkLog();
+
+
+                        this.setTouchEvent();
+
                         this.fireEvent("postLoad");
                     }.bind(this)
                 });
@@ -486,7 +598,7 @@ MWF.xApplication.process.Xform.widget.Monitor = new Class({
                 if (this.process.selectedActivitys.length){
                     if (!this.noselected){
                         this.selected();
-                        _self.showWorklog(this, offset, size);
+                        _self.showWorklog(this, offset, size, e);
                     }
                     this.noselected = false;
                 }
@@ -498,26 +610,32 @@ MWF.xApplication.process.Xform.widget.Monitor = new Class({
             if (!_self.isPlaying) {
                 if (!this.process.selectedActivitys.length) {
                     this.selected();
-                    _self.showWorklog(this, offset, size);
+                    _self.showWorklog(this, offset, size, e);
                 }
                 if (this.countSet) this.countSet.toFront();
             }
             e.stopPropagation();
         }.bind(activity));
 
-        this.paper.canvas.addEvent("click", function(e){
-            if (!_self.isPlaying) {
-                if (this.unSelectedEvent) {
-                    if (this.currentSelected || this.selectedActivitys.length) {
-                        this.unSelected(e);
+        this.paper.canvas.addEvent("click", this.checkUnselectedAndHide.bind(this) );
+    },
+    checkUnselectedAndHide: function(e){
+        debugger;
+        if(this.maskNode){
+            this.maskNode.destroy();
+            this.maskNode = null;
+        }
+        if (!this.isPlaying) {
+            if (this.process.unSelectedEvent) {
+                if (this.process.currentSelected || this.process.selectedActivitys.length) {
+                    this.process.unSelected(e);
 
-                        _self.hideCurrentWorklog();
-                    }
-                } else {
-                    this.unSelectedEvent = true;
+                    this.hideCurrentWorklog();
                 }
+            } else {
+                this.process.unSelectedEvent = true;
             }
-        }.bind(this.process));
+        }
     },
     getlogNodePosition : function(activity, node, offset, psize){
         var targetCoondinates = {
@@ -662,53 +780,130 @@ MWF.xApplication.process.Xform.widget.Monitor = new Class({
 
         return {"x": x, "y": y};
     },
-    showWorklog: function(activity, offset, psize){
+    closeWorkLog: function (){
+        if(this.currentWorklogNode){
+            this.currentWorklogNode.destroy();
+            this.currentWorklogNode = null;
+        }
+    },
+    showWorklog: function(activity, offset, psize, event){
         this.hideCurrentWorklog();
 
         if (!activity.worklogNode) activity.worklogNode = this.createWorkLogNode(activity.worklogs, activity);
 
         this.currentWorklogNode = activity.worklogNode;
         this.currentWorklogNode.setStyle("display", !!this.currentWorklogNode.get("html") ? "block" : "none");
-        this.setWorkLogPosition(activity, activity.worklogNode, offset, psize);
+        this.setWorkLogPosition(activity, activity.worklogNode, offset, psize, event);
     },
-    setWorkLogPosition(activity, logNode, offset, psize){
+    setWorkLogPosition: function(activity, logNode, offset, psize, event){
+        debugger;
         if( !logNode )logNode = activity.worklogNode;
         if( layout.mobile ){
             var pSize = this.paperNode.getSize();
             var bodySize =  $(document.body).getSize();
-            if( this.paperNode.getPosition().y + pSize.y > bodySize.y ){
-                var mobileActionNode = document.body.getElement(".o2_form_mobile_actions");
-                logNode.inject( $(document.body) );
-                logNode.setStyles({
-                    "display": "block",
-                    "position": "absolute",
-                    "width": "calc( 100% - 4px )",
-                    "max-width": "500px",
-                    "bottom": mobileActionNode ? (mobileActionNode.getSize().y+1+"px") : "1px",
-                    "left": "0px"
-                });
-                logNode.setStyle("left", (bodySize.x - logNode.getSize().x)/2 + "px");
-            }else{
-                logNode.inject( this.paperNode );
-                logNode.setStyles({
-                    "display": "block",
-                    "position": "absolute",
-                    "width": "calc( 100% - 4px )",
-                    "max-width": "500px",
-                    "bottom": "1px",
-                    "left": "0px"
-                });
-                logNode.setStyle("left", (pSize.x - logNode.getSize().x)/2 + "px");
+
+            if( !this.isPlaying && !this.inDialog() ){
+                this.maskNode = new Element('div', {
+                    styles: {
+                        "background-color": "transparent",
+                        "position": "absolute",
+                        "opacity": 0,
+                        "height": "100%",
+                        "width": "100%",
+                        "left": 0,
+                        "top": 0
+                    }
+                }).inject(document.body);
+
+                this.maskNode.addEvent('touchstart', function(e){
+                    if( !logNode.offsetParent )return;
+                    if(this.maskNode){
+                        this.maskNode.destroy();
+                        this.maskNode = null;
+                    }
+                    this.checkUnselectedAndHide(e);
+                    e.stopPropagation();
+                    e.preventDefault();
+                }.bind(this));
             }
+
+             // if( this.paperNode.getPosition().y + pSize.y > bodySize.y ){
+            var bottomY;
+            if( this.inDialog() ){
+                var dialogContent = this.getDialogContent();
+                bottomY = bodySize.y - dialogContent.getSize().y;
+            }else{
+                var mobileActionNode = document.body.getElement(".o2_form_mobile_actions");
+                bottomY = mobileActionNode ? mobileActionNode.getSize().y+1 : 1;
+            }
+            logNode.inject( $(document.body) );
+            logNode.setStyles({
+                "display": "block",
+                "position": "absolute",
+                "width": "calc( 100% - 4px )",
+                "max-width": "500px",
+                "max-height": "calc( 90% - "+bottomY+"px )",
+                "overflow": "auto",
+                "bottom": bottomY+"px",
+                "left": "0px",
+                "z-index": this.getZindex()
+            });
+            logNode.setStyle("left", 0);
+                //logNode.setStyle("left", (bodySize.x - logNode.getSize().x)/2 + "px");
+            // }else{
+            //     logNode.inject( this.paperNode );
+            //     logNode.setStyles({
+            //         "display": "block",
+            //         "position": "absolute",
+            //         "width": "calc( 100% - 4px )",
+            //         "max-width": "500px",
+            //         "max-height": "90%",
+            //         "overflow": "auto",
+            //         "bottom": "1px",
+            //         "left": "0px",
+            //         "z-index": this.getZindex()
+            //     });
+            //     logNode.setStyle("left", (pSize.x - logNode.getSize().x)/2 + "px");
+            // }
         }else{
             var p = this.getlogNodePosition(activity, logNode, offset, psize);
             logNode.setPosition({"x": p.x, "y": p.y});
         }
+        this.fireEvent('showWorklog', [logNode]);
+    },
+    getDialogContent: function(){
+        var parent = this.paperNode;
+        while (parent){
+            if( parent.hasClass('MWF_dialod_content') ){
+                return parent;
+            }
+            parent = parent.getParent();
+        }
+        return null;
+    },
+    inDialog: function (){
+        return !!this.getDialogContent();
+    },
+    getZindex: function () {
+        var parent = this.paperNode;
+        var zindex = 1;
+        while (parent){
+            var zIndex = parent.getStyle('z-index');
+            if( zIndex && parseFloat(zIndex).toString() !== "NaN" ){
+                zindex = Math.max(zindex, zIndex.toFloat()+1);
+            }
+            parent = parent.getParent();
+        }
+        return zindex;
     },
     hideCurrentWorklog: function(){
         if (this.currentWorklogNode){
             this.currentWorklogNode.setStyle("display", "none");
             this.currentWorklogNode = null;
+        }
+        if(this.maskNode){
+            this.maskNode.destroy();
+            this.maskNode = null;
         }
     },
     bindTabEvent: function(){
@@ -777,6 +972,7 @@ MWF.xApplication.process.Xform.widget.Monitor = new Class({
                         router = log.properties.routeName || "";
                         opinion = log.properties.opinion || "";
                 }
+                if( !log.person )log.person = '';
                 if (log.type==="currentTask"){
                     var taskNode = new Element("div", {"styles": this.css.workLogTaskNode}).inject(workNode);
                     var html = "<div style='font-weight: bold; color: red'>"+log.person.substring(0, log.person.indexOf("@"))+" "+MWF.xApplication.process.Xform.LP.processing+" </div>";
@@ -811,6 +1007,7 @@ MWF.xApplication.process.Xform.widget.Monitor = new Class({
                     }
                 }else{
                     log.taskCompletedList.each(function(task){
+                        if( !task.person )task.person = '';
                         var taskNode = new Element("div", {"styles": this.css.workLogTaskNode}).inject(workNode);
                         var html = "<div style='font-weight: bold'>"+task.person.substring(0, task.person.indexOf("@"))+": </div>";
                         html += "<div style='margin-left: 10px'>["+(task.routeName || "")+"] "+o2.txt(task.opinion)+"</div>";
@@ -819,6 +1016,7 @@ MWF.xApplication.process.Xform.widget.Monitor = new Class({
                     }.bind(this));
 
                     log.taskList.each(function(task){
+                        if( !task.person )task.person = '';
                         var taskNode = new Element("div", {"styles": this.css.workLogTaskNode}).inject(workNode);
                         var html = "<div style='font-weight: bold; color: red'>"+task.person.substring(0, task.person.indexOf("@"))+" "+MWF.xApplication.process.Xform.LP.processing+" </div>";
                         taskNode.set("html", html);

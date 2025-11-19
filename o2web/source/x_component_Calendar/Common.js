@@ -23,7 +23,7 @@ MWFCalendar.EventForm = new Class({
     Extends: MPopupForm,
     Implements: [Options, Events],
     options: {
-        "style": "meeting",
+        "style": "v10",
         "okClass": "mainColor_bg",
         "width": "800",
         "height": "475",
@@ -38,10 +38,11 @@ MWFCalendar.EventForm = new Class({
         "startTime" : null,
         "endTime" : null,
         "isWholeday" : false,
-        "defaultCalendarId" : ""
+        "defaultCalendarId" : "",
+        "scrollType": "window"
     },
     open: function (e) {
-        if( this.options.isFull ){
+        if( !layout.mobile && this.options.isFull ){
             this.options.width = "800";
             this.options.height = "630";
         }
@@ -52,7 +53,7 @@ MWFCalendar.EventForm = new Class({
         this.fireEvent("postOpen");
     },
     create: function () {
-        if( this.options.isFull ){
+        if( !layout.mobile && this.options.isFull ){
             this.options.width = "1100";
             this.options.height = "630";
         }
@@ -62,7 +63,7 @@ MWFCalendar.EventForm = new Class({
         this.fireEvent("postCreate");
     },
     edit: function () {
-        if( this.options.isFull ){
+        if( !layout.mobile && this.options.isFull ){
             this.options.width = "1100";
             this.options.height = "630";
         }
@@ -79,7 +80,7 @@ MWFCalendar.EventForm = new Class({
     loadEventContent : function(){
         var path = "../o2_lib/rrule/";
         COMMON.AjaxModule.load(path+"rrule.js", function () {
-            if( this.isEdited || this.isNew ) {
+            // if( this.isEdited || this.isNew ) {
                 this.app.actions.listMyCalendar(function (json) {
                     this.calendarIds = [];
                     this.calendarNames = [];
@@ -97,166 +98,174 @@ MWFCalendar.EventForm = new Class({
 
                     this._createTableContent_Edit();
                 }.bind(this))
-            }else{
-                this.app.actions.getCalendar( this.data.calendarId, function (json) {
-                    this.calendarName = json.data.name;
-                    this._createTableContent_Read();
-                }.bind(this))
-            }
+            // }else{
+            //     this.app.actions.getCalendar( this.data.calendarId, function (json) {
+            //         this.calendarName = json.data.name;
+            //         this._createTableContent_Read();
+            //     }.bind(this))
+            // }
         }.bind(this));
     },
-    _createTableContent_Read : function(){
-        this.formTopTextNode.set( "text", this.lp.readEvent );
-        this.formTableContainer.setStyle("width","86%");
-
-        var data = this.data;
-
-        var beginD = Date.parse(data.startTime);
-        var endD = Date.parse(data.endTime);
-        var begin = beginD.format(this.lp.dateFormatAll) + "（" + this.lp.weeks.arr[beginD.get("day")] + "）";
-        var end = endD.format(this.lp.dateFormatAll) + "（" + this.lp.weeks.arr[endD.get("day")] + "）";
-
-        if( data.recurrenceRule  ){
-            this.oldRecurrenceRule = data.recurrenceRule;
-            this.rRule = RRule.fromString(data.recurrenceRule).origOptions;
-        }else{
-            this.rRule = {};
-        }
-        var text = this.lp.repeatFrequencyArr;
-        var value = ["NONE",RRule["DAILY"],RRule["WEEKLY"],RRule["MONTHLY"],RRule["YEARLY"] ];
-        var repeat;
-        if( this.rRule.freq ){
-            repeat = text[ value.indexOf( this.rRule.freq ) ];
-            if( this.rRule.byweekday ){
-                var repeatWeeks = this.rRule.byweekday.toString().split(",");
-                var repeatWeekTextList = [];
-                var weekArr = this.lp.weeks.arr;
-                var rruleArr = this.lp.weeks.rruleArr;
-                repeatWeeks.each( function(r){
-                    repeatWeekTextList.push( weekArr[ rruleArr.indexOf( r ) ] );
-                });
-                repeat = this.lp.repeatInfor.replace("{frequency}", repeatWeekTextList.join("、"));
-            }else{
-                repeat = repeat + this.lp.repeat;
-            }
-            if( this.rRule.until && ( repeat !== "不重复" || repeat !== this.lp.notRepeat ) ){
-                repeat += "  "+ this.lp.endDate +"："+this.rRule.until.format("%Y-%m-%d");
-            }
-        }else{
-            repeat = this.lp.notRepeat
-        }
-
-        var remind;
-        if( data.valarmTime_config ){ //天、时、分、秒
-            if( data.valarmTime_config === "0,0,0,-5" ){
-                remind = this.lp.remindWhenBegin;
-            }else{
-                var valarmTime_configList = data.valarmTime_config.split(",");
-                valarmTime_configList.each( function( v, i ){
-                    var unit;
-                    if( i == 0 ){
-                        unit = this.lp.date;
-                    }else if( i == 1 ){
-                        unit = this.lp.hour;
-                    }else if( i==2 ){
-                        unit = this.lp.minute;
-                    }else{
-                        unit = this.lp.second;
-                    }
-                    if( v && v!="0" ){
-                        remind = this.lp.remindInAdvance.replace("{text}",  Math.abs(v)+unit );
-                    }
-                }.bind(this))
-            }
-        }
-
-        debugger;
-        var calendarName =  this.calendarName; //this.calendarNames[ this.calendarIds.indexOf( data.calendarId ) ];
-
-        var html = "<table width='100%' bordr='0' cellpadding='7' cellspacing='0' styles='formTable' style='table-layout:fixed;'>" +
-            //"<tr><td colspan='2' styles='formTableHead'>申诉处理单</td></tr>" +
-        "<tr><td styles='formTableTitle' width='40'>"+this.lp.calendar+"：</td>" +
-        "    <td styles='formTableValue' width='400'>"+calendarName+"</td>" +
-        "</tr>" +
-        "<tr><td styles='formTableTitle'>"+this.lp.subject+"：</td>" +
-        "    <td styles='formTableValue'><div styles='colorItem'></div>"+ data.title +"</td></tr>" +
-        "<tr><td styles='formTableTitle'>"+this.lp.beginTime+"：</td>" +
-        "    <td styles='formTableValue'>"+ begin +"</td>" +
-        "</tr>" +
-        "<tr><td styles='formTableTitle'>"+this.lp.endTime+"：</td>" +
-        "    <td styles='formTableValue'>"+end+"</td>" +
-        "</tr>"+
-        "<tr><td styles='formTableTitle'>"+this.lp.address+"：</td>" +
-        "    <td styles='formTableValue'>"+( data.locationName || "" )+"</td>" +
-        "</tr>";
-        if( remind ){
-            html += "<tr><td styles='formTableTitle'>"+this.lp.remind+"：</td>" +
-                "    <td styles='formTableValue'>"+remind+"</td>" +
-                "</tr>";
-        }else{
-            html += "<tr><td styles='formTableTitle'>"+this.lp.remind+"：</td>" +
-                "    <td styles='formTableValue'>"+ this.lp.remindIntervalArr[0] +"</td>" +
-                "</tr>";
-        }
-
-        if( repeat && repeat!==this.lp.no && repeat !== this.lp.notRepeat ){
-            html += "<tr><td styles='formTableTitle'>"+this.lp.repeat+"：</td>" +
-            "    <td styles='formTableValue'>"+ repeat +"</td>" +
-            "</tr>";
-        }else{
-            html += "<tr><td styles='formTableTitle'>"+this.lp.repeat+"：</td>" +
-                "    <td styles='formTableValue'>"+ this.lp.notRepeat +"</td>" +
-                "</tr>";
-        }
-
-        if( data.comment ){
-            html += "<tr><td styles='formTableTitle' valign='top'><div style='padding-top: 15px;'>"+ this.lp.content +"：</div></td>" +
-                "    <td styles='formTableValue'>"+ this.parseHtml(data.comment)+"</td>" +
-                "</tr>";
-        }else{
-            html += "<tr><td styles='formTableTitle' valign='top'>"+ this.lp.content +"：</td>" +
-                "    <td styles='formTableValue'>"+this.lp.none+"</td>" +
-                "</tr>";
-        }
-
-        this.formTableArea.set("html", html );
-        this.formTableArea.getElements("[styles='formTableTitle']").setStyles({
-            "color" : "#333",
-            "font-size": "16px",
-            "padding": "0px 20px 0px 0px",
-            "height" : "35px",
-            "line-height" : "35px",
-            "text-align": "left"
-        });
-        this.formTableArea.getElements("[styles='formTableValue']").setStyles({
-            "text-align": "left",
-            "font-size": "16px"
-        });
-        var colorItem = this.formTableArea.getElement("[styles='colorItem']");
-        var div = new Element("div", {
-            styles : this.css.colorNode
-        }).inject( colorItem );
-        div.setStyle("background-color",this.data.color);
-    },
+    // _createTableContent_Read : function(){
+    //     this.formTopTextNode.set( "text", this.lp.readEvent );
+    //     this.formTableContainer.setStyle("width","86%");
+    //
+    //     var data = this.data;
+    //
+    //     var beginD = Date.parse(data.startTime);
+    //     var endD = Date.parse(data.endTime);
+    //     var begin = beginD.format(this.lp.dateFormatAll) + "（" + this.lp.weeks.arr[beginD.get("day")] + "）";
+    //     var end = endD.format(this.lp.dateFormatAll) + "（" + this.lp.weeks.arr[endD.get("day")] + "）";
+    //
+    //     if( data.recurrenceRule  ){
+    //         this.oldRecurrenceRule = data.recurrenceRule;
+    //         this.rRule = RRule.fromString(data.recurrenceRule).origOptions;
+    //     }else{
+    //         this.rRule = {};
+    //     }
+    //     var text = this.lp.repeatFrequencyArr;
+    //     var value = ["NONE",RRule["DAILY"],RRule["WEEKLY"],RRule["MONTHLY"],RRule["YEARLY"] ];
+    //     var repeat;
+    //     if( this.rRule.freq ){
+    //         repeat = text[ value.indexOf( this.rRule.freq ) ];
+    //         if( this.rRule.byweekday ){
+    //             var repeatWeeks = this.rRule.byweekday.toString().split(",");
+    //             var repeatWeekTextList = [];
+    //             var weekArr = this.lp.weeks.arr;
+    //             var rruleArr = this.lp.weeks.rruleArr;
+    //             repeatWeeks.each( function(r){
+    //                 repeatWeekTextList.push( weekArr[ rruleArr.indexOf( r ) ] );
+    //             });
+    //             repeat = this.lp.repeatInfor.replace("{frequency}", repeatWeekTextList.join("、"));
+    //         }else{
+    //             repeat = repeat + this.lp.repeat;
+    //         }
+    //         if( this.rRule.until && ( repeat !== "不重复" || repeat !== this.lp.notRepeat ) ){
+    //             repeat += "  "+ this.lp.endDate +"："+this.rRule.until.format("%Y-%m-%d");
+    //         }
+    //     }else{
+    //         repeat = this.lp.notRepeat
+    //     }
+    //
+    //     var remind;
+    //     if( data.valarmTime_config ){ //天、时、分、秒
+    //         if( data.valarmTime_config === "0,0,0,-5" ){
+    //             remind = this.lp.remindWhenBegin;
+    //         }else{
+    //             var valarmTime_configList = data.valarmTime_config.split(",");
+    //             valarmTime_configList.each( function( v, i ){
+    //                 var unit;
+    //                 if( i == 0 ){
+    //                     unit = this.lp.date;
+    //                 }else if( i == 1 ){
+    //                     unit = this.lp.hour;
+    //                 }else if( i==2 ){
+    //                     unit = this.lp.minute;
+    //                 }else{
+    //                     unit = this.lp.second;
+    //                 }
+    //                 if( v && v!="0" ){
+    //                     remind = this.lp.remindInAdvance.replace("{text}",  Math.abs(v)+unit );
+    //                 }
+    //             }.bind(this))
+    //         }
+    //     }
+    //
+    //     debugger;
+    //     var calendarName =  this.calendarName; //this.calendarNames[ this.calendarIds.indexOf( data.calendarId ) ];
+    //
+    //     var html = `<div class='formTable'>
+    //     "<tr><td styles='formTableTitle' width='40'>"+this.lp.calendar+"：</td>
+    //     "    <td styles='formTableValue' width='400'>"+calendarName+"</td>
+    //     "</tr>" +
+    //     "<tr><td styles='formTableTitle'>"+this.lp.subject+"：</td>
+    //     "    <td styles='formTableValue'><div styles='colorItem'></div>"+ data.title +"</td></tr>
+    //     "<tr><td styles='formTableTitle'>"+this.lp.beginTime+"：</td>
+    //     "    <td styles='formTableValue'>"+ begin +"</td>
+    //     "</tr>" +
+    //     "<tr><td styles='formTableTitle'>"+this.lp.endTime+"：</td>
+    //     "    <td styles='formTableValue'>"+end+"</td>
+    //     "</tr>"+
+    //     "<tr><td styles='formTableTitle'>"+this.lp.address+"：</td>
+    //     "    <td styles='formTableValue'>"+( data.locationName || "" )+"</td>
+    //     "</tr>"`;
+    //     if( remind ){
+    //         html += "<tr><td styles='formTableTitle'>"+this.lp.remind+"：</td>" +
+    //             "    <td styles='formTableValue'>"+remind+"</td>" +
+    //             "</tr>";
+    //     }else{
+    //         html += "<tr><td styles='formTableTitle'>"+this.lp.remind+"：</td>" +
+    //             "    <td styles='formTableValue'>"+ this.lp.remindIntervalArr[0] +"</td>" +
+    //             "</tr>";
+    //     }
+    //
+    //     if( repeat && repeat!==this.lp.no && repeat !== this.lp.notRepeat ){
+    //         html += "<tr><td styles='formTableTitle'>"+this.lp.repeat+"：</td>" +
+    //         "    <td styles='formTableValue'>"+ repeat +"</td>" +
+    //         "</tr>";
+    //     }else{
+    //         html += "<tr><td styles='formTableTitle'>"+this.lp.repeat+"：</td>" +
+    //             "    <td styles='formTableValue'>"+ this.lp.notRepeat +"</td>" +
+    //             "</tr>";
+    //     }
+    //
+    //     if( data.comment ){
+    //         html += "<tr><td styles='formTableTitle' valign='top'><div style='padding-top: 15px;'>"+ this.lp.content +"：</div></td>" +
+    //             "    <td styles='formTableValue'>"+ this.parseHtml(data.comment)+"</td>" +
+    //             "</tr>";
+    //     }else{
+    //         html += "<tr><td styles='formTableTitle' valign='top'>"+ this.lp.content +"：</td>" +
+    //             "    <td styles='formTableValue'>"+this.lp.none+"</td>" +
+    //             "</tr>";
+    //     }
+    //
+    //     this.formTableArea.set("html", html );
+    //     this.formTableArea.getElements("[styles='formTableTitle']").setStyles({
+    //         "color" : "#333",
+    //         "font-size": "16px",
+    //         "padding": "0px 20px 0px 0px",
+    //         "height" : "35px",
+    //         "line-height" : "35px",
+    //         "text-align": "left"
+    //     });
+    //     this.formTableArea.getElements("[styles='formTableValue']").setStyles({
+    //         "text-align": "left",
+    //         "font-size": "16px"
+    //     });
+    //     var colorItem = this.formTableArea.getElement("[styles='colorItem']");
+    //     var div = new Element("div", {
+    //         styles : this.css.colorNode
+    //     }).inject( colorItem );
+    //     div.setStyle("background-color",this.data.color);
+    // },
     _createTableContent_Edit: function () {
         this.oldCoordinate = null;
         var editEnable = this.editEnable = ( this.isEdited || this.isNew );
         this.userName = layout.desktop.session.user.distinguishedName;
         this.userId = layout.desktop.session.user.id;
 
-        if( this.options.isFull ){
+        if( layout.mobile ){
             this.formTableContainer.setStyles({
                 "width" : "auto",
-                "padding-left" : "40px"
+                "padding-left" : "20px",
+                "padding-right" : "20px"
             });
         }else{
-            this.formTableContainer.setStyle("width","80%");
+            if( this.options.isFull ){
+                this.formTableContainer.setStyles({
+                    "width" : "auto",
+                    "padding-left" : "40px",
+                    "padding-right" : "40px"
+                });
+            }else{
+                this.formTableContainer.setStyle("width","80%");
+            }
         }
 
         if( this.isNew ){
-            this.formTopTextNode.set( "text", this.lp.addEvent );
+            this.formTopTextNode?.set( "text", this.lp.addEvent );
         }else if( this.isEdited ){
-            this.formTopTextNode.set( "text", this.lp.editEvent );
+            this.formTopTextNode?.set( "text", this.lp.editEvent );
             this.options.height = "590";
         }
 
@@ -340,7 +349,7 @@ MWFCalendar.EventForm = new Class({
 
 
         //this.attachmentTr = this.formTableArea.getElement("[item='attachmentTr']");
-        //this.attachmentArea = this.formTableArea.getElement("[item='attachment']");
+        this.attachmentArea = this.formTableArea.getElement("[item='attachment']");
 
         if( !this.data.color ){
             if( this.options.defaultCalendarId ){
@@ -353,45 +362,46 @@ MWFCalendar.EventForm = new Class({
         MWF.xDesktop.requireApp("Template", "MForm", function () {
             this.form = new MForm(this.formTableArea, data, {
                 isEdited: this.isEdited || this.isNew,
-                style : "meeting",
+                style : "v10", mvcStyle: "v10",
                 hasColon : true,
                 itemTemplate: {
-                    calendarId : { text : this.lp.calendar, defaultValue : this.options.defaultCalendarId, type : "select", selectValue : this.calendarIds, selectText : this.calendarNames, event : {
-                        change : function( item ){
-                            this.setColorByCalendarId( item.getValue() )
-                        }.bind(this)
-                    }},
-                    startDateInput: { text : this.lp.beginTime ,tType: "date", defaultValue: defaultStartDate , notEmpty : true },
-                    startTimeInput: { tType: "time",
-                        defaultValue: defaultStartTime, className : ( (this.isNew || this.isEdited ) ?  "inputTimeUnformatWidth" : "" ),
-                        disable : data.isAllDayEvent
+                    calendarId : { type : "oo-select", text : this.lp.calendar, defaultValue : this.options.defaultCalendarId,
+                        selectValue : this.calendarIds, selectText : this.calendarNames,
+                        event : {
+                            change : function( item ){
+                                this.setColorByCalendarId( item.getValue() )
+                            }.bind(this)
+                        }
                     },
-                    endDateInput: { text : this.lp.endTime, tType: "date",  defaultValue: defaultEndDate, notEmpty : true  },
-                    endTimeInput: { tType: "time",
-                        defaultValue: defaultEndTime, className : ( (this.isNew || this.isEdited ) ?  "inputTimeUnformatWidth" : "" ),
-                        disable : data.isAllDayEvent
+                    startDateInput: { type : "oo-datetime", mode: 'date', format: 'YYYY-MM-DD', text : this.lp.beginTime , defaultValue: defaultStartDate , notEmpty : true },
+                    startTimeInput: { type : "oo-datetime", mode: 'time', format: 'HH:mm',
+                        defaultValue: defaultStartTime, disable : ()=>{ return data.isAllDayEvent; }
                     },
-                    remind : { text : this.lp.remind, type : "select", selectText : this.lp.remindIntervalArr,
+                    endDateInput: { type : "oo-datetime", mode: 'date', format: 'YYYY-MM-DD', text : this.lp.endTime, defaultValue: defaultEndDate, notEmpty : true  },
+                    endTimeInput: { type : "oo-datetime", mode: 'time', format: 'HH:mm',
+                        defaultValue: defaultEndTime, disable : data.isAllDayEvent
+                    },
+                    remind : { text : this.lp.remind, type : "oo-select", selectText : this.lp.remindIntervalArr,
                         selectValue : ["", "-5_s","-5_m","-10_m","-15_m","-30_m","-1_h","-2_h"] },
-                    isAllDayEvent : { type : "checkbox", selectValue : ["true"], selectText : [ this.lp.allDay ], event : {
+                    isAllDayEvent : { type : "oo-checkgroup", text:"　", selectValue : ["true"], selectText : [ this.lp.allDay ], event : {
                         change : function(item ){
                             var itemStart = item.form.getItem("startTimeInput");
                             var itemEnd = item.form.getItem("endTimeInput");
-                            if( item.getValue() == "true" && !itemStart.options.disable && !itemEnd.options.disable ){
-                                itemStart.getElements().setStyle("display","none");
-                                itemEnd.getElements().setStyle("display","none")
+                            if( item.getValue().contains("true") ){ //&& !itemStart.options.disable && !itemEnd.options.disable ){
+                                itemStart.getElements()?.setStyle("display","none");
+                                itemEnd.getElements()?.setStyle("display","none");
                             }else{
                                 if( itemStart.options.disable )itemStart.enable();
                                 if( itemEnd.options.disable )itemEnd.enable();
-                                itemStart.getElements().setStyle("display","");
-                                itemEnd.getElements().setStyle("display","")
+                                itemStart.getElements()?.setStyle("display","");
+                                itemEnd.getElements()?.setStyle("display","");
                             }
                         }.bind(this)
                     } },
-                    title: { text : this.lp.eventSubject, notEmpty : true },
-                    description: {type: "textarea"},
-                    locationName : { text : this.lp.locationName },
-                    repeat : { text : this.lp.repeat, type : "select", defaultValue : "NONE",
+                    title: { type: "oo-input", text : this.lp.eventSubject, notEmpty : true },
+                    description: {type: "oo-textarea"},
+                    locationName : { type: "oo-input",  text : this.lp.locationName },
+                    repeat : { text : this.lp.repeat, type : "oo-select", defaultValue : "NONE",
                         selectText : this.lp.repeatFrequencyArr2,
                         selectValue : ["NONE",RRule["DAILY"],RRule["WEEKLY"],RRule["MONTHLY"],RRule["YEARLY"] ], event : {
                         change : function(item){
@@ -406,19 +416,19 @@ MWFCalendar.EventForm = new Class({
                             }
                         }.bind(this)
                     }},
-                    repeatUntilAvailable : { text : this.lp.repeatUntilAvailable, type : "radio",
+                    repeatUntilAvailable : { text : this.lp.repeatUntilAvailable, type : "oo-radiogroup",
                         selectText : this.lp.repeatUntilAvailableTextArr,
                         selectValue : ["NONE", "AVAILABLE"],
                         defaultValue : "NONE"
                     },
-                    repeatUntilDate : { tType : "date", event : {
+                    repeatUntilDate : { type : "oo-datetime", mode: 'date', format: 'YYYY-MM-DD', event : {
                         click : function(){ this.form.getItem("repeatUntilAvailable").setValue("AVAILABLE") }.bind(this)
                     }},
                     comment : { text : this.lp.content, type : "rtf", RTFConfig : {
                         skin : "bootstrapck",
                         "resize_enabled": false,
                         toolbar : [
-                            { name: 'document', items : [ 'Preview' ] },
+                            // { name: 'document', items : [ 'Preview' ] },
                             //{ name: 'clipboard', items : [ 'Cut','Copy','Paste','PasteText','PasteFromWord','-','Undo','Redo' ] },
                             { name: 'basicstyles', items : [ 'Bold','Italic','Underline','Strike','-','RemoveFormat' ] },
                             //{ name: 'paragraph', items : [ 'JustifyLeft','JustifyCenter','JustifyRight','JustifyBlock' ] },
@@ -440,8 +450,7 @@ MWFCalendar.EventForm = new Class({
 
             this.loadColor();
 
-            //if( this.data.id )
-            //    this.loadAttachment();
+            // if( this.data.id )this.loadAttachment();
         }.bind(this), true);
     },
     getRRuleString : function( data ){
@@ -470,91 +479,72 @@ MWFCalendar.EventForm = new Class({
         return rule.toString();
     },
     getHtml : function(){
-        var boxStyle = (this.isEdited || this.isNew) ? "border:1px solid #ccc; border-radius: 4px;overflow: hidden;padding:8px;" : "";
+        var data = this.data || {};
+        var editMode = (this.isEditable( this.data ) && this.isEdited) || this.isNew;
       if( this.options.isFull ){
-          var html =  "<div style='overflow: hidden;'>" +
-              "<div item='baseInforContainer' style='float: left; width : 500px;'>" +
-              "<table width='100%' bordr='0' cellpadding='7' cellspacing='0' styles='formTable' style='table-layout:fixed;'>" +
-                  //"<tr><td colspan='2' styles='formTableHead'>申诉处理单</td></tr>" +
-              "<tr><td styles='formTableTitle' width='80' lable='calendarId'></td>" +
-              "    <td styles='formTableValue' item='calendarId' colspan='2' width='400'></td>" +
-              "</tr>" +
-              "<tr><td styles='formTableTitle' lable='title'></td>" +
-              "    <td styles='formTableValue' item='title'  colspan='2'></td></tr>" +
-              "<tr><td styles='formTableTitle' lable='startDateInput'></td>" +
-              "    <td styles='formTableValue' item='startDateInput' width='" + ( this.editEnable ? "260" : "100" ) + "'></td>" +
-              "    <td styles='formTableValue' item='startTimeInput'></td>" +
-              "</tr>" +
-              "<tr><td styles='formTableTitle' lable='endDateInput'></td>" +
-              "    <td styles='formTableValue' item='endDateInput'></td>" +
-              "    <td styles='formTableValue' item='endTimeInput'></td>" +
-              "</tr>"+
-              "<tr><td styles='formTableTitle'></td>" +
-              "    <td styles='formTableValue' item='isAllDayEvent' colspan='2'></td>" +
-              "</tr>"+
-              "<tr><td styles='formTableTitle' lable='locationName'></td>" +
-              "    <td styles='formTableValue' item='locationName' colspan='2'></td>" +
-              "</tr>" +
-              "<tr><td styles='formTableTitle' lable='remind'></td>" +
-              "    <td styles='formTableValue' item='remind' colspan='2'></td>" +
-              "</tr>" +
-              "<tr><td styles='formTableTitle' lable='repeat'></td>" +
-              "    <td styles='formTableValue' item='repeat' colspan='2'></td>" +
-              "</tr>" +
-              "<tr item='repeatWeekArea' style='display:"+ ( this.data.repeat == RRule["WEEKLY"] ? "" : "none") +";'><td styles='formTableTitle'></td>" +
-              "    <td styles='formTableValue' item='repeatWeek' colspan='2' style='overflow:hidden;'></td>" +
-              "</tr>" +
-              "<tr item='repeatUntilArea' style='display:"+ ( (!this.data.repeat || this.data.repeat == "") ? "none" : "") +";'><td styles='formTableTitle'></td>" +
-              "    <td styles='formTableValue' colspan='2' style='overflow: hidden;line-height:34px;'>" +
-              "        <div lable='repeatUntilAvailable' style='float: left;'></div>"+
-              "        <div item='repeatUntilAvailable'  style='float: left;'></div>"+
-              "        <div item='repeatUntilDate'  style='float: left;width:170px;'></div>"+
-              "    </td>" +
-              "</tr>" +
-              "<tr><td styles='formTableTitle'>"+this.lp.color+"：</td>" +
-              "    <td styles='formTableValue' item='color' colspan='2' style='overflow: hidden;'></td>" +
-              "</tr>" +
-              "</table>"+
-              "</div>" +
-              "<div style='float: left; width : 500px;' item='commentContainer'>" +
-              "<table width='100%' bordr='0' cellpadding='7' cellspacing='0' styles='formTable'>" +
-                  //"<tr><td colspan='2' styles='formTableHead'>申诉处理单</td></tr>" +
-                  "<tr><td styles='formTableTitle' ></td>" +
-                  "    <td styles='formTableValue' lable='comment' colspan='2'></td>" +
-                  "</tr>" +
-              "<tr><td styles='formTableTitle' ></td>" +
-              "    <td styles='formTableValue' item='comment' colspan='2'></td>" +
-              "</tr>" +
-                  //"<tr><td styles='formTableTitle'>"+this.lp.eventDescription+":</td>" +
-                  //"    <td styles='formTableValue' item='description'  colspan='2'></td></tr>" +
-              "<tr item='attachmentTr'><td styles='formTableTitle'></td>" +
-              "    <td styles='formTableValue' item='attachment'></td></tr>" +
-              "</table>"+
-              "</div>" +
-              "</div>";
-          return html;
+          return `<div style='display: flex;gap:2em;${layout.mobile ? "flex-direction: column;":""}'>
+              <div item='baseInforContainer' style='flex: 1;'>
+                  <div class='formTable'>
+                    <div item='calendarId'></div> 
+                    <div item='title'></div>
+                    <div style="display: flex;">
+                      <div item='startDateInput' style='flex:2;'></div>
+                      <div item='startTimeInput' style='flex:1;'></div>
+                    </div>
+                    <div style="display: flex;"> 
+                      <div item='endDateInput' style='flex:2;'></div> 
+                      <div item='endTimeInput' style='flex:1;'></div>
+                    </div>
+                    <div item='isAllDayEvent' style="
+                        ${editMode || data.isAllDayEvent === 'true' || data.isAllDayEvent === true ? '' : 'display:none;' }">
+                    </div>
+                    <div item='locationName'></div>
+                    <div item='remind'></div>
+                    <div item='repeat'></div>
+                    <div item='repeatWeekArea' class="formLine" style='display:${this.data.repeat === RRule["WEEKLY"] ? "" : "none"};'>
+                        <div class="formLabel"></div>
+                        <div class="formValue" item='repeatWeek' style="display: flex;
+                            ${layout.mobile ?
+                                'justify-content: flex-start; flex-wrap: wrap; gap: 1rem;':
+                                'justify-content: space-between;'}">
+                        </div>
+                    </div>
+                     <div item='repeatUntilArea' class="formLine" style='
+                            display:${(!this.data.repeat || this.data.repeat === "") ? "none" : "flex"};
+                            ${layout.mobile ? "flex-direction: column;align-items:normal;":""}'>
+                          <div item='repeatUntilAvailable' style="flex: 2"></div>
+                          <div item='repeatUntilDate' style="flex: 1;${editMode || data.repeatUntilAvailable === 'AVAILABLE' ? '' : 'display:none;' }"></div>
+                     </div>
+                      <div class="formLine" style="display: ${(this.isEdited || this.isNew) ? 'flex' : 'none'}">
+                        <div class="formLabel">${this.lp.color}</div>
+                        <div class='formValue' item='color' style='overflow: hidden;'></div>
+                      </div>
+                  </div>
+              </div>
+              <div style='flex: 1;' item='commentContainer'>
+                  <div class="formLine">
+                    <div style="padding:0.5em 0.35em;">${this.lp.content}</div>
+                    <div class='formValue' item='color' style='overflow: hidden;'></div>
+                  </div>
+                  <div item='comment'></div>
+                  <div item='attachment'></div>
+              </div>
+          </div>`;
       }else{
-          return  "<table width='100%' bordr='0' cellpadding='7' cellspacing='0' styles='formTable'>" +
-                  //"<tr><td colspan='2' styles='formTableHead'>申诉处理单</td></tr>" +
-              "<tr><td styles='formTableTitle' lable='calendarId'></td>" +
-              "    <td styles='formTableValue' item='calendarId'  colspan='2'></td></tr>" +
-              "<tr><td styles='formTableTitle' lable='title'></td>" +
-              "    <td styles='formTableValue' item='title'  colspan='2'></td></tr>" +
-              "<tr><td styles='formTableTitle' width='100' lable='startDateInput'></td>" +
-              "    <td styles='formTableValue' item='startDateInput' width='300'></td>" +
-              "    <td styles='formTableValue' item='startTimeInput'></td>" +
-              "</tr>" +
-              "<tr><td styles='formTableTitle' lable='endDateInput'></td>" +
-              "    <td styles='formTableValue' item='endDateInput'></td>" +
-              "    <td styles='formTableValue' item='endTimeInput'></td>" +
-              "</tr>" +
-              "<tr><td styles='formTableTitle'></td>" +
-              "    <td styles='formTableValue' item='isAllDayEvent' colspan='2'></td>" +
-              "</tr>" +
-              "<tr><td styles='formTableTitle' lable='remind'></td>" +
-              "    <td styles='formTableValue' item='remind' colspan='2'></td>" +
-              "</tr>" +
-              "</table>";
+          return `<div class='formTable'>
+              <div item='calendarId'></div>
+              <div item='title'></div>
+              <div style="display: flex;">
+                 <div item='startDateInput' style='flex:2;'></div>
+                 <div item='startTimeInput' style='flex:1;'></div>
+              </div>
+              <div style="display: flex;">
+                <div item='endDateInput' style='flex:2;'></div>
+                <div item='endTimeInput' style='flex:1;'></div>
+              </div>
+              <div item='isAllDayEvent'></div>
+              <div item='remind'></div>
+              </div>`;
       }
     },
     _setNodesSize : function(width, height, formContentHeight, formTableHeight ){
@@ -653,8 +643,6 @@ MWFCalendar.EventForm = new Class({
             "background" : "#f7f7f7",
             "color" : "#666",
             "padding" : "0px 9px",
-            "margin-right" : "9px",
-            "float" : "left",
             "font-size" : "12px",
             "cursor" : "pointer"
         };
@@ -672,7 +660,9 @@ MWFCalendar.EventForm = new Class({
                 text : this.lp.weeks.arr[i],
                 events : {
                     click : function(ev){
-                        this.triggerWeek( ev.target )
+                        if( (this.isEditable( this.data ) && this.isEdited) || this.isNew ){
+                            this.triggerWeek( ev.target );
+                        }
                     }.bind(this)
                 }
             }).inject(container);
@@ -718,21 +708,25 @@ MWFCalendar.EventForm = new Class({
     },
     _createBottomContent : function(){
         var editable = this.isEditable( this.data );
-        var html = "<div style='width:724px;margin:0px auto;'><table width='724' bordr='0' cellpadding='7' cellspacing='0' styles='formTable'>" +
-            "<tr><td styles='formTableValue' width='80'></td>" +
-            "    <td styles='formTableValue' style='padding-top: 15px;'>"+
-            "       <div item='saveAction' style='float:left;display:"+ (( (editable && this.isEdited) || this.isNew) ? "" : "none") +";'></div>"+
-            "       <div item='editAction' style='float:left;display:"+ ((!editable || (this.isEdited || this.isNew))  ? "none" : "") +";'></div>"+
-            "       <div item='removeAction' style='float:left;display:"+ ( ( editable && this.isEdited ) ? "" : "none") +";'></div>"+
-            "       <div item='cancelAction' style='"+( (editable && (this.isEdited || this.isNew )) ? "float:left;" : "float:left;wdith:100px;")+"'></div>"+
-            "       <div item='moreInfor' style='float: right;margin-top:5px;'></div>"+
-            "   </td></tr>" +
-            "</table></div>";
+        var html = layout.mobile ?
+            `<div style='display:contents'>
+                   <div item='cancelAction' style="display: contents"></div>
+                   <div item='saveAction' style='float:left;display:${( (editable && this.isEdited) || this.isNew) ? "contents" : "none"}'></div>
+                   <div item='editAction' style='float:left;display:${(!editable || (this.isEdited || this.isNew))  ? "none" : "contents"};'></div>
+                   <div item='removeAction' style='float:left;display:${( editable && this.isEdited ) ? "contents" : "none"};'></div>
+            </div>`:
+            `<div style='padding-top: 20px;display: flex;justify-content: center;align-items: center;'>
+                   <div item='saveAction' style='float:left;display:${( (editable && this.isEdited) || this.isNew) ? "" : "none"}'></div>
+                   <div item='editAction' style='float:left;display:${(!editable || (this.isEdited || this.isNew))  ? "none" : ""};'></div>
+                   <div item='removeAction' style='float:left;display:${( editable && this.isEdited ) ? "" : "none"};'></div>
+                   <div item='cancelAction'></div>
+                   <div item='moreInfor' style='float: right;margin-left:20px;'></div>
+            </div>`;
         this.formBottomNode.set("html", html);
         MWF.xDesktop.requireApp("Template", "MForm", function () {
             var form = new MForm(this.formBottomNode, {}, {
                 isEdited: this.isEdited || this.isNew,
-                style : "meeting",
+                style : layout.mobile ? "v10_mobile" : "v10",
                 hasColon : true,
                 itemTemplate: {
                     moreInfor : {
@@ -740,21 +734,24 @@ MWFCalendar.EventForm = new Class({
                             click : function(){ this.openMoreInfor() }.bind(this)
                         }, disable : this.options.isFull
                     },
-                    saveAction : { type : "button", className : "inputOkButton", clazz : "mainColor_bg", value : this.lp.save, event : {
+                    saveAction : { type : "oo-button", className : "inputOkButton", clazz : "mainColor_bg", value : this.lp.save, event : {
                         click : function(){ this.save();}.bind(this)
-                    } },
-                    removeAction : { type : "button", className : "inputCancelButton", value : this.lp.cancelEvent , event : {
+                    }},
+                    removeAction : { type : "oo-button", className : "inputCancelButton", appearance:'cancel', value : this.lp.cancelEvent , event : {
                         click : function( item, ev ){ this.cancelEvent(ev); }.bind(this)
-                    } },
-                    editAction : { type : "button", className : "inputOkButton", clazz : "mainColor_bg", value : this.lp.editEvent , event : {
+                    }},
+                    editAction : { type : "oo-button", className : "inputOkButton", clazz : "mainColor_bg", value : this.lp.editEvent , event : {
                         click : function(){ this.editEvent(); }.bind(this)
-                    } },
-                    cancelAction : { type : "button", className : "inputCancelButton", value : this.lp.close , event : {
+                    }},
+                    cancelAction : { type : "oo-button", className : "inputCancelButton", appearance:'cancel', value : this.lp.close , event : {
                         click : function(){ this.close(); }.bind(this)
-                    } }
+                    }}
                 }
             }, this.app);
             form.load();
+            if(layout.mobile){
+                this.formatMobileButton(this.formBottomNode.getFirst(), this.formAreaNode);
+            }
         }.bind(this), true);
     },
     openMoreInfor : function(){
@@ -796,12 +793,13 @@ MWFCalendar.EventForm = new Class({
     },
 
     loadAttachment: function(){
-        if(!this.attachmentTr)return;
-        this.attachmentTr.setStyle("display","");
+        // if(!this.attachmentTr)return;
+        // this.attachmentTr.setStyle("display","");
         this.attachmentNode = new Element("div", {"styles": this.css.createEventAttachmentNode}).inject(this.attachmentArea);
         var attachmentContentNode = new Element("div", {"styles": this.css.createEventAttachmentContentNode}).inject(this.attachmentNode);
         MWF.require("MWF.widget.AttachmentController", function(){
             this.attachmentController = new MWF.widget.AttachmentController(attachmentContentNode, this, {
+                "style": "v10",
                 "size": "min",
                 "isSizeChange": false,
                 "isReplace": false,
@@ -932,13 +930,15 @@ MWFCalendar.EventForm = new Class({
         }.bind(this))
     },
     openDeleteOptionForm : function( callback ){
+        const par = layout.mobile ? {container: document.body}: {};
         this.deleteOptionsForm = new MWFCalendar.DeleteOptionDialog( this, {}, {
+            closeByClickMask: !!layout.mobile,
             onPostOk : function( saveOptions ){
                 if(callback){
                     callback(saveOptions)
                 }
             }.bind(this)
-        }, {});
+        }, par);
         this.deleteOptionsForm.edit();
     },
     save: function(){
@@ -1001,13 +1001,15 @@ MWFCalendar.EventForm = new Class({
         }
     },
     openSaveOptionForm : function( callback ){
+        const par = layout.mobile ? {container: document.body}: {};
         this.saveOptionsForm = new MWFCalendar.SaveOptionDialog( this, {}, {
+            closeByClickMask: !!layout.mobile,
             onPostOk : function( saveOptions ){
                 if(callback){
-                    callback(saveOptions)
+                    callback(saveOptions);
                 }
             }.bind(this)
-        }, {});
+        }, par);
         this.saveOptionsForm.edit();
     },
     getSaveData: function(){
@@ -1135,10 +1137,10 @@ MWFCalendar.CalendarForm = new Class({
     Extends: MPopupForm,
     Implements: [Options, Events],
     options: {
-        "style": "meeting",
+        "style": "v10",
         "okClass": "mainColor_bg",
         "width": "800",
-        "height": "500",
+        "height": "420",
         "hasTop": true,
         "hasIcon": false,
         "hasTopIcon" : false,
@@ -1147,27 +1149,40 @@ MWFCalendar.CalendarForm = new Class({
         "maxAction" : true,
         "resizeable" : true,
         "closeAction": true,
-        "resultSeparator" : null
+        "resultSeparator" : null,
+        "scrollType": "window"
     },
     _createTableContent: function () {
         var data = this.data;
         var editEnable = this.editEnable = ( !this.isEdited && !this.isNew && this.data.manageable );
         this.userName = ( layout.desktop.session.user || layout.user ).distinguishedName;
         this.userId = ( layout.desktop.session.user || layout.user ).id;
-        if( data.type == "UNIT" ){
-            this.options.height = "650"
+        if( !layout.mobile ){
+            if( data.type === "UNIT" ){
+                this.options.height = "650";
+            }
         }
         if( this.isNew ){
-            this.formTopTextNode.set( "text", this.lp.createCalendar );
+            this.formTopTextNode?.set( "text", this.lp.createCalendar );
         }else if( this.isEdited ){
-            this.formTopTextNode.set( "text", this.lp.editCalendar );
+            this.formTopTextNode?.set( "text", this.lp.editCalendar );
         }else{
-            this.formTopTextNode.set( "text", this.lp.calendar );
+            this.formTopTextNode?.set( "text", this.lp.calendar );
         }
 
         this.formTableArea.set("html", this.getHtml());
 
-        this.formTableContainer.setStyle("width","80%");
+        debugger;
+
+        if(layout.mobile){
+            this.formTableContainer.setStyles({
+                "width" : "auto",
+                "padding-left" : "20px",
+                "padding-right" : "20px"
+            });
+        }else{
+            this.formTableContainer.setStyle("width","80%");
+        }
 
         this.colorItem = this.formTableArea.getElement("[item='color']");
 
@@ -1175,12 +1190,13 @@ MWFCalendar.CalendarForm = new Class({
         MWF.xDesktop.requireApp("Template", "MForm", function () {
             this.form = new MForm(this.formTableArea, data, {
                 isEdited: this.isEdited || this.isNew,
-                style : "meeting",
+                style : "v10",
+                mvcStyle: "v10",
                 hasColon : true,
                 itemTemplate: {
-                    name: { text : this.lp.calendarName, notEmpty : true },
-                    description: {text : this.lp.description, type: "textarea"},
-                    type : { text : this.lp.type, type : "select", isEdited : this.isNew,
+                    name: { type:'oo-input', text : this.lp.calendarName, notEmpty : true },
+                    description: { type: "oo-textarea", text : this.lp.description},
+                    type : { text : this.lp.type, type : "oo-select", isEdited : this.isNew,
                         selectValue : ["PERSON", "UNIT"],
                         selectText : this.lp.canlendarTypeArr,
                         defaultValue : "PERSON",
@@ -1190,16 +1206,16 @@ MWFCalendar.CalendarForm = new Class({
                             }.bind(this)
                         }
                     },
-                    target : { text : this.lp.unit, type : "org", orgType : "unit", validRule : { empty : function( value, item){
-                        if( item.form.getItem("type").getValue() == "UNIT" && value == ""){ return false }else{ return true };
+                    target : { text : this.lp.unit, type : "oo-org", orgType : "unit", validRule : { empty : function( value, item){
+                        return !(item.form.getItem("type").getValue() === "UNIT" && value === "");
                     }}, validMessage : { empty : this.lp.unitEmptyNotice } },
-                    isPublic : { text : this.lp.isOpened, type : "select", selectValue : ["true","false"], selectText : this.lp.trueFalseArr, defaultValue : "false" },
-                    status : { text : this.lp.isAvaliable, type : "radio", selectValue : ["OPEN","CLOSE"], selectText : this.lp.trueFalseArr, defaultValue : "OPEN" },
-                    manageablePersonList : { text : this.lp.manager, type : "org", orgType : "person", count : 0},
-                    viewerList : { text : this.lp.viewerRange, type : "org", orgType : ["person","unit","group"], count : 0, value : function(){
+                    isPublic : { text : this.lp.isOpened, type : "oo-select", selectValue : ["true","false"], selectText : this.lp.trueFalseArr, defaultValue : "false" },
+                    status : { text : this.lp.isAvaliable, type : "oo-radioGroup", selectValue : ["OPEN","CLOSE"], selectText : this.lp.trueFalseArr, defaultValue : "OPEN" },
+                    manageablePersonList : { text : this.lp.manager, type : "oo-org", orgType : "person", count : 0},
+                    viewerList : { text : this.lp.viewerRange, type : "oo-org", orgType : ["person","unit","group"], count : 0, value : function(){
                         return ( data.viewablePersonList || [] ).combine( data.viewableUnitList || [] ).combine( data.viewableGroupList || [] )
                     }.bind(this)},
-                    publisherList : { text : this.lp.publisherRange, type : "org", orgType : ["person","unit","group"], count : 0, value : function(){
+                    publisherList : { text : this.lp.publisherRange, type : "oo-org", orgType : ["person","unit","group"], count : 0, value : function(){
                         return ( data.publishablePersonList || [] ).combine( data.publishableUnitList || [] ).combine( data.publishableGroupList || [] )
                     }.bind(this)}
                 }
@@ -1212,40 +1228,41 @@ MWFCalendar.CalendarForm = new Class({
         }.bind(this), true);
     },
     getHtml : function(){
-        var boxStyle = (this.isEdited || this.isNew) ? "border:1px solid #ccc; border-radius: 4px;overflow: hidden;padding:8px;" : "";
-        var targetStyle = this.data.type != "UNIT" ? "style='display:none'" : "";
-        var permissionStyle = this.data.type != "UNIT" ? "style='display:none'" : "";
-        return  "<table width='100%' bordr='0' cellpadding='7' cellspacing='0' styles='formTable' style='table-layout:fixed;'>" +
-                "<tr><td styles='formTableTitle' width='80' lable='name'></td>" +
-                "    <td styles='formTableValue' item='name' width='400' colspan='3'></td></tr>" +
-                "<tr><td styles='formTableTitle'>"+this.lp.color+"：</td>" +
-                "    <td styles='formTableValue' item='color' style='overflow: hidden;' colspan='3'></td></tr>" +
-                "<tr><td styles='formTableTitle' lable='type' width='80'></td>" +
-                "    <td styles='formTableValue' item='type'></td>" +
-                "   <td styles='formTableTitleRight' lable='isPublic'  width='50'></td>" +
-                "    <td styles='formTableValue' item='isPublic'></td></tr>" +
-                "<tr><td styles='formTableTitle' lable='description'></td>" +
-                "    <td styles='formTableValue' item='description' colspan='3'></td></tr>" +
-                "<tr "+targetStyle+"><td styles='formTableTitle' lable='target'></td>" +
-                "    <td styles='formTableValue' item='target' colspan='3'></td></tr>" +
-                "<tr "+permissionStyle+"><td styles='formTableTitle' lable='manageablePersonList'></td>" +
-                "    <td styles='formTableValue' item='manageablePersonList' colspan='3'></td></tr>" +
-                "<tr "+permissionStyle+"><td styles='formTableTitle' lable='viewerList'></td>" +
-                "    <td styles='formTableValue' item='viewerList' colspan='3'></td></tr>" +
-                "<tr "+permissionStyle+"><td styles='formTableTitle' lable='publisherList'></td>" +
-                "    <td styles='formTableValue' item='publisherList' colspan='3'></td></tr>" +
-                "</tr>" +
-                "<tr><td styles='formTableTitle' lable='status'></td>" +
-                "   <td styles='formTableValue' item='status' colspan='3'></td></tr>" +
-                "</table>"
+        var targetStyle = this.data.type !== "UNIT" ? "style='display:none'" : "";
+        var permissionStyle = this.data.type !== "UNIT" ? "style='display:none'" : "";
+        return  `<div class="formTable">
+                    <div item='name'></div>
+                    <div class="formLine">
+                        <div class="formLabel">${this.lp.color}</div>
+                        <div class='formValue' item='color' style='overflow: hidden;'></div>
+                    </div>
+                    ${
+                        layout.mobile ?
+                            `<div item='type'></div><div item='isPublic'></div>` :
+                            `<div style='display: flex;'>
+                                <div item='type' style="flex: 1;"></div>
+                                <div item='isPublic' style="flex: 1;"></div>
+                            </div>`
+                    }  
+                    <div item='description'></div>
+                    <div ${targetStyle} item='target'></div>
+                    <div ${permissionStyle} item='manageablePersonList'></div>
+                    <div ${permissionStyle} item='viewerList'></div>
+                    <div ${permissionStyle} item='publisherList'></div>
+                    <div item='status'></div>
+                </div>`;
     },
     changeType : function( type ){
         var changeItemName = ["target","manageablePersonList","viewerList","publisherList"];
         changeItemName.each( function(name){
-            this.formTableArea.getElement("[item='"+name+"']").getParent().setStyle("display",type == "UNIT" ? "" : "none");
+            this.formTableArea.getElement("[item='"+name+"']").setStyle("display",type === "UNIT" ? "" : "none");
         }.bind(this));
-        this.options.height = type == "UNIT" ? "650" : "500";
-        this.setFormNodeSize();
+        if( !layout.mobile ){
+            this.options.height = type === "UNIT" ? "650" : "500";
+            this.setFormNodeSize();
+        }else{
+
+        }
     },
     loadColor : function(){
         if( this.isEdited || this.isNew ){
@@ -1291,37 +1308,43 @@ MWFCalendar.CalendarForm = new Class({
         }.bind(this))
     },
     _createBottomContent : function(){
-        var html = "<div style='width:724px;margin:0px auto;'><table width='724' bordr='0' cellpadding='7' cellspacing='0' styles='formTable'>" +
-            "<tr><td styles='formTableValue' width='80'></td>" +
-            "    <td styles='formTableValue' style='padding-top: 15px;'>"+
-            "       <div item='saveAction' style='float:left;display:"+ ( (this.isEdited || this.isNew) ? "" : "none") +";'></div>"+
-            "       <div item='editAction' style='float:left;display:"+ ( this.editEnable ? "" : "none") +";'></div>"+
-            "       <div item='removeAction' style='float:left;display:"+ ( this.isEdited ? "" : "none") +";'></div>"+
-            "       <div item='cancelAction' style='"+( (this.isEdited || this.isNew || this.editEnable) ? "float:left;" : "float:right;margin-right:15px;")+"'></div>"+
-            "   </td></tr>" +
-            "</table></div>";
+        var html = layout.mobile ? `<div style='display:contents'>
+               <div item='cancelAction' style='display:contents'></div>
+               <div item='saveAction' style='float:left;display:${(this.isEdited || this.isNew) ? "contents" : "none"}'></div>
+               <div item='editAction' style='float:left;display:${this.editEnable ? "contents" : "none"};'></div>
+               <div item='removeAction' style='float:left;display:${this.isEdited ? "contents" : "none"};'></div>
+            </div>` :
+            `<div style='padding-top: 15px; display:flex; justify-content: center;'>
+               <div item='saveAction' style='float:left;display:${(this.isEdited || this.isNew) ? "" : "none"}'></div>
+               <div item='editAction' style='float:left;display:${this.editEnable ? "" : "none"};'></div>
+               <div item='removeAction' style='float:left;display:${this.isEdited ? "" : "none"};'></div>
+               <div item='cancelAction'></div>
+            </div>`;
         this.formBottomNode.set("html", html);
         MWF.xDesktop.requireApp("Template", "MForm", function () {
             var form = new MForm(this.formBottomNode, {}, {
                 isEdited: this.isEdited || this.isNew,
-                style : "meeting",
+                style : layout.mobile ? "v10_mobile" : "v10",
                 hasColon : true,
                 itemTemplate: {
-                    saveAction : { type : "button", className : "inputOkButton", clazz : "mainColor_bg", value : this.lp.save, event : {
+                    saveAction : { type : "oo-button", className : "inputOkButton", clazz : "mainColor_bg", value : this.lp.save, event : {
                         click : function(){ this.ok();}.bind(this)
                     } },
-                    removeAction : { type : "button", className : "inputCancelButton", value : this.lp.deleteCalendar , event : {
+                    removeAction : { type : "oo-button", className : "inputCancelButton", appearance:'cancel', value : this.lp.deleteCalendar , event : {
                         click : function( item, ev ){ this.deleteCalendar(ev); }.bind(this)
                     } },
-                    editAction : { type : "button", className : "inputOkButton", clazz : "mainColor_bg", value : this.lp.editCalendar , event : {
+                    editAction : { type : "oo-button", className : "inputOkButton", clazz : "mainColor_bg", value : this.lp.editCalendar , event : {
                         click : function(){ this.editCalendar(); }.bind(this)
                     } },
-                    cancelAction : { type : "button", className : "inputCancelButton", value : this.lp.close , event : {
+                    cancelAction : { type : "oo-button", className : "inputCancelButton", appearance:'cancel', value : this.lp.close , event : {
                         click : function(){ this.close(); }.bind(this)
                     } }
                 }
             }, this.app);
             form.load();
+            if(layout.mobile){
+                this.formatMobileButton(this.formBottomNode.getFirst(), this.formAreaNode);
+            }
         }.bind(this), true);
     },
     deleteCalendar : function( e ){
@@ -1330,7 +1353,7 @@ MWFCalendar.CalendarForm = new Class({
             _self.app.actions.deleteCalendar( _self.data.id, function( json ){
                 _self.close();
                 _self.app.notice( _self.lp.deleteSuccess );
-                _self.app.leftNavi.reload();
+                (_self.view || _self.app.leftNavi).reload();
             }.bind(this));
             this.close();
         }, function(){
@@ -1407,7 +1430,7 @@ MWFCalendar.SaveOptionDialog = new Class({
     Extends: MPopupForm,
     Implements: [Options, Events],
     options: {
-        "style": "meeting",
+        "style": "v10",
         "okClass": "mainColor_bg",
         "width": "470",
         "height": "325",
@@ -1418,14 +1441,16 @@ MWFCalendar.SaveOptionDialog = new Class({
         "draggable": true,
         //"maxAction" : true,
         "closeAction": true,
-        "title" : MWF.xApplication.Calendar.LP.saveOptionDialogTitle
+        "title" : MWF.xApplication.Calendar.LP.saveOptionDialogTitle,
+        "scrollType": "window"
     },
     _createTableContent : function(){
 
         this.formTableContainer.setStyles({
             "width" : "auto",
             "padding-top" : "20px",
-            "padding-left" : "40px"
+            "padding-left" : "40px",
+            "padding-right" : "40px"
         });
 
         var lp = MWF.xApplication.Calendar.LP;
@@ -1439,7 +1464,7 @@ MWFCalendar.SaveOptionDialog = new Class({
 
         MWF.xDesktop.requireApp("Template", "MForm", function () {
             this.form = new MForm(this.formTableArea, {empName: "xadmin"}, {
-                style : "meeting",
+                style : "v10",
                 isEdited: this.isEdited || this.isNew,
                 itemTemplate: {
                     saveOption: {
@@ -1469,7 +1494,7 @@ MWFCalendar.DeleteOptionDialog = new Class({
     Extends: MPopupForm,
     Implements: [Options, Events],
     options: {
-        "style": "meeting",
+        "style": "v10",
         "okClass": "mainColor_bg",
         "width": "470",
         "height": "325",
@@ -1480,17 +1505,19 @@ MWFCalendar.DeleteOptionDialog = new Class({
         "draggable": true,
         //"maxAction" : true,
         "closeAction": true,
-        "title" : MWF.xApplication.Calendar.LP.deleteOptionDialogTitle
+        "title" : MWF.xApplication.Calendar.LP.deleteOptionDialogTitle,
+        "scrollType": "window"
     },
     _createTableContent : function(){
         this.formTableContainer.setStyles({
             "width" : "auto",
             "padding-top" : "20px",
-            "padding-left" : "40px"
+            "padding-left" : "40px",
+            "padding-right" : "40px"
         });
 
         var lp = MWF.xApplication.Calendar.LP;
-        this.lp = { ok : lp.modifyConfirm, cancel : lp.cancel };
+        this.lp = { ok : lp.deleteConfirm, cancel : lp.cancel };
 
         var html = "<table width='80%' bordr='0' cellpadding='5' cellspacing='0' styles='formTable'>" +
                 //"<tr><td colspan='2' styles='formTableHead'>申诉处理单</td></tr>" +
@@ -1502,7 +1529,7 @@ MWFCalendar.DeleteOptionDialog = new Class({
         MWF.xDesktop.requireApp("Template", "MForm", function () {
             this.form = new MForm(this.formTableArea, {empName: "xadmin"}, {
                 isEdited: this.isEdited || this.isNew,
-                style : "meeting",
+                style : "v10",
                 itemTemplate: {
                     saveOption: {
                         defaultValue : "single",
@@ -1533,6 +1560,7 @@ MWFCalendar.EventTooltip = new Class({
         displayDelay : 300
     },
     _loadCustom : function( callback ){
+        this.node.style.setProperty('box-sizing', 'content-box', 'important');
         this.loadAttachment();
         this.loadButton();
         if(callback)callback();

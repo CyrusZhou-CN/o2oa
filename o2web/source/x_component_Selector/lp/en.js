@@ -30,6 +30,7 @@ MWF.xApplication.Selector.LP={
 	"empty": "Empty",
 	"remove": "Remove",
 	"selected2": "Selected",
+	"searchResult": "search Result",
 	"identity": "Identity",
 	"person": "Person",
 	"duty": "Duty",
@@ -42,13 +43,16 @@ MWF.xApplication.Selector.LP={
 	"role": "Role",
 	"group": "Group",
 	"unit": "Unit",
+	"unitDuty": "unitDuty",
 	"systemList": "System List",
 	"quantifier": {
 		"person": "person",
 		"identity": "identity",
 		"unit": "unit",
 		"group": "group",
-		"role": "role"
+		"role": "role",
+		"processActivity": "Process activities",
+		"activity": "Process activities"
 	},
 	"appType": {
 		"process": "Process",
@@ -75,6 +79,12 @@ MWF.xApplication.Selector.LP={
 	"agent": "Agent",
 	"selectFieldProperty": "Select field attributes",
 	"searchDescriptionFieldProperty": "Expanded forms can search for components",
-	"currentForm": "Current form"
+	"currentForm": "Current form",
+	"selectPanFile": "Select cloud storage files",
+	"personFile": "personal documents",
+	"unitFile": "Enterprise files",
+	"selectWidget": "Select components",
+	"processActivity": "Process activities",
+	"activity": "Process activities"
 }
 MWF.xApplication.Selector["lp."+o2.language] = MWF.xApplication.Selector.LP

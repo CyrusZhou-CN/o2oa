@@ -55,8 +55,8 @@ import com.x.program.center.Business;
 
 public class SyncOrganization {
 
-	private static Logger logger = LoggerFactory.getLogger(SyncOrganization.class);
-	private static ReentrantLock lock = new ReentrantLock();
+	private static final Logger logger = LoggerFactory.getLogger(SyncOrganization.class);
+	private static final ReentrantLock lock = new ReentrantLock();
 
 	public PullResult execute(Business business) throws Exception {
 		PullResult result = new PullResult();
@@ -256,7 +256,7 @@ public class SyncOrganization {
 	}
 
 	private Person checkPerson(Business business, PullResult result, User user) throws Exception {
-		Person person = business.person().getWithAndFxIdObject(user.getUid());
+		Person person = business.person().getWithUnique(user.getUid());
 		if (null == person) {
 			if ((StringUtils.isNotEmpty(user.getMobile())) && StringUtils.isNotEmpty(user.getName())) {
 				person = this.createOrLinkPerson(business, result, user);
@@ -282,29 +282,17 @@ public class SyncOrganization {
 	private Person createOrLinkPerson(Business business, PullResult result, User user) throws Exception {
 		EntityManagerContainer emc = business.entityManagerContainer();
 		emc.beginTransaction(Person.class);
-		Person person = emc.flag(user.getMobile(), Person.class);
-		if (null != person) {
-			person.setAndFxId(user.getUid());
-			person.setAndFxHash(DigestUtils.sha256Hex(XGsonBuilder.toJson(user)));
-			person.setName(user.getName());
-			person.setMobile(user.getMobile());
-			person.setUnique(user.getUid());
-			person.setGenderType(GenderType.d);
-			emc.check(person, CheckPersistType.all);
-			result.getUpdatePersonList().add(person.getDistinguishedName());
-		} else {
-			person = new Person();
-			person.setAndFxId(user.getUid());
-			person.setAndFxHash(DigestUtils.sha256Hex(XGsonBuilder.toJson(user)));
-			person.setName(user.getName());
-			person.setMobile(user.getMobile());
-			person.setUnique(user.getUid());
-			person.setGenderType(GenderType.d);
-			/* 新增人员需要增加密码 */
-			business.person().setPassword(person, this.initPassword(business, person));
-			emc.persist(person, CheckPersistType.all);
-			result.getCreatePersonList().add(person.getDistinguishedName());
-		}
+		Person person = new Person();
+		person.setAndFxId(user.getUid());
+		person.setAndFxHash(DigestUtils.sha256Hex(XGsonBuilder.toJson(user)));
+		person.setName(user.getName());
+		person.setMobile(user.getMobile());
+		person.setUnique(user.getUid());
+		person.setGenderType(GenderType.d);
+		/* 新增人员需要增加密码 */
+		business.person().setPassword(person, this.initPassword(business, person));
+		emc.persist(person);
+		result.getCreatePersonList().add(person.getDistinguishedName());
 		emc.commit();
 		return person;
 	}
@@ -329,6 +317,7 @@ public class SyncOrganization {
 		EntityManagerContainer emc = business.entityManagerContainer();
 		emc.beginTransaction(Person.class);
 		person.setAndFxHash(DigestUtils.sha256Hex(XGsonBuilder.toJson(user)));
+		person.setAndFxId(user.getUid());
 		person.setName(user.getName());
 		person.setMobile(user.getMobile());
 		emc.check(person, CheckPersistType.all);
@@ -435,7 +424,7 @@ public class SyncOrganization {
 		List<Identity> os = em.createQuery(cq.select(root).where(p)).setMaxResults(1).getResultList();
 		Identity identity = null;
 		Long order = user.getSeq();
-		if (os.size() == 0) {
+		if (os.isEmpty()) {
 			identity = this.createIdentity(business, result, person, unit, user, order);
 		} else {
 			identity = os.get(0);
@@ -460,7 +449,8 @@ public class SyncOrganization {
 			identity.setOrderNumber(order.intValue());
 		}
 		// 人员有多个身份不能设置多个主身份
-		identity.setMajor(false);
+		boolean major = emc.countEqual(Identity.class, Identity.person_FIELDNAME, person.getId()) < 1;
+		identity.setMajor(major);
 		emc.persist(identity, CheckPersistType.all);
 		emc.commit();
 		result.getCreateIdentityList().add(identity.getDistinguishedName());

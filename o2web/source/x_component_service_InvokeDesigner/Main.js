@@ -778,6 +778,9 @@ MWF.xApplication.service.InvokeDesigner.Main = new Class({
         node = new Element("div", {"styles": this.css.propertyItemTitleNode, "text": this.lp.alias+":"}).inject(this.propertyContentArea);
         this.propertyAliasNode = new Element("input", {"styles": this.css.propertyInputNode, "value": ""}).inject(this.propertyContentArea);
 
+        node = new Element("div", {"styles": this.css.propertyItemTitleNode, "text": this.lp.category+":"}).inject(this.propertyContentArea);
+        this.propertyCategoryNode = new Element("input", {"styles": this.css.propertyInputNode, "value": ""}).inject(this.propertyContentArea);
+
         node = new Element("div", {"styles": this.css.propertyItemTitleNode, "text": this.lp.remoteAddrRegex+":"}).inject(this.propertyContentArea);
         this.propertyRemoteAddrRegexNode = new Element("input", {"styles": this.css.propertyInputNode, "value": ""}).inject(this.propertyContentArea);
 
@@ -804,17 +807,21 @@ MWF.xApplication.service.InvokeDesigner.Main = new Class({
 
         node = new Element("div", {"styles": this.css.propertyItemTitleNode, "text": this.lp.executorList+":"}).inject(this.propertyContentArea);
         this.propertyExecutorListNode = new Element("div", {"styles": this.css.propertyOrgNode}).inject(this.propertyContentArea);
-        MWF.xDesktop.requireApp("process.ProcessDesigner", "widget.PersonSelector", function() {
-            this.executorListSelector = new MWF.xApplication.process.ProcessDesigner.widget.PersonSelector(this.propertyExecutorListNode, this, {
-                "types": ['person', 'unit', 'group', 'role'],
-                "names": [],
-                "onChange": function (ids) {
-                    if(this.invokeTab)this.invokeTab.showPage.invoke.data.executorList = ids.map(function(id){
-                        return id.data.distinguishedName;
-                    });
-                }.bind(this)
-            });
-        }.bind(this));
+        MWF.xDesktop.requireApp("process.ProcessDesigner", "widget.PersonSelector", null, false);
+        this.executorListSelector = new MWF.xApplication.process.ProcessDesigner.widget.PersonSelector(this.propertyExecutorListNode, this, {
+            "types": ['person', 'unit', 'group', 'role'],
+            "names": [],
+            "onChange": function (ids) {
+                if(this.invokeTab)this.invokeTab.showPage.invoke.data.executorList = ids.map(function(id){
+                    return id.data.distinguishedName;
+                });
+            }.bind(this)
+        });
+
+        node = new Element("div", {"styles": this.css.propertyItemTitleNode, "text": this.lp.enableAnonymous+":"}).inject(this.propertyContentArea);
+        this.propertyEnableAnonymousNode = new Element("select", {"styles": this.css.propertySelectNode }).inject(this.propertyContentArea);
+        new Element("option" , {  "value" : "true", "text" : this.lp.true  }).inject(this.propertyEnableAnonymousNode);
+        new Element("option" , {  "value" : "false", "text" : this.lp.false  }).inject(this.propertyEnableAnonymousNode);
 
         node = new Element("div", {"styles": this.css.propertyItemTitleNode, "text": this.lp.isEnable+":"}).inject(this.propertyContentArea);
         this.propertyEnableNode = new Element("select", {"styles": this.css.propertySelectNode }).inject(this.propertyContentArea);
@@ -863,9 +870,10 @@ MWF.xApplication.service.InvokeDesigner.Main = new Class({
         MWF.require("MWF.widget.ScriptArea", null, false);
         this.propertyRequireBodyScriptArea = new MWF.widget.ScriptArea(propertyRequireBodyScriptWraper, {
             "title": this.lp.requireArguments,
-            "isload" : true,
+            //"isload" : true,
             "isbind" : false,
-            "forceType": "ace",
+            "mode": "json",
+            //"forceType": "ace",
             "maxObj": this.content,
             "onChange": function(){
                 if(this.currentPage){
@@ -972,7 +980,8 @@ MWF.xApplication.service.InvokeDesigner.Main = new Class({
                     onFailure: function(xhr){
                         var result;
                         try{
-                            result = JSON.stringify(xhr.responseText, null, 4);
+                            var json = JSON.parse(xhr.responseText);
+                            result = JSON.stringify(json, null, 4);
                         }catch (e) {
                             result = xhr.responseText;
                         }
@@ -1197,6 +1206,7 @@ MWF.xApplication.service.InvokeDesigner.Main = new Class({
                 "name": "",
                 "id": id,
                 "alias": "",
+                "category": "",
                 "description": "",
                 //"language": "javascript",
                 //"dependInvokeList": [],
@@ -1205,6 +1215,7 @@ MWF.xApplication.service.InvokeDesigner.Main = new Class({
                 "enableToken" : true,
                 "enable" : true,
                 "remoteAddrRegex" : "",
+                "enableAnonymous" : false,
                 "lastStartTime" : "",
                 "lastEndTime" : ""
             };
@@ -1216,6 +1227,9 @@ MWF.xApplication.service.InvokeDesigner.Main = new Class({
 		this.actions.getInvoke(id, function(json){
 			if (json){
 				var data = json.data;
+                if( !data.hasOwnProperty('enableAnonymous') ){
+                    data.enableAnonymous = false;
+                }
 
                 if (!notSetTile){
                     this.setTitle(this.options.appTitle + "-"+data.name);

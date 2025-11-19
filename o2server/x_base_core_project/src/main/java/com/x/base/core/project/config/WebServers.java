@@ -27,13 +27,13 @@ public class WebServers extends ConcurrentSkipListMap<String, WebServer> {
 			"x_component_cms_FormDesigner", "x_component_cms_Index", "x_component_cms_Module",
 			"x_component_cms_QueryViewDesigner", "x_component_cms_ScriptDesigner", "x_component_cms_ViewDesigner",
 			"x_component_cms_Xform", "x_component_Collect", "x_component_Common", "x_component_ConfigDesigner",
-			"x_component_Console", "x_component_ControlPanel", "x_component_CRM", "x_component_Deployment",
+			"x_component_Console", "x_component_ControlPanel", "x_component_Deployment",
 			"x_component_DesignCenter", "x_component_Empty", "x_component_FaceSet", "x_component_File",
 			"x_component_FindDesigner", "x_component_Forum", "x_component_ForumCategory", "x_component_ForumDocument",
 			"x_component_ForumPerson", "x_component_ForumSearch", "x_component_ForumSection", "x_component_ftsearch",
 			"x_component_Homepage", "x_component_HotArticle", "x_component_IMV2", "x_component_LogViewer",
 			"x_component_Meeting", "x_component_Minder", "x_component_MinderEditor", "x_component_Note",
-			"x_component_OKR", "x_component_Org", "x_component_portal_DictionaryDesigner",
+			"x_component_OKR", "x_component_Org", "x_component_orgregion", "x_component_portal_DictionaryDesigner",
 			"x_component_portal_PageDesigner", "x_component_portal_Portal", "x_component_portal_PortalExplorer",
 			"x_component_portal_PortalManager", "x_component_portal_ScriptDesigner",
 			"x_component_portal_WidgetDesigner", "x_component_process_Application",
@@ -49,7 +49,7 @@ public class WebServers extends ConcurrentSkipListMap<String, WebServer> {
 			"x_component_service_AgentDesigner", "x_component_service_DictionaryDesigner",
 			"x_component_service_InvokeDesigner", "x_component_service_ScriptDesigner",
 			"x_component_service_ServiceManager", "x_component_Setting", "x_component_systemconfig",
-			"x_component_Template", "x_component_ThreeMember", "x_desktop", "x_init");
+			"x_component_Template", "x_component_ThreeMember", "x_desktop", "x_init", "x_component_AI");
 
 	public WebServers() {
 		super();

@@ -10,9 +10,18 @@ MWF.xApplication.process.Xform.OOInput = MWF.APPOOInput = new Class({
         // if (this.isReadonly() || this.json.showMode==="read"){
         //     this._loadNodeRead();
         // }else{
-        this._loadNodeEdit();
+        if (this.json.id==='personAttributeList..data..0..attrName'){
+            debugger;
+        }
+        if (!this.isReadable && !!this.isHideUnreadable){
+            this.node?.addClass('hide');
+        }else{
+            this._loadNodeEdit();
+        }
+        
         // }
     },
+
     loadDescription: function () {
         this.node.setAttribute('placeholder', this.json.description || '');
     },
@@ -35,6 +44,12 @@ MWF.xApplication.process.Xform.OOInput = MWF.APPOOInput = new Class({
             // "label-style": "width:6.2vw; min-width:5em; max-width:9em"
         });
 
+        if (o2.isMediaMobile() && !this.json.inDatatable){
+			this.node.setAttribute("skin-mode", 'mobile');
+		}else{
+            this.node.removeAttribute("skin-mode");
+        }
+
         if (this.json.properties) {
             this.node.set(this.json.properties);
         }
@@ -44,19 +59,23 @@ MWF.xApplication.process.Xform.OOInput = MWF.APPOOInput = new Class({
 
         if (this.json.label) {
             this.node.setAttribute('label', this.json.label);
-        }
+        } 
 
         if (this.json.showIcon != 'no' && !this.form.json.hideModuleIcon) {
-            this.node.setAttribute('right-icon', 'edit');
+            this.node.setAttribute('right-icon', (this.json.properties && this.json.properties["right-icon"]) || 'edit');
         } else if (this.form.json.nodeStyleWithhideModuleIcon) {
             this.node.setAttribute('right-icon', '');
+        }
+
+        if (this.json.inDatatable){
+            this.node.setAttribute('view-style', '');
         }
 
         this.node.setAttribute('readonly', false);
         this.node.setAttribute('readmode', false);
         this.node.setAttribute('disabled', false);
 
-        if (!this.isReadonly()){
+        if (!this.isReadonly() && this.isEditable){
             if (this.json.showMode === 'readonlyMode') {
                 this.node.setAttribute('readonly', true);
             } else if (this.json.showMode === 'disabled') {
@@ -93,6 +112,11 @@ MWF.xApplication.process.Xform.OOInput = MWF.APPOOInput = new Class({
         if (this.json.dataType){
             this.node.setAttribute("type", this.json.dataType);
         }
+        if (this.json.innerHTML){
+			this.node.set("html", this.json.innerHTML);
+		}
+
+        this._loadNodeOtherAttr()
 
         this.node.addEvent('change', function () {
             var v = this.getInputData('change');
@@ -112,6 +136,7 @@ MWF.xApplication.process.Xform.OOInput = MWF.APPOOInput = new Class({
             this.validationMode();
             this.validation();
         }.bind(this));
+        
         this.node.addEvent('keyup', function () {
             this.validationMode();
         }.bind(this));
@@ -121,7 +146,27 @@ MWF.xApplication.process.Xform.OOInput = MWF.APPOOInput = new Class({
                 e.target.setCustomValidity(this.validationText);
             }
         });
+        this.node.addEventListener('invalid', (e)=>{
+            if (this.node._props.validity){
+                e.target.setCustomValidity(this.node._props.validity);
+            }else{
+                var label = this.json.label ? `“${this.json.label.replace(/　/g, '')}”` :  MWF.xApplication.process.Xform.LP.requiredHintField;
+                const o = {
+                    valueMissing: MWF.xApplication.process.Xform.LP.requiredHint.replace('{label}', label),
+                }
+                //通过 e.detail 获取 验证有效性状态对象：ValidityState
+                for (const k in o){
+                    if (e.detail[k]){
+                        if (o[k]){
+                            
+                            break;
+                        }
+                    }
+                }
+            }
+        });
     },
+    _loadNodeOtherAttr: function(){},
     createModelNode: function () {
         // this.modelNode = new Element('div', {'styles': this.form.css.modelNode}).inject(this.node, 'after');
         // new Element('div', {
@@ -156,11 +201,20 @@ MWF.xApplication.process.Xform.OOInput = MWF.APPOOInput = new Class({
     },
 
     notValidationMode: function (text) {
-        this.validationText = text;
-        this.node.checkValidity();
+        if(!this.isNotValidationMode){
+            this.isNotValidationMode = true;
+            this.validationText = text;
+            this.node.checkValidity();
+
+            if ( this.node && !this.node.isIntoView()) this.node.scrollIntoView({ behavior: "smooth", block: "center" });
+
+        }
     },
     validationMode: function () {
-        this.validationText = '';
-        this.node.unInvalidStyle();
-    }
+        if(this.isNotValidationMode){
+            this.isNotValidationMode = false;
+            this.validationText = '';
+            this.node.unInvalidStyle();
+        }
+    },
 });

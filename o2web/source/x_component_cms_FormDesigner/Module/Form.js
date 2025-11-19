@@ -11,7 +11,7 @@ MWF.xApplication.cms.FormDesigner.Module.Form = MWF.CMSFCForm = new Class({
 			"Datatemplate", "Htmleditor", "TinyMCEEditor", "Number", "Currency", "Office", "Orgfield", "Personfield", "Readerfield", "Authorfield", "Org",
 			"Reader", "Author", "Radio", "Select", "Textarea", "Textfield", "Address","Combox",
 			"Elcascader","Elcheckbox","Elcolorpicker", "Eldate", "Eldatetime", "Elinput", "Elnumber", "Elradio", "Elrate", "Elselect", "Elslider", "Elswitch", "ElTime",
-			"OOInput", "OODatetime", "OOTextarea", "OOSelect", "OOCheckGroup", "OORadioGroup"
+			"OOInput", "OODatetime", "OOTextarea", "OOSelect", "OOCheckGroup", "OORadioGroup, OOCurrency, OOAddress"
 			],
 		"injectActions" : [
 			{
@@ -318,7 +318,7 @@ MWF.xApplication.cms.FormDesigner.Module.Form = MWF.CMSFCForm = new Class({
 			this.versionList.each(function (version,index) {
 				var node = new Element("tr").inject(this.versionTable);
 				var html = "<td>"+(index+1)+"</td>" +
-					"<td>"+version.person+"</td>" +
+					"<td>"+o2.txt(version.person)+"</td>" +
 					"<td>"+version.updateTime+"</td>" +
 					"<td></td>";
 				node.set("html", html);
@@ -352,9 +352,16 @@ MWF.xApplication.cms.FormDesigner.Module.Form = MWF.CMSFCForm = new Class({
 			var formData = JSON.parse(json.data.data);
 			//this.action.FormAction.update(version.form, formData,function( json ){
 			this.designer.notice(MWF.CMSFD.LP.version["resumeSuccess"]);
-			var data = JSON.decode(MWF.decodeJsonString(formData.data));
-			data.isNewForm = false;
-			this.reload(data);
+			this.designer.formData = JSON.decode(MWF.decodeJsonString(formData.data));
+			this.designer.formData.isNewForm = false;
+			if(this.designer.pcForm)this.designer.pcForm.reload(this.designer.formData);
+
+			if (formData.mobileData){
+				this.designer.formMobileData = JSON.decode(MWF.decodeJsonString(formData.mobileData));
+				this.designer.formMobileData.isNewForm = false;
+				if(this.designer.mobileForm)this.designer.mobileForm.reload(this.designer.formMobileData);
+			}
+
 			this.dlg.close();
 			//}.bind(this), null, false);
 		}.bind(this), null, false);

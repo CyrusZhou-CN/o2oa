@@ -29,13 +29,16 @@ MWF.xApplication.process.ApplicationExplorer.Main = new Class({
 	loadApplication: function(callback){
 		this.loadControl();
 		this.content.loadHtml(this.viewPath, {"bind": {"lp": this.lp, "control": this.control}}, function(){
-			if (!this.options.isRefresh){
-				this.maxSize(function(){
+			o2.Actions.load('x_program_center').ConfigOpenAction.getDisableExportEnable().then((json)=>{
+				this.cannotExport = (json.data && json.data.value);
+				if (!this.options.isRefresh){
+					this.maxSize(function(){
+						this.loadApp(callback);
+					}.bind(this));
+				}else{
 					this.loadApp(callback);
-				}.bind(this));
-			}else{
-				this.loadApp(callback);
-			}
+				}
+			});
 		}.bind(this));
 	},
 	loadApp: function(callback){
@@ -723,10 +726,25 @@ MWF.xApplication.process.ApplicationExplorer.Application = new Class({
 			this.loadNodes();
 			this.loadElements();
 			this.loadNewNode();
+			// this.loadTooltip();
 		}.bind(this));
 
 		this.resizeContentFun = this.resizeContent.bind(this);
 		this.app.addEvent("resize", this.resizeContentFun);
+	},
+	loadTooltip: function(){
+		this.tooltip = new MWF.xApplication.process.ApplicationExplorer.ApplicationTooltip(
+			this.container,
+			this.node,
+			this.app,
+			{},
+			{
+				axis : "x",
+				hiddenDelay : 300,
+				displayDelay : 300
+			}
+		);
+		this.tooltip.data = this.data;
 	},
 	loadElements: function(){
 		this.loadElementList("formList", this.formListNode, this.openForm.bind(this), this.lp.noForm, this.createNewForm.bind(this));
@@ -869,6 +887,10 @@ MWF.xApplication.process.ApplicationExplorer.Application = new Class({
 		this.actionExport = this.node.getElement(".o2_process_AppExp_item_Action_export");
 
 		if (this.actionArea) this.setActionEvent();
+
+		if (this.app.cannotExport){
+			this.actionExport.setStyle("display", "none");
+		}
 	},
 
 	setActionEvent: function(){
@@ -955,6 +977,37 @@ MWF.xApplication.process.ApplicationExplorer.Application = new Class({
 });
 
 
+MWF.xDesktop.requireApp("Template", "MTooltips", null, false);
+MWF.xApplication.process.ApplicationExplorer.ApplicationTooltip = new Class({
+	Extends: MTooltips,
+	options:{
+		nodeStyles: {
+			"font-size" : "12px",
+			"position" : "absolute",
+			"max-width" : "500px",
+			"min-width" : "180px",
+			"z-index" : "1001",
+			"background-color" : "#fff",
+			"padding" : "10px",
+			"border-radius" : "8px",
+			"box-shadow": "0 0 18px 0 #999999",
+			"-webkit-user-select": "text",
+			"-moz-user-select": "text"
+		},
+		isFitToContainer : true,
+		overflow : "scroll"
+	},
+	_loadCustom : function( callback ){
+		if(callback)callback();
+	},
+	_customNode : function( node, contentNode ){
+		// this.inforNode.inject(contentNode);
+		// if( this.inforNode.getSize().y > 300 ){
+		// 	this.inforNode.setStyle("padding-bottom", "15px");
+		// }
+		this.fireEvent("customContent", [contentNode, node]);
+	}
+});
 
 
 

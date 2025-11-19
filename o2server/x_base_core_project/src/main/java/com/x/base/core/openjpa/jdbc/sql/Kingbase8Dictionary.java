@@ -8,7 +8,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
-
 import org.apache.openjpa.jdbc.kernel.exps.FilterValue;
 import org.apache.openjpa.jdbc.schema.Column;
 import org.apache.openjpa.jdbc.schema.Sequence;
@@ -237,13 +236,13 @@ public class Kingbase8Dictionary extends DBDictionary {
 		}
 
 		protected PreparedStatement prepareStatement(String paramString, boolean paramBoolean) throws SQLException {
-			return new Kingbase8Dictionary.KingbasePreparedStatement(super.prepareStatement(paramString, false), this,
+			return new KingbasePreparedStatement(super.prepareStatement(paramString, false), this,
 					this._dict);
 		}
 
 		protected PreparedStatement prepareStatement(String paramString, int paramInt1, int paramInt2,
 				boolean paramBoolean) throws SQLException {
-			return new Kingbase8Dictionary.KingbasePreparedStatement(
+			return new KingbasePreparedStatement(
 					super.prepareStatement(paramString, paramInt1, paramInt2, false), this, this._dict);
 		}
 	}

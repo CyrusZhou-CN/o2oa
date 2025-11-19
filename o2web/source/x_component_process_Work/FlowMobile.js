@@ -45,7 +45,7 @@ MWF.xApplication.process.Work.FlowMobile  = MWF.ProcessFlowMobile = new Class({
             }
             this.node.getParent().setStyle("height", "100%");
             this.changeAction( this.navi[0].key );
-            if( this.processEnable || this.resetEnable || this.addTaskEnable ){
+            if( this.options.isQuickSelect && (this.processEnable || this.resetEnable || this.addTaskEnable) ){
                 this.loadQuickSelect();
             }else{
                 this.quickSelectNode.hide();
@@ -179,6 +179,10 @@ MWF.xApplication.process.Work.FlowMobile  = MWF.ProcessFlowMobile = new Class({
         this.goBack.load();
     },
     loadQuickSelect: function(){
+        if( !this.options.isQuickSelect || (!this.addTaskEnable && !this.resetEnable && !this.processEnable) ){
+            if(this.quickSelector)this.quickSelector.hide();
+            return;
+        }
         this.quickSelector = new MWF.ProcessFlow.widget.QuickSelectMobile(
             $(document.body), //this.form.app ? this.form.app.content :
             null, this.form.app, {}, {
@@ -244,6 +248,7 @@ MWF.ProcessFlow.ResetMobile = new Class({
         this.orgNode.addEvent("click", function () {
             this.getSelOptions( function (options) {
                 options.values = this.orgData || [] ;
+                options.title = this.lp.inputResetPeople;
                 setTimeout(function () {
                     this.selector = new MWF.O2Selector($(document.body), options);
                 }.bind(this), 100);
@@ -392,7 +397,7 @@ MWF.ProcessFlow.AddTaskMobile = new Class({
                 text: this.lp.parallel,
                 value: "parallel"
             }],
-            value: this.quickData.mode || "single" //默认单人
+            value: this.quickData.mode || this.businessData.activity.defaultAddTaskMode || "single" //默认单人
         });
         this.mode.load();
 
@@ -400,7 +405,7 @@ MWF.ProcessFlow.AddTaskMobile = new Class({
         if( this.quickData.routeId ){
             position = (this.quickData.routeId === "before") ? "true" : "false"
         }else{
-            position = "false"; //默认为后加签
+            position = this.businessData.activity.defaultAddTaskType === 'before' ? 'true' :"false"; //默认为后加签
         }
         this.position = new MWF.ProcessFlow.widget.Radio2(this.positionArea, this.flow, {
             activeIcon: "o2icon-checkbox",
@@ -431,6 +436,7 @@ MWF.ProcessFlow.AddTaskMobile = new Class({
         this.orgNode.addEvent("click", function () {
             this.getSelOptions( function (options) {
                 options.values = this.orgData || [] ;
+                options.title = this.lp.inputAddTaskPeople;
                 setTimeout(function () {
                     this.selector = new MWF.O2Selector($(document.body), options);
                 }.bind(this), 100);
@@ -1098,7 +1104,7 @@ MWF.ProcessFlow.Processor.OrgListMobile = new Class({
         container.addEvent("click", function () {
             org.load( quickOrgData );
         });
-        var defaultValue = quickOrgData || org.getValue();
+        var defaultValue = !!json.resetValueWithDefault ? org._computeValue() : (quickOrgData || org.getValue());
         org.loadOrgWidget(defaultValue, contentNode);
     },
     getSelectedData: function (filedName) {
@@ -1341,7 +1347,6 @@ MWF.ProcessFlow.widget.QuickSelectMobile = new Class({
         // }
         var p = o2.Actions.load("x_processplatform_assemble_surface").TaskProcessModeAction.listMode( d );
         Promise.resolve(p).then(function (json) {
-            debugger;
             var list = this.filterData(json.data);
             var data = list.map(function (d) {
                 return {
@@ -1393,13 +1398,18 @@ MWF.ProcessFlow.widget.QuickSelectMobile = new Class({
             }).inject( this.quickNode );
             item.store( "data", d );
             var title = new Element("div.o2flow-quick-select-itemtitle", {
-                text: this.flow.lp.flowActions[d.type]
+                text: this.flow.lp.flowActions[d.type] + "："
             }).inject( item );
             title.addClass( "o2flow-"+d.type+"-color" );
             var content = new Element("div.o2flow-quick-select-itemtext", {
-                text: "："+ d.text
-            }).inject( item )
-        }.bind(this))
+                text: d.text
+            }).inject( item );
+            new Element("div.o2flow-quick-select-itemaction.ooicon-close", {
+                events: {
+                    click: function (e) { _self.deleteItem(e, item); }
+                }
+            }).inject( item );
+        }.bind(this));
     }
 });
 

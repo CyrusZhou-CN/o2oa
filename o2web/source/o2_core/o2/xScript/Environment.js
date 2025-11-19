@@ -23,7 +23,28 @@ MWF.xScript.Environment = function(ev){
             while (p && !_forms[p.getKey()]) p = p.getParent();
             //if (p) if (p.getKey()) if (_forms[p.getKey()]) _forms[p.getKey()].resetData();
             var k = (p) ? p.getKey() : "";
-            if (k) if(_forms[k]) if(_forms[k].resetData) _forms[k].resetData();
+            if (k) if(_forms[k]){
+                if(_forms[k].resetData){
+                    _forms[k].resetData();
+                    if (_forms[k].form){
+                        if (_forms[k].form.relatedModules?.[_forms[k].json.id]){
+                            _forms[k].form.relatedModules?.[_forms[k].json.id].forEach((module)=>{
+                                module?.reload();
+                            })
+                        }
+                        if (_forms[k].form.relatedDisplayModules && _forms[k].form.relatedDisplayModules[(_forms[k].json.id)]){
+                            _forms[k].form.relatedDisplayModules[(_forms[k].json.id)].forEach((o)=>{
+                                o.module?._checkDisplay(o.display);
+                            })
+                        }
+                        if (_forms[k].form.relatedValueModules && _forms[k].form.relatedValueModules[(_forms[k].json.id)]){
+                            _forms[k].form.relatedValueModules[(_forms[k].json.id)].forEach((o)=>{
+                                o.module?._checkValue(o.value);
+                            })
+                        }
+                    }
+                }
+            } 
             //if(p) if(p.getKey()) if(_forms[p.getKey()]) if(_forms[p.getKey()].render) _forms[p.getKey()].render();
         }, "", null, _form);
     };
@@ -1872,6 +1893,149 @@ MWF.xScript.Environment = function(ev){
         }
     };
 
+    var _renderViewContainerMobile = function(title, viewerGenerator, okCallback, notCloseOnOK){
+        const node = new Element('div.mwf_selectView_node');
+        const html = `<div class="mwf_selectView_content invisible" data-o2-element="contentNode">
+                            <div class="mwf_selectView_title">${title || ''}</div>
+                            <div class="mwf_selectView_view" data-o2-element="viewNode"></div>
+                            <div class="mwf_selectView_action">
+                                <oo-button type="light" class="mwf_selectView_action_close hide" data-o2-events="click:selectCancel">${o2.LP.widget.close}</oo-button>
+                                <oo-button type="light" class="mwf_selectView_action_cancel" data-o2-events="click:selectCancel">${o2.LP.widget.cancel}</oo-button>
+                                <oo-button class="mwf_selectView_action_ok" data-o2-events="click:selectOk">${o2.LP.widget.ok}</oo-button>
+                            </div>
+                          </div>`;
+        const o = {
+            selectOk: function(e){
+                okCallback && okCallback();
+                if( !notCloseOnOK ){
+                    this.selectCancel(e);
+                }
+            },
+            selectCancel: function(e){
+                this.contentNode.removeClass('visible');
+                this.contentNode.addClass('invisible');
+                window.setTimeout(()=>{
+                    node.destroy();
+                }, 200);
+            }
+        };
+        node.loadHtmlText(html, {module: o});
+        document.body.appendChild(node);
+
+        // MWF.xDesktop.requireApp("query.Query", "Viewer", ()=>{
+        //     viewer = new MWF.xApplication.query.Query.Viewer(o.viewNode, viewJson, {"style": "select"}, _form.app, _form.Macro);
+        //     viewer.addEvent('selectRow', (row)=>{
+        //         row.node.addClass('selectedRow');
+        //     });
+        //     viewer.addEvent('unselectRow', (row)=>{
+        //         row.node.removeClass('selectedRow');
+        //     });
+        // });
+
+        window.setTimeout(()=>{
+            viewerGenerator(o.viewNode, o);
+        }, 200);
+
+        requestAnimationFrame(()=>{
+            o.contentNode.removeClass('invisible');
+            o.contentNode.addClass('visible');
+        });
+        o.contentNode.addEventListener('click', (e)=>{
+            e.stopPropagation(e);
+        });
+        node.addEventListener('click', (e)=>{
+            o.selectCancel(e);
+        });
+    }
+    this._renderViewContainerMobile = _renderViewContainerMobile;
+
+    var selectViewMobile = function (viewJson, okCallback, dialogOptions, viewOptions, loadedCallback){
+        if(!viewOptions)viewOptions = {"style": "select"};
+        if(!dialogOptions)dialogOptions = {};
+
+        var viewer = null;
+        _renderViewContainerMobile(
+            dialogOptions.title || viewJson.caption,
+            (viewNode)=>{
+                MWF.xDesktop.requireApp("query.Query", "Viewer", ()=>{
+                    viewer = new MWF.xApplication.query.Query.Viewer(viewNode, viewJson, viewOptions, _form.app, _form.Macro);
+                    viewer.addEvent('selectRow', (row)=>{
+                        row.node.addClass('selectedRow');
+                    });
+                    viewer.addEvent('unselectRow', (row)=>{
+                        row.node.removeClass('selectedRow');
+                    });
+                    if(loadedCallback)loadedCallback(viewer);
+                });
+            },
+            ()=>{
+                if(okCallback)okCallback(viewer.getData());
+            }
+        );
+    };
+    var selectViewPc = function(viewJson, okCallback, dlalogOptions, viewOptions, loadedCallback){
+
+            if(!viewOptions)viewOptions = {"style": "select"};
+
+            var options =  dlalogOptions || {};
+            var width = options.width || viewJson.width || "700";
+            var height = options.height || viewJson.height || "400";
+            var style = options.style || "v10_view";
+            if (layout.mobile){
+                var size = document.body.getSize();
+                width = size.x;
+                height = size.y;
+                style = "viewmobile";
+            }
+
+            var opts = Object.assign({}, options, {
+                title: options.title || viewJson.caption || "select view",
+                style: style,
+                width: width.toInt(),
+                height: height.toInt(),
+                zindex: options.zindex,
+                html: "<div style='height: 100%;flex:1;'></div>",
+                maxHeightPercent: layout.mobile ? "100%" : "98%",
+                maskNode: layout.mobile ? $(document.body) :  _form.app.content,
+                container: layout.mobile ? $(document.body) : _form.app.content,
+                buttonList: [
+                    {
+                        "text": MWF.LP.process.button.ok,
+                        "action": function(){
+                            //if (callback) callback(_self.view.selectedItems);
+                            if (okCallback) okCallback(_self.view.getData());
+                            this.close();
+                        }
+                    },
+                    {
+                        "text": MWF.LP.process.button.cancel,
+                        "action": function(){this.close();}
+                    }
+                ]
+            });
+
+            var _self = this;
+            MWF.require("MWF.xDesktop.Dialog", function(){
+                var dlg = o2.DL.open(opts);
+                if (layout.mobile){
+                    var backAction = dlg.node.getElement(".MWF_dialod_Action_back");
+                    var okAction = dlg.node.getElement(".MWF_dialod_Action_ok");
+                    if (backAction) backAction.addEvent("click", function(e){
+                        dlg.close();
+                    }.bind(this));
+                    if (okAction) okAction.addEvent("click", function(e){
+                        //if (okCallback) okCallback(this.view.selectedItems);
+                        if (okCallback) okCallback(this.view.getData());
+                        dlg.close();
+                    }.bind(this));
+                }
+
+                MWF.xDesktop.requireApp("query.Query", "Viewer", function(){
+                    this.view = new MWF.xApplication.query.Query.Viewer(dlg.content.getFirst(), viewJson, viewOptions, _form.app, _form.Macro);
+                    if(loadedCallback)loadedCallback(this.view);
+                }.bind(this));
+            }.bind(this));
+    };
     this.view = {
         "lookup": function(view, callback, async){
             var filterList = {"filterList": (view.filter || null)};
@@ -1896,91 +2060,122 @@ MWF.xScript.Environment = function(ev){
                     }.bind(this)});
             }.bind(this));
         },
-        "select": function(view, callback, options){
-            if (view.view){
+        "select": function(view, okCallback, dialogOptions, viewOptions, loadedCallback){
+            if( view.view || view.viewName || view.name || view.viewId ){
                 var viewJson = {
                     "application": view.application || _form.json.application,
-                    "viewName": view.view || "",
-                    "isTitle": (view.isTitle===false) ? "no" : "yes",
-                    "select": (view.isMulti===false) ? "single" : "multi",
+                    "viewName": view.viewName || view.view || view.name || "",
+                    "isTitle": typeOf( view.isTitle ) === 'string' ? view.isTitle : ((view.isTitle===false) ? "no" : "yes"),
+                    "select": typeOf( view.select ) === 'string' ? view.select : ((view.isMulti===false) ? "single" : "multi"),
                     "filter": view.filter
                 };
-                if (!options) options = {};
-                options.width = view.width;
-                options.height = view.height;
-                options.title = view.caption;
-                var width = options.width || "700";
-                var height = options.height || "400";
-
-                if (layout.mobile){
-                    var size = document.body.getSize();
-                    width = size.x;
-                    height = size.y;
-                    options.style = "viewmobile";
-                }
-                width = width.toInt();
-                height = height.toInt();
-
-                var size = _form.app.content.getSize();
-                var x = (size.x-width)/2;
-                var y = (size.y-height)/2;
-                if (x<0) x = 0;
-                if (y<0) y = 0;
-                if (layout.mobile){
-                    x = 20;
-                    y = 0;
-                }
-
-                var _self = this;
-                MWF.require("MWF.xDesktop.Dialog", function(){
-                    var dlg = new MWF.xDesktop.Dialog({
-                        "title": options.title || "select view",
-                        "style": options.style || "view",
-                        "top": y,
-                        "left": x-20,
-                        "fromTop":y,
-                        "fromLeft": x-20,
-                        "width": width,
-                        "height": height,
-                        "html": "<div style='height: 100%;'></div>",
-                        "maskNode": _form.app.content,
-                        "container": _form.app.content,
-                        "buttonList": [
-                            {
-                                "text": MWF.LP.process.button.ok,
-                                "action": function(){
-                                    //if (callback) callback(_self.view.selectedItems);
-                                    if (callback) callback(_self.view.getData());
-                                    this.close();
-                                }
-                            },
-                            {
-                                "text": MWF.LP.process.button.cancel,
-                                "action": function(){this.close();}
-                            }
-                        ]
-                    });
-                    dlg.show();
-
-                    if (layout.mobile){
-                        var backAction = dlg.node.getElement(".MWF_dialod_Action_back");
-                        var okAction = dlg.node.getElement(".MWF_dialod_Action_ok");
-                        if (backAction) backAction.addEvent("click", function(e){
-                            dlg.close();
-                        }.bind(this));
-                        if (okAction) okAction.addEvent("click", function(e){
-                            //if (callback) callback(this.view.selectedItems);
-                            if (callback) callback(this.view.getData());
-                            dlg.close();
-                        }.bind(this));
+                if( view.hasOwnProperty('viewId') )viewJson.viewId = view.viewId;
+                // if( view.hasOwnProperty('titleStyles') )viewJson.titleStyles = view.titleStyles;
+                // if( view.hasOwnProperty('itemStyles') )viewJson.itemStyles = view.itemStyles;
+                // if( view.hasOwnProperty('isExpand') )viewJson.isExpand = view.isExpand;
+                // if( view.hasOwnProperty('showActionbar') )viewJson.showActionbar = view.showActionbar;
+                // if( view.hasOwnProperty('defaultSelectedScript') )viewJson.defaultSelectedScript = view.defaultSelectedScript;
+                // if( view.hasOwnProperty('selectedAbleScript') )viewJson.selectedAbleScript = view.selectedAbleScript;
+                for( var key in view){
+                    if( !viewJson.hasOwnProperty(key) ){
+                        viewJson[key] = view[key];
                     }
-
-                    MWF.xDesktop.requireApp("query.Query", "Viewer", function(){
-                        this.view = new MWF.xApplication.query.Query.Viewer(dlg.content.getFirst(), viewJson, {"style": "select"}, _form.app, _form.Macro);
-                    }.bind(this));
-                }.bind(this));
+                }
+                if (layout.mobile && o2.version.dev===10){
+                    selectViewMobile(viewJson, okCallback, dialogOptions, viewOptions, loadedCallback);
+                }else{
+                    selectViewPc(viewJson, okCallback, dialogOptions, viewOptions, loadedCallback);
+                }
             }
         }
+    }
+
+
+    var selectStatementMobile = function (statementJson, okCallback, dialogOptions, statementOptions, loadedCallback){
+            if(!statementOptions)statementOptions = {"style": "select"};
+            if(!dialogOptions)dialogOptions = {};
+
+            var viewer = null;
+            _renderViewContainerMobile(
+                dialogOptions.title || statementJson.caption,
+                (viewNode)=>{
+                    MWF.xDesktop.requireApp("query.Query", "Statement", ()=>{
+                        viewer = new MWF.xApplication.query.Query.Statement( viewNode, statementJson, statementOptions, _form.app, _form.Macro);
+                        viewer.addEvent('selectRow', (row)=>{
+                            row.node.addClass('selectedRow');
+                        });
+                        viewer.addEvent('unselectRow', (row)=>{
+                            row.node.removeClass('selectedRow');
+                        });
+                        if(loadedCallback)loadedCallback(viewer);
+                    });
+                },
+                ()=>{
+                    if(callback)callback(viewer.getData());
+                }
+            );
+    };
+    var selectStatementPc = function(statementJson, okCallback, dialogOptions, statementOptions, loadedCallback){
+
+            if(!statementOptions)statementOptions = {"style": "select"};
+
+            var options =  dialogOptions || {};
+            var width = options.width || statementJson.width || "700";
+            var height = options.height || statementJson.height || "400";
+            var style = options.style || "v10_view";
+
+            if (layout.mobile) {
+                var size = document.body.getSize();
+                width = size.x;
+                height = size.y;
+                style = "viewmobile";
+            }
+
+            var opts = Object.assign({}, options, {
+                    title: options.title || statementJson.caption || "select view",
+                    style: style,
+                    width: width.toInt(),
+                    height: height.toInt(),
+                    zindex: options.zindex,
+                    html: "<div style='height: 100%;flex:1;'></div>",
+                    maxHeightPercent: layout.mobile ? "100%" : "98%",
+                    maskNode: layout.mobile ? $(document.body) :  _form.app.content,
+                    container: layout.mobile ? $(document.body) : _form.app.content,
+                    buttonList: [
+                        {
+                            "text": MWF.LP.process.button.ok,
+                            "action": function () {
+                                //if (callback) callback(_self.view.selectedItems);
+                                if (okCallback) okCallback(_self.statement.getData());
+                                this.close();
+                            }
+                        },
+                        {
+                            "text": MWF.LP.process.button.cancel,
+                            "action": function () { this.close(); }
+                        }
+                    ]
+                });
+            var _self = this;
+            MWF.require("MWF.xDesktop.Dialog", function () {
+                var dlg = o2.DL.open(opts);
+                if (layout.mobile) {
+                    var backAction = dlg.node.getElement(".MWF_dialod_Action_back");
+                    var okAction = dlg.node.getElement(".MWF_dialod_Action_ok");
+                    if (backAction) backAction.addEvent("click", function (e) {
+                        dlg.close();
+                    }.bind(this));
+                    if (okAction) okAction.addEvent("click", function (e) {
+                        if (okCallback) okCallback(this.statement.getData());
+                        dlg.close();
+                    }.bind(this));
+                }
+
+                MWF.xDesktop.requireApp("query.Query", "Statement", function () {
+                    this.statement = new MWF.xApplication.query.Query.Statement(dlg.content.getFirst(), statementJson, statementOptions, _form.app, _form.Macro);
+                    if(loadedCallback)loadedCallback(this.statement);
+                }.bind(this));
+            }.bind(this));
     };
 
     this.statement = {
@@ -2093,92 +2288,34 @@ MWF.xScript.Environment = function(ev){
                 }
                 return parameter;
             },
-        "select": function (statement, callback, options) {
-            if (statement.name) {
-                // var parameter = this.parseParameter(statement.parameter);
-                // var filterList = this.parseFilter(statement.filter, parameter);
+        "select": function(statement, okCallback, dialogOptions, statementOptions, loadedCallback){
+            if( statement.name || statement.statementName || statement.statementId || statement.statement ) {
                 var statementJson = {
-                    "statementId": statement.name || "",
-                    "isTitle": (statement.isTitle === false) ? "no" : "yes",
-                    "select": (statement.isMulti === false) ? "single" : "multi",
-                    "filter": statement.filter,
-                    "parameter": statement.parameter
+                    "application": statement.application || _form.json.application,
+                    "statementName": statement.statementName || statement.name || statement.statement || "",
+                    "isTitle": typeOf(statement.isTitle) === 'string' ? statement.isTitle : ((statement.isTitle === false) ? "no" : "yes"),
+                    "select": typeOf(statement.select) === 'string' ? statement.select : ((statement.isMulti === false) ? "single" : "multi"),
+                     "filter": statement.filter,
+                     "parameter": statement.parameter
                 };
-                if (!options) options = {};
-                options.width = statement.width;
-                options.height = statement.height;
-                options.title = statement.caption;
-
-                var width = options.width || "700";
-                var height = options.height || "400";
-
-                if (layout.mobile) {
-                    var size = document.body.getSize();
-                    width = size.x;
-                    height = size.y;
-                    options.style = "viewmobile";
-                }
-                width = width.toInt();
-                height = height.toInt();
-
-                var size = _form.app.content.getSize();
-                var x = (size.x - width) / 2;
-                var y = (size.y - height) / 2;
-                if (x < 0) x = 0;
-                if (y < 0) y = 0;
-                if (layout.mobile) {
-                    x = 20;
-                    y = 0;
-                }
-
-                var _self = this;
-                MWF.require("MWF.xDesktop.Dialog", function () {
-                    var dlg = new MWF.xDesktop.Dialog({
-                        "title": options.title || "select statement view",
-                        "style": options.style || "view",
-                        "top": y,
-                        "left": x - 20,
-                        "fromTop": y,
-                        "fromLeft": x - 20,
-                        "width": width,
-                        "height": height,
-                        "html": "<div style='height: 100%;'></div>",
-                        "maskNode": _form.app.content,
-                        "container": _form.app.content,
-                        "buttonList": [
-                            {
-                                "text": MWF.LP.process.button.ok,
-                                "action": function () {
-                                    //if (callback) callback(_self.view.selectedItems);
-                                    if (callback) callback(_self.statement.getData());
-                                    this.close();
-                                }
-                            },
-                            {
-                                "text": MWF.LP.process.button.cancel,
-                                "action": function () { this.close(); }
-                            }
-                        ]
-                    });
-                    dlg.show();
-
-                    if (layout.mobile) {
-                        var backAction = dlg.node.getElement(".MWF_dialod_Action_back");
-                        var okAction = dlg.node.getElement(".MWF_dialod_Action_ok");
-                        if (backAction) backAction.addEvent("click", function (e) {
-                            dlg.close();
-                        }.bind(this));
-                        if (okAction) okAction.addEvent("click", function (e) {
-                            //if (callback) callback(this.view.selectedItems);
-                            if (callback) callback(this.statement.getData());
-                            dlg.close();
-                        }.bind(this));
+                if (statement.name)statementJson.statementId = statement.statementId;
+                if (statement.statementId) statementJson.statementId = statement.statementId;
+                // if (statement.hasOwnProperty('titleStyles')) statementJson.titleStyles = statement.titleStyles;
+                // if (statement.hasOwnProperty('itemStyles')) statementJson.itemStyles = statement.itemStyles;
+                // if (statement.hasOwnProperty('isExpand')) statementJson.isExpand = statement.isExpand;
+                // if (statement.hasOwnProperty('showActionbar')) statementJson.showActionbar = statement.showActionbar;
+                // if (statement.hasOwnProperty('defaultSelectedScript')) statementJson.defaultSelectedScript = statement.defaultSelectedScript;
+                // if (statement.hasOwnProperty('selectedAbleScript')) statementJson.selectedAbleScript = statement.selectedAbleScript;
+                for (var key in statement) {
+                    if (!statementJson.hasOwnProperty(key)) {
+                        statementJson[key] = statement[key];
                     }
-
-                    MWF.xDesktop.requireApp("query.Query", "Statement", function () {
-                        this.statement = new MWF.xApplication.query.Query.Statement(dlg.content.getFirst(), statementJson, { "style": "select" }, _form.app, _form.Macro);
-                    }.bind(this));
-                }.bind(this));
+                }
+                if (layout.mobile && o2.version.dev === 10) {
+                    selectStatementMobile(statementJson, okCallback, dialogOptions, statementOptions, loadedCallback);
+                } else {
+                    selectStatementPc(statementJson, okCallback, dialogOptions, statementOptions, loadedCallback);
+                }
             }
         }
     };
@@ -2926,6 +3063,20 @@ MWF.xScript.Environment = function(ev){
     }
 
 
+    /**
+     * 调用服务接口。
+     * @module exec()
+     * @o2category server.common
+     * @o2ordernumber 151
+     * @o2cn 方法定义
+     * @param name {String} 要调用的服务名称
+     * @param data {Object} 调用的服务的请求数据
+     * @returns {promise} 调用结果
+     */
+    this.invoke = function(name, data){
+        return this.Actions.load('x_program_center').InvokeAction.execute(name, data);
+    }
+
     //仅前台对象-----------------------------------------
     //form
 
@@ -3198,6 +3349,24 @@ MWF.xScript.Environment = function(ev){
             }
         },
 
+         /**对当前表单打开的流程实例进行流转。如果传入option参数，则与process方法完全相同，无option参数，使用新的继续流转界面。<b>（仅流程表单中可用）</b><br/>
+         * 可以通过this.workContext.getControl().allowProcessing来判断当前用户是否有权限进行流转。<br/>
+         * this.form.process()会触发 beforeSave、afterSave、beforeProcess、afterProcess事件，因此在上述事件中不允许使用本方法。
+         * @method process
+         * @static
+         * @param {Object} [option] - 流程的相关数据，如果不带此参数，则弹出路由选择和意见填写框<br/>
+         */
+        "flowWork": function(option){
+            var op = _form.getOpinion();
+            var mds = op.medias;
+            if (option){
+                _form.submitWork(option.routeName, option.opinion, mds, option.callback,
+                    option.processor, null, option.appendTaskIdentityList, option.processorOrgList, option.callbackBeforeSave );
+            }else{
+                _form.flowWork();
+            }
+        },
+
         /**对当前文档的待办重新设定处理人。<b>（仅流程表单中可用）</b><br/>
          * 可以通过this.workContext.getControl().allowReset来判断当前用户是否有权限重置处理人。<br/>
          * @method reset
@@ -3453,19 +3622,6 @@ MWF.xScript.Environment = function(ev){
             }
         },
 
-        /**创建关联当前工作的聊天群。<b>（仅流程表单中可用）</b><br/>
-         * 根据当前工作的关联人员创建聊天群。<br/>
-         * @method startIM
-         * @static
-         * @param {String} [jobId] - 当前工作的jobId<br/>
-         *
-         * @example
-         //带参数，启动创建界面
-         this.form.startIM("jobId");
-         */
-        "startIM": function(jobId){
-            _form.openIMChatStarter(jobId);
-        },
         /**分享当前工作到IM聊天会话中。<b>（仅流程表单中可用）</b><br/>
          * @method shareToIMChat
          * @static
@@ -3657,7 +3813,7 @@ MWF.xScript.Environment = function(ev){
          *   "isMove" : true, //（boolean）可选，弹出框是否可移动。默认值：true。
          *   "offset" : {"x":-200, "y": -100}, //（object）可选，弹出框相对容器(container)的x轴y轴位置偏移量，空则居中。
          *   "mask" : true, //（boolean）可选，是否需要遮罩层。默认值：true。
-         *   "duration" : true, //（number）可选，动画显示弹出框效果时间。默认值：200。
+         *   "duration" : 200, //（number）可选，动画显示弹出框效果时间。默认值：200。
          *   "zindex": 100, //（number）可选，弹出框的z轴优先级，默认为100（日期控件的zindex为300，选人控件为1000，最好不要高于300）。
          *   "buttonList" : [
          *       {
@@ -4060,7 +4216,7 @@ MWF.xScript.Environment = function(ev){
                 var len = workData.workList.length + workData.workCompletedList.length;
                 if (len){
                     if (len>1 && choice){
-                        var node = new Element("div", {"styles": {"padding": "20px", "width": "500px"}}).inject(_form.node);
+                        var node = new Element("div", {"styles": {"padding": "20px", "width": "500px"}}).inject(_form.node || _form.app.contentNode);
                         workData.workList.each(function(work){
                             var workNode = new Element("div", {
                                 "styles": {
@@ -4150,11 +4306,13 @@ MWF.xScript.Environment = function(ev){
                         }
                     }
                 }else{
+                    _form.notice(o2.LP.widget.noWork, 'warn');
                     runCallback(new Error("Can't open this Job", {
                         cause: workData
                     }));
                 }
             }else{
+                _form.notice(o2.LP.widget.noWork, 'warn');
                 runCallback(new Error("Can't open this Job", {
                     cause: workData
                 }));
@@ -4258,6 +4416,46 @@ MWF.xScript.Environment = function(ev){
                 }
 
             });
+        },
+
+        /**在指定dom元素中打开一个门户页面。<br/>
+         * @method loadPortal
+         * @static
+         * @param {Element} content - 一个DOM元素，门户页面在此dom元素中加载。
+         * @param {String} portal - 要打开的门户应用名称、别名或ID。
+         * @param {String} [page] - 要打开的页面名称、别名或ID。如果忽略，则打开门户的默认首页
+         * @param {Object} [data] - 门户的业务数据，在门户中可用this.data访问。
+         * @param {Object} [par] - 打开页面可以传入参数。<br>在被打开的页面中，可以通过脚本this.page.parameters访问到此参数。
+         * @example
+         this.form.openPortal(id, "", {"type": "my type"});
+         */
+        "loadPortal": function (content, portal, page, data, par) {
+            const app = new MWF.xApplication.portal.Portal.Main(layout.desktop, {
+                portalId: portal,
+                pageId: page,
+                data: data,
+                parameters: par
+            });
+            app.viewMode="Default";
+            app.windowNode = content;
+            app.setCurrent = function(){
+                this.window.setCurrent();
+            }
+            app.setUncurrent = function(){
+                this.window.setUncurrent();
+            }
+            app.close = function(){
+                this.fireAppEvent("queryClose");
+                this.window.close(function () {
+                    this.window = null;
+                    this.taskitem = null;
+                    this.fireAppEvent("postClose");
+                    o2.release(this);
+                }.bind(this));
+            }
+            app.load(true, content);
+
+            return app;
         },
 
 
@@ -4431,7 +4629,28 @@ MWF.xScript.Environment = function(ev){
          * @static
          * @param {String|Array} [app]  - 流程应用的名称、别名或ID。
          * @param {String} [process]  - 要启动的流程的名称、别名或ID。
-         * @param {Object} [data]   - 流程启动时默认的业务数据。
+         * @param {Object} [data]   - 流程启动时默认的业务数据。如果需要传递附件可以添加 $attachmentList, 如果需要传递关联文档可以添加 $correlationTargetList
+         * <pre><code class='language-js'>{
+         *      "subject": "某某标题",  //业务数据字段
+         *      "count": 123,		//业务数据字段
+         *      "$attachmentList": [ //传递$attachmentList，会把附件拷贝到新工作，不会放在业务数据中。（没有copyFrom则放在业务数据中）
+         *          {
+         *              'id':'源附件id',
+         *              'name':'附件名称',
+         *              'site':'附件组件的site',
+         *              'isSoftCopy':'是否软拷贝，默认false，true表示不拷贝真实存储附件，共用附件，仅支持流程附件',
+         *              'copyFrom':'附件来源(cms或processPlatform)'
+         *          }
+         *      ],
+         *      "$correlationTargetList": [ //传递$correlationTargetList，会把文档关联到新工作，不会放在业务数据中
+         *          {
+         *              'type':'关联目标类型(cms或processPlatform)',
+         *              'bundle':'关联目标标识',
+         *              'site':'关联文档组件的site',
+         *              'view':'来源视图'
+         *          }
+         *      ]
+         * }</code></pre>
          * @param {String | Array} [identity]  - 流程启动所使用的身份。如果此参数为空/空字符串，且当前人有多个身份的情况下，会弹出身份选择对话框;如果此参数为数组，则弹出数组范围内的身份供选择；否则使用默认身份。
          * @param {Function} [callback]  - 流程启动后的回调函数，可以获取到启动的数据。
          * @param {Boolean} [target]  - 为true时，在当前页面打开启动的流程实例；否则打开新窗口。默认false。（当前表单或页面在浏览器单独打开的时候该参数有效。）
@@ -4513,8 +4732,25 @@ MWF.xScript.Environment = function(ev){
             MWF.xDesktop.requireApp("process.TaskCenter", "ProcessStarter", null, false);
             var action = MWF.Actions.get("x_processplatform_assemble_surface").getProcessByName(process, app, function(json){
                 if (json.data){
+                    var attachmentList = [];
+                    var correlationTargetList = [];
+                    if( data && data.$attachmentList && o2.typeOf(data.$attachmentList) === 'array' ){
+                        attachmentList = data.$attachmentList.filter(function(d){
+                            return !!d.copyFrom;
+                        });
+                        data.$attachmentList = data.$attachmentList.filter(function(d){
+                            return !d.copyFrom;
+                        });
+                        if( !data.$attachmentList.length )delete data.$attachmentList;
+                    }
+                    if( data && data.$correlationTargetList && o2.typeOf(data.$correlationTargetList) === 'array' ){
+                        correlationTargetList = data.$correlationTargetList;
+                        delete data.$correlationTargetList;
+                    }
                     var starter = new MWF.xApplication.process.TaskCenter.ProcessStarter(json.data, _form.app, {
                         "workData": data,
+                        "attachmentList": attachmentList,
+                        "correlationTargetList": correlationTargetList,
                         "identity": identity,
                         "latest": latest,
                         "skipDraftCheck": skipDraftCheck,
@@ -4553,6 +4789,12 @@ MWF.xScript.Environment = function(ev){
                     starter.load();
                 }
             });
+        },
+
+        addRelated: function(path, module){
+            if (!_form.relatedModules) _form.relatedModules = {};
+            if (!_form.relatedModules[path]) _form.relatedModules[path] = new Set();
+            _form.relatedModules[path].add(module);
         }
     };
 

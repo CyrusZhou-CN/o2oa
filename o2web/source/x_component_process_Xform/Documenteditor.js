@@ -111,6 +111,7 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
             this._loadStyles();
 
             this._afterLoaded();
+            this.isActive = true;
         }
     },
 
@@ -624,6 +625,8 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
                 });
             }
             this.getSealData();
+
+            this.validationMode();
         }
     },
     _loadMeeting: function(){
@@ -1163,6 +1166,14 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
     },
 
     _loadUserInterface: function(callback){
+        this.data = this._getBusinessData();
+        if (!this.data) this.data = this._getDefaultData();
+        
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+
         this.node.empty();
         this.node.setStyles(this.form.css.documentEditorNode);
         this.pages = [];
@@ -1173,11 +1184,14 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
         this.toolNode = new Element("div", {"styles": this.css.doc_toolbar}).inject(this.node);
         this.contentNode = new Element("div#doc_content", {"styles": this.css.doc_content}).inject(this.node);
 
-        if (!this.form.isLoaded){
-            this.form.addEvent("afterModulesLoad", function(){this.loadDocumentEditor(callback);}.bind(this));
-        }else{
-            this.loadDocumentEditor(callback);
-        }
+        // if (this.isReadable){
+            if (!this.form.isLoaded){
+                this.form.addEvent("afterModulesLoad", function(){this.loadDocumentEditor(callback);}.bind(this));
+            }else{
+                this.loadDocumentEditor(callback);
+            }
+        // }
+       
         o2.loadCss('../x_desktop/fonts/fonts.css');
     },
     loadDocumentEditor: function(callback){
@@ -1321,7 +1335,6 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
 
             //var pNode = this.toolNode.getOffsetParent();
 
-            debugger;
             var paddingTop = (this.isFullScreen) ? 0 : (node || this.form.node).getStyle("padding-top");
             var pTop = window.getComputedStyle(node || this.scrollNode).paddingTop;
             try {
@@ -1864,6 +1877,7 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
                 return !!this.form.Macro.exec(this.json.allowEditScript.code, this);
             }
         }
+        if (!this.isEditable) return false;
         return true;
     },
     _isAllowPrint: function(){
@@ -1943,7 +1957,7 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
         // if (this.json.fullWidth=="y"){
         //     html += "<span style='line-height: 26px; color: #999999; font-size: 12px'>已启用半角空格自动转换为全角空格，如需输入半角空格，请使用：SHIFT+空格</span>"
         // }
-        this.toolbarNode = new Element("div", {"styles": this.css.doc_toolbar_node}).inject(this.toolNode);
+        this.toolbarNode = new Element("div.o2-documentEditor-toolbar", {"styles": this.css.doc_toolbar_node}).inject(this.toolNode);
         this.toolbarNode.set("html", html);
 
         MWF.require("MWF.widget.Toolbar", function() {
@@ -1953,11 +1967,13 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
 
         if (!layout.mobile){
             window.setTimeout(function(){
-                this.scrollNode = this.toolbarNode.getParentSrcollNode()|| this.node.getParent();;
-                if (this.scrollNode){
-                    this.scrollNode.addEvent("scroll", function(){
-                        this.resetToolbarEvent();
-                    }.bind(this));
+                if (this.toolbarNode){
+                    this.scrollNode = this.toolbarNode?.getParentSrcollNode()|| this.node.getParent();;
+                    if (this.scrollNode){
+                        this.scrollNode.addEvent("scroll", function(){
+                            this.resetToolbarEvent();
+                        }.bind(this));
+                    }
                 }
             }.bind(this), 1000)
         }
@@ -1978,7 +1994,8 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
 
             }
         }.bind(this));
-        if (this.json.canDoublePage==="n" || layout.mobile) this.doublePageAction.hide();
+        // if (this.json.canDoublePage==="n" || layout.mobile) this.doublePageAction.hide();
+        this.doublePageAction.hide();
 
 
         this.zoomActionArea =  new Element("div", {"styles": {"float": "right", "margin-right": "10px"}}).inject(this.toolbarNode);
@@ -2692,8 +2709,8 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
     _splitFiletextNodeOneWord:function(lnode, nextPageNode){
         var text = lnode.textContent;
         var len = text.length;
-        var left = text.substring(0, len-1);
-        var right = text.substring(len-1, len);
+        var left = text.substring(0, len-2);
+        var right = text.substring(len-2, len);
         lnode.textContent = left;
         nextPageNode.textContent = right+nextPageNode.textContent;
         //nextPageNode.appendText(right, "top");
@@ -2729,13 +2746,12 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
                         }
                         //var subnode = lnode.getLast();
                         this._splitFiletext(lnode, nextPageNode, nextFiletextNode, pageNode);
-                        if (!lnode.firstChild) if (lnode.parentNode) lnode.parentNode.removeChild(lnode);
+                        // if (!lnode.firstChild) if (lnode.parentNode) lnode.parentNode.removeChild(lnode);
                         nextPageNode = nextPageNode.getParent();
                     }
                 } else if (nodeType == Node.TEXT_NODE) {
                     var nextPageTextNode = nextPageNode.insertBefore(document.createTextNode(""), nextPageNode.firstChild);
                     while ((contentNode.getSize().y > this.options.docPageHeight) && lnode.textContent) {
-                        //console.log(contentNode.getSize().y);
                         this._splitFiletextNodeOneWord(lnode, nextPageTextNode)
                     }
                     if (!lnode.textContent) if (lnode.parentNode) lnode.parentNode.removeChild(lnode); //lnode.remove();
@@ -2759,7 +2775,7 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
             var idx = this.pages.indexOf(pageNode);
             if (this.pages.length<=idx+1) this._createNewPage();
             var nextPage = this.pages[idx+1];
-            if (blockNode.hasClass("doc_layout_filetext")){
+            if (blockNode.hasClass("doc_layout_filetext") || blockNode.hasClass("doc_block_page") ){
 
                 var filetextNode = nextPage.getElement(".doc_layout_filetext");
                 if (!filetextNode){
@@ -3128,6 +3144,7 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
         }
     },
     _computeItemFieldData: function(name, dataItem, dataItemNode){
+        if (!this.data) return;
         var v = "";
         var module = (dataItemNode) ? this.form.all[dataItemNode] : this.form.all[this.json[dataItem]];
         if (module && module.getData) v = module.getData();
@@ -3161,6 +3178,12 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
                         case "copyto2":
                             var flag = (v.substring(v.length-1, v.length)=="。");
                             this.data[name] = v + ((flag) ? "" : "。");
+                            break;
+                        case "copies":
+                            if (this.json.copiesValueLength!==0){
+                                v = v.toString().padStart(this.json.copiesValueLength, '0');
+                            }
+                            this.data[name] = v;
                             break;
                         default:
                             if (name==="subject") v = o2.txt(v);
@@ -3221,11 +3244,18 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
                             this.data[name] = signers;
                             break;
                         case "mainSend":
-                            this.data[name] = strs.length ? strs.join("，") + "：" : "";
+                            const mainSends = strs.map((s)=>{
+                                return s.split('@')[0];
+                            });
+                            this.data[name] = mainSends.length ? mainSends.join("，") + "：" : "";
                             break;
                         case "copyto":
                         case "copyto2":
-                            this.data[name] = strs.length ? strs.join("，") + "。" : "";
+                            const copytos = strs.map((s)=>{
+                                return s.split('@')[0];
+                            });
+
+                            this.data[name] = copytos.length ? copytos.join("，") + "。" : "";
                             break;
                         default:
                             this.data[name] = strs.join("，");
@@ -3233,6 +3263,9 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
                     //}
                     break;
                 default:
+                    if (name==="copies" && this.json.copiesValueLength!==0){
+                        v = v.toString().padStart(this.json.copiesValueLength, '0');
+                    }
                     this.data[name] = v.toString();
             }
         }else{
@@ -3244,6 +3277,7 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
         this.setData(this.data);
     },
     _computeItemData: function(name, typeItem, dataItem, scriptItem, ev, dom){
+        if (!this.data) return;
         switch (this.json[typeItem]) {
             case "data":
                 if (this.json[dataItem]){
@@ -3386,7 +3420,18 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
      * this.form.get("fieldId").reload();
      */
     reload: function(callback){
-        this.resetData(false, callback);
+        this._loadReadEditAbeld();
+        if (!this.isReadable){
+            this.contentNode?.empty();
+            this.node?.addClass('hide');
+            return;
+        }
+
+        if (!this.isActive){
+            this.active();
+        }else{
+            this.resetData(false, callback);
+        }  
     },
     resetData: function(diffFiletext, callback){
         this._computeData(false);
@@ -3492,6 +3537,7 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
         }
 
         //}
+        this.validationMode();
         return this.data;
     },
     getAttachmentTextData: function(){
@@ -3512,6 +3558,7 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
                 this.data.seals.push(seal.get("src"));
             }.bind(this));
         }
+        this._setBusinessData(this.data);
     },
     setAttachmentData: function(){
         if (!this.attachmentTemplete){
@@ -3795,19 +3842,35 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
         }
     },
     createErrorNode: function(text){
-        var node = new Element("div");
-        var iconNode = new Element("div", {
+        const size = this.node.getSize();
+        const top = 0 - size.y +40;
+        node = new Element("div", {styles:{
+            "position": "relative",
+            "top": top+'px',
+            "display": "flex",
+            "justify-content": "center",
+            "font-size": "1.25rem",
+            "background-color": "#ffcdcd99",
+            "height": "40px",
+            "align-items": "center"
+        }});
+        var iconNode = new Element("div.ooicon-error", {
             "styles": {
                 "width": "20px",
-                "height": "20px",
+                "height": "1.2em",
+                "color": "red",
                 "float": "left",
-                "background": "url("+"../x_component_process_Xform/$Form/default/icon/error.png) center center no-repeat"
+                "display": "flex",
+                "align-items": "center",
+                "justify-content": "center"
+                // "background": "url("+"../x_component_process_Xform/$Form/default/icon/error.png) center center no-repeat"
             }
         }).inject(node);
         var textNode = new Element("div", {
             "styles": {
-                "line-height": "20px",
-                "margin-left": "20px",
+                "height": "auto",
+                "line-height": "1.2em",
+                "margin-left": "5px",
                 "color": "red",
                 "word-break": "keep-all"
             },
@@ -3824,6 +3887,8 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
 
             this.errNode = this.createErrorNode(text).inject(this.node, "after");
             this.showNotValidationMode(this.node);
+
+            this.node.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
         }
     },
     showNotValidationMode: function(node){
@@ -3924,6 +3989,9 @@ MWF.xApplication.process.Xform.Documenteditor = MWF.APPDocumenteditor =  new Cla
         return true;
     },
     validation: function(routeName, opinion){
+
+        if (this.isReadonly() || this.node?.isDisplayNone() || !this.isEditable) return true;
+        
         if (!this.validationConfig(routeName, opinion))  return false;
 
         if (!this.json.validation) return true;

@@ -504,10 +504,13 @@ MWF.xApplication.Org.UnitExplorer.UnitContent = new Class({
     },
     _loadContent: function(){
         this._listBaseInfor();
-        this.loadListCount();
-        this._listIdentityMembers();
-        this._listDutys();
-        if (this.data.control.allowEdit) this._listAttributes();
+        if( this.data && this.data.id ){
+            this.loadListCount();
+            this._listIdentityMembers();
+            this._listDutys();
+            if (this.data.control.allowEdit) this._listAttributes();
+        }
+
         //var _self = this;
         // this.personMemberList = this._listMembers("personList", "woSubDirectIdentityList", this.personMemberContentNode, [{
         //     "get": function(){
@@ -528,6 +531,12 @@ MWF.xApplication.Org.UnitExplorer.UnitContent = new Class({
         //     {"style": "width: 40%", "text": this.explorer.app.lp.groupDn},
         //     {"style": "", "text": this.explorer.app.lp.groupDescription}
         // ], this.addGroupMember.bind(this), "groupCountNode");
+    },
+    loadList: function (){
+        this.loadListCount();
+        this._listIdentityMembers();
+        this._listDutys();
+        if (this.data.control.allowEdit) this._listAttributes();
     },
     loadListCount: function(){
         var identityCount = this.data.woSubDirectIdentityList.length;
@@ -1409,9 +1418,14 @@ MWF.xApplication.Org.UnitExplorer.UnitContent.BaseInfor = new Class({
     },
 
     save: function(){
+        if( this.saving ){
+            return;
+        }
+        this.saving = true;
         var tdContents = this.editContentNode.getElements("td.inforContent");
         if (!this.nameInputNode.get("value") || !this.uniqueInputNode.get("value")){
             this.explorer.app.notice(this.explorer.app.lp.inputUnitInfor, "error", this.explorer.propertyContentNode);
+            this.saving = false;
             return false;
         }
         //this.data.genderType = gender;
@@ -1426,11 +1440,13 @@ MWF.xApplication.Org.UnitExplorer.UnitContent.BaseInfor = new Class({
         this.saveUnit(function(){
             this.cancel(  null,true );
             this.content.propertyContentScrollNode.unmask();
+            this.saving = false;
         }.bind(this), function(xhr, text, error){
             var errorText = error;
             if (xhr) errorText = xhr.responseText;
             this.explorer.app.notice("request json error: "+errorText, "error");
             this.content.propertyContentScrollNode.unmask();
+            this.saving = false;
         }.bind(this));
     },
     saveUnit: function(callback, cancel){
@@ -1457,6 +1473,9 @@ MWF.xApplication.Org.UnitExplorer.UnitContent.BaseInfor = new Class({
                     this.item.data = this.data;
                     this.item.refresh();
                     if (this.item.parent) this.item.parent.subUnits.push(this.item);
+
+                    this.content.loadList();
+
                     if (callback) callback();
                 }.bind(this), null, json.data.id);
             }

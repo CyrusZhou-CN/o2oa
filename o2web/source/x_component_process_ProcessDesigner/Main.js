@@ -59,6 +59,7 @@ MWF.xApplication.process.ProcessDesigner.Main = new Class({
         if (callback) callback();
     },
     addKeyboardEvents: function(){
+        if( !MWF.shortcut )MWF.require("MWF.xDesktop.shortcut");
         this.addEvent("copy", function(){
             this.copyModule();
         }.bind(this));
@@ -647,6 +648,11 @@ MWF.xApplication.process.ProcessDesigner.Main = new Class({
 
             this.processEditionNode = toolbarNode.getElement(".processEdition");
             this.processEditionInforNode = toolbarNode.getElement(".processEditionInfor");
+
+            toolbarNode.querySelector('oo-button.fieldPermissionsButton')?.addEventListener('click', function(e){
+                this.process.openFieldPermissions(e);
+            }.bind(this));
+
         }.bind(this));
     },
     getProcessToolbarHTML: function(callback){

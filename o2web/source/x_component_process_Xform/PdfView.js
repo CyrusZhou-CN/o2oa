@@ -28,6 +28,12 @@ MWF.xApplication.process.Xform.PdfView = MWF.APPPdfView =  new Class({
         this.node.empty();
     },
     _afterLoaded: function(){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+        if (!this.isEditable)  this.mode  = "read";
+        
         if(this.mode !== "read"){
             this.createUpload();
         }

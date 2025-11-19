@@ -91,6 +91,7 @@ MWF.xApplication.process.Xform.$Input = MWF.APP$Input =  new Class(
             this.descriptionNode = null;
         }
         this.node.empty();
+        this._loadReadEditAbeld();
         this._beforeReloaded();
         this._loadUserInterface();
         this._loadStyles();
@@ -98,13 +99,26 @@ MWF.xApplication.process.Xform.$Input = MWF.APP$Input =  new Class(
         this._afterReloaded();
         this.fireEvent("postLoad");
     },
+
     _loadNode: function(){
-        if (this.isReadonly()){
-            this._loadNodeRead();
+        if (!this.isReadable && !!this.isHideUnreadable){
+            this.node?.addClass('hide');
         }else{
-            this._loadNodeEdit();
+            if (this.isReadonly()){
+                this._loadNodeRead();
+            }else{
+                this._loadNodeEdit();
+            }
         }
     },
+
+    // _loadNode: function(){
+    //     if (this.isReadonly()){
+    //         this._loadNodeRead();
+    //     }else{
+    //         this._loadNodeEdit();
+    //     }
+    // },
     _loadNodeRead: function(){
         this.node.empty();
         this.node.set({
@@ -260,22 +274,13 @@ MWF.xApplication.process.Xform.$Input = MWF.APP$Input =  new Class(
         return (this.json.defaultValue && this.json.defaultValue.code) ? this.form.Macro.exec(this.json.defaultValue.code, this): (value || "");
     },
 	getValue: function(){
+        if (!this.isReadable) return '';
         if (this.moduleValueAG) return this.moduleValueAG;
         var value = this._getBusinessData();
-        if (!value) value = this._computeValue();
-		return value || "";
+        if (o2.typeOf(value)==="null" || value==='') value = this._computeValue();
+		return value ?? "";
 	},
     _setValue: function(value){
-	    // if (value && value.isAG){
-	    //     var ag = o2.AG.all(value).then(function(v){
-	    //         if (o2.typeOf(v)=="array") v = v[0];
-        //         this.__setValue(v);
-        //     }.bind(this));
-        //     this.moduleValueAG = ag;
-	    //     ag.then(function(){
-        //         this.moduleValueAG = null;
-        //     }.bind(this));
-        // }else {
         if (!!value && o2.typeOf(value.then)=="function"){
             var p = Promise.resolve(value).then(function(v){
                 this.__setValue(v);
@@ -285,10 +290,6 @@ MWF.xApplication.process.Xform.$Input = MWF.APP$Input =  new Class(
             this.moduleValueAG = null;
             this.__setValue(value);
         }
-
-            //this.__setValue(value);
-        // }
-
     },
     __setValue: function(value){
         this.moduleValueAG = null;
@@ -331,7 +332,7 @@ MWF.xApplication.process.Xform.$Input = MWF.APP$Input =  new Class(
      * @return {Boolean} 是否只读.
      */
 	isReadonly : function(){
-        return !!(this.readonly || this.json.isReadonly || this.form.json.isReadonly || this.json.showMode==="read" || this.isSectionMergeRead());
+        return !!(!this.isEditable || this.readonly || this.json.isReadonly || this.form.json.isReadonly || this.json.showMode==="read" || this.isSectionMergeRead());
     },
 	getTextData: function(){
 		//var value = this.node.get("value");
@@ -514,19 +515,25 @@ MWF.xApplication.process.Xform.$Input = MWF.APP$Input =  new Class(
                 }
             }
         }else{
-            node = new Element("div");
-            var iconNode = new Element("div", {
+            node = new Element("div", {styles:{
+                "margin-top": "0.3em"  
+            }});
+            var iconNode = new Element("div.ooicon-error", {
                 "styles": {
                     "width": "20px",
-                    "height": "20px",
+                    "height": "1.2em",
                     "float": "left",
-                    "background": "url("+"../x_component_process_Xform/$Form/default/icon/error.png) center center no-repeat"
+                    "display": "flex",
+                    "color": "red",
+                    "align-items": "center",
+                    "justify-content": "center"
+                    // "background": "url("+"../x_component_process_Xform/$Form/default/icon/error.png) center center no-repeat"
                 }
             }).inject(node);
             var textNode = new Element("div", {
                 "styles": {
                     "height": "auto",
-                    "line-height": "20px",
+                    "line-height": "1.2em",
                     "margin-left": "20px",
                     "color": "red",
                     "word-break": "keep-all"
@@ -592,7 +599,7 @@ MWF.xApplication.process.Xform.$Input = MWF.APP$Input =  new Class(
             var v = (data.valueType==="value") ? n : n.length;
             switch (data.operateor){
                 case "isnull":
-                    if (!v || (o2.typeOf(v)==="array" && !v.length)){
+                    if ((!v && v!==0) || (o2.typeOf(v)==="array" && !v.length)){
                         this.notValidationMode(data.prompt);
                         return false;
                     }

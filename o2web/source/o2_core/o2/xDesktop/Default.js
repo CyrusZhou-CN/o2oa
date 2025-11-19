@@ -134,6 +134,7 @@ o2.xDesktop.Default = new Class({
         var options = (optionsStr) ? JSON.decode(optionsStr) : null;
 
         if (appNames){
+            if (!this.status) this.status = {};
             this.status.apps = {};
             this.status.apps[appNames] = options || {};
             this.status.apps[appNames].name = appNames;
@@ -267,7 +268,7 @@ o2.xDesktop.Default = new Class({
         var skinCss = this.path+this.options.style+ "/style-skin.css";
         var html = this.path+this.options.style+((o2.session.isMobile || layout.mobile) ? "/layout-pc.html" : "/layout-pc.html");
 
-        var cssv10 = "/x_desktop/css/v10/"+this.options.style+ "/style-skin.css";
+        var cssv10 = "../x_desktop/css/v10/"+this.options.style+ "/style-skin.css";
         this.node.loadCss(cssv10);
 
 
@@ -348,7 +349,7 @@ o2.xDesktop.Default = new Class({
             //var options = {"portalId": layout.config.indexPage.portal, "pageId": layout.config.indexPage.page, "appId": appId};
 
             app = {
-                "options": {"name": "portal.Portal", "portalId": layout.config.indexPage.portal, "pageId": layout.config.indexPage.page, "appId": appId},
+                "options": {"name": "portal.Portal", "portalId": layout.config.indexPage.portal, "pageId": layout.config.indexPage.page, "appId": appId, isHomepage: true},
                 "close": function(){
                     this.taskitem.destroy();
                 },
@@ -359,7 +360,7 @@ o2.xDesktop.Default = new Class({
             //layout.openApplication(null, "portal.Portal", options);
         }else{
             app = {
-                "options": {"name": "Homepage", "appId": "Homepage", "title": o2.LP.desktop.homepage},
+                "options": {"name": "Homepage", "appId": "Homepage", "title": o2.LP.desktop.homepage, isHomepage: true},
                 "close": function(){
                     this.taskitem.destroy();
                 },
@@ -894,6 +895,7 @@ o2.xDesktop.Default = new Class({
                 "style": app.options.style,
                 "appId": app.appId
             };
+            if (app.options.isHomepage) appStatus.isHomepage = true;
             var status = (app.recordStatus) ? app.recordStatus() : null;
 
             app.close(true);
@@ -1902,7 +1904,6 @@ o2.xDesktop.Default.StartMenu.Item = new Class({
         this.makeLnk();
     },
     addLnk: function(dragTargetLnk, dragPosition){
-        debugger;
 
         lnkdata = {
             "name": this.data.path,
@@ -2957,7 +2958,6 @@ o2.xDesktop.Default.Lnk = new Class({
         this.load(targetLnk, position);
     },
     load: function(targetLnk, position){
-        debugger;
         this.node = new Element("div.layout_menu_lnk_item");
         if (targetLnk){
             if (!position) position = "before";

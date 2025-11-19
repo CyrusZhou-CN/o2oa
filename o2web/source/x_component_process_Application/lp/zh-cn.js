@@ -18,6 +18,7 @@ MWF.xApplication.process.Application.LP = {
 	"workdelete" : "已删除工作",
 	"dict" : "数据配置",
 	"serial" : "编号配置",
+	"archive" : "归档配置",
 	"startProcess" : "发起流程",
 
 	"query": "搜索",
@@ -36,7 +37,8 @@ MWF.xApplication.process.Application.LP = {
 		"add" : "新增",
 		"rollback" : "回溯",
 		"delSnap" : "彻底删除",
-		"restore" : "恢复"
+		"restore" : "恢复",
+		"adjustTime" : "修改时间"
  	},
 
 	"subject" : "标题",

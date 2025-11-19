@@ -10,10 +10,10 @@ o2.widget.AttachmentController = o2.widget.ATTER  = new Class({
         "resize": true,
         "attachmentCount": 0,
         "isUpload": true,
+        "isFromDriver": 'hidden',
         "isDelete": true,
         "isReplace": true,
         "isDownload": true,
-        "isPreviewAtt": true,
         "isPreviewAtt": true,
         "isSizeChange": true,
         "isConfig": true,
@@ -21,6 +21,7 @@ o2.widget.AttachmentController = o2.widget.ATTER  = new Class({
         "readonly": false,
         "availableListStyles" : ["list","seq","icon","preview"],
         "toolbarGroupHidden" : [], //edit read list view
+        "singleToolbarHidden" : [], //delete edit config open edit
         "images": ["bmp", "gif", "png", "jpeg", "jpg", "jpe", "ico"],
         "audios": ["mp3", "wav", "wma", "wmv"],
         "videos": ["avi", "mkv", "mov", "ogg", "mp4", "mpa", "mpe", "mpeg", "mpg", "rmvb"],
@@ -194,6 +195,10 @@ o2.widget.AttachmentController = o2.widget.ATTER  = new Class({
 
             this.min_uploadAction = this.createAction(this.minActionAreaNode, "upload", o2.LP.widget.upload, function (e, node) {
                 this.uploadAttachment(e, node);
+            }.bind(this));
+
+            this.min_openDriverAction = this.createAction(this.minActionAreaNode, "drive", o2.LP.widget.selectFromDriver, function (e, node) {
+                this.openDriver(e, node);
             }.bind(this));
 
             this.min_deleteAction = this.createAction(this.minActionAreaNode, "delete", o2.LP.widget["delete"], function (e, node) {
@@ -426,6 +431,10 @@ o2.widget.AttachmentController = o2.widget.ATTER  = new Class({
             this.uploadAttachment(e, node);
         }.bind(this));
 
+        this.openDriverAction = this.createAction(this.editActionsGroupNode, "drive", o2.LP.widget.selectFromDriver, function(e, node){
+            this.openDriver(e, node);
+        }.bind(this));
+
         this.deleteAction = this.createAction(this.editActionsGroupNode, "delete", o2.LP.widget["delete"], function(e, node){
             this.deleteAttachment(e, node);
         }.bind(this));
@@ -537,6 +546,7 @@ o2.widget.AttachmentController = o2.widget.ATTER  = new Class({
     //        this.setReadonly();
     //    }else{
             this.checkUploadAction();
+            this.checkOpenDriverAction();
             this.checkDeleteAction();
 
             this.checkReplaceAction();
@@ -554,7 +564,7 @@ o2.widget.AttachmentController = o2.widget.ATTER  = new Class({
     },
     checkEditActionBox: function(){
         var isShowEdit = false;
-        ["isUpload", "isDelete", "isReplace"].each(function( key ){
+        ["isUpload", "isFromDriver", "isDelete", "isReplace"].each(function( key ){
             if( key === "isReplace" && this.options.isReplaceHidden )return;
             if( this.options[key] !== "hidden" )isShowEdit = true;
         }.bind(this));
@@ -596,6 +606,38 @@ o2.widget.AttachmentController = o2.widget.ATTER  = new Class({
             }else{
                 this.setActionEnabled(this.uploadAction);
                 this.setActionEnabled(this.min_uploadAction);
+            }
+        }
+    },
+    checkOpenDriverAction: function(){
+        if (this.options.readonly) {
+            if (this.options.isFromDriver === "hidden") {
+                this.setActionHidden(this.openDriverAction);
+                this.setActionHidden(this.min_openDriverAction);
+            } else {
+                this.setActionDisabled(this.openDriverAction);
+                this.setActionDisabled(this.min_openDriverAction);
+            }
+            return false;
+        }
+        if (this.options.isFromDriver === "hidden" ){
+            this.setActionHidden(this.openDriverAction);
+            this.setActionHidden(this.min_openDriverAction);
+        }else if (!this.options.isFromDriver){
+            this.setActionDisabled(this.openDriverAction);
+            this.setActionDisabled(this.min_openDriverAction);
+        }else{
+            if (this.options.attachmentCount.toInt() > 0){
+                if (this.attachments.length>=this.options.attachmentCount.toInt()){
+                    this.setActionDisabled(this.openDriverAction);
+                    this.setActionDisabled(this.min_openDriverAction);
+                }else{
+                    this.setActionEnabled(this.openDriverAction);
+                    this.setActionEnabled(this.min_openDriverAction);
+                }
+            }else{
+                this.setActionEnabled(this.openDriverAction);
+                this.setActionEnabled(this.min_openDriverAction);
             }
         }
     },
@@ -853,7 +895,6 @@ o2.widget.AttachmentController = o2.widget.ATTER  = new Class({
     },
 
     uploadAttachment: function(e, node, files){
-        debugger;
         if (this.module) this.module.uploadAttachment(e, node, files);
     },
     doUploadAttachment: function(obj, action, invokeUrl, parameter, finish, every, beforeUpload, multiple, accept, size, failureEvery, files){
@@ -867,6 +908,41 @@ o2.widget.AttachmentController = o2.widget.ATTER  = new Class({
             var text = o2.LP.widget.notUploadNotice;
             if (o2 && o2.xDesktop && o2.xDesktop.notice) o2.xDesktop.notice("info", {"x": "right", "y": "top"}, text, this.node);
         }
+    },
+    openDriver: function(e, node, files){
+        this.module.openDriver(e, node, files);
+    },
+    // doSelectDriverAttachment: function(obj, action, invokeUrl, parameter, finish, every, beforeUpload, multiple, accept, size, failureEvery, files){
+    //     if ( !this.options.readonly && ( this.options.isUpload && this.options.isUpload !== "hidden") ){
+    //         if (FormData.expiredIE){
+    //             this.doInputUploadAttachment(obj, action, invokeUrl, parameter, finish, every, beforeUpload, multiple, accept, size, failureEvery);
+    //         }else{
+    //             this.doFormDataUploadAttachment(obj, action, invokeUrl, parameter, finish, every, beforeUpload, multiple, accept, size, failureEvery, files);
+    //         }
+    //     }else{
+    //         var text = o2.LP.widget.notUploadNotice;
+    //         if (o2 && o2.xDesktop && o2.xDesktop.notice) o2.xDesktop.notice("info", {"x": "right", "y": "top"}, text, this.node);
+    //     }
+    // },
+    orderAttachments: function (attDataList){
+        var preNode;
+        var attachments = [];
+        var index = 0;
+        attDataList.each( function( att ){
+            var matchAttachments = this.attachments.filter( function( attachment ){
+                return attachment.data.id === att.id || (attachment.data.businessId && attachment.data.businessId === att.businessId);
+            });
+            if( matchAttachments.length ){
+                index++;
+                attachments.push(matchAttachments[0]);
+                var content = this.options.size === 'min' ? this.minContent : this.content;
+                var node = matchAttachments[0].node;
+                preNode ? node.inject( preNode, "after" ) : node.inject( content, "top" );
+                preNode = node;
+                matchAttachments[0].setSequence(index);
+            }
+        }.bind(this));
+        this.attachments = attachments;
     },
     addUploadMessage: function(fileName){
         var contentHTML = "";
@@ -1007,7 +1083,7 @@ o2.widget.AttachmentController = o2.widget.ATTER  = new Class({
                 });
 
                 var isContinue = true;
-                if (beforeUpload) isContinue = beforeUpload([inputNameNode.get("value")]);
+                if (beforeUpload) isContinue = beforeUpload([inputNameNode.get("value")], parameter);
                 if (isContinue){
                     messageItem = this.addUploadMessage(inputNameNode.get("value"));
                     formNode.submit();
@@ -1038,7 +1114,7 @@ o2.widget.AttachmentController = o2.widget.ATTER  = new Class({
                 };
 
                 var isContinue = true;
-                if (beforeUpload) isContinue = beforeUpload(files);
+                if (beforeUpload) isContinue = beforeUpload(files, parameter);
                 if (isContinue){
                     var accepts = (accept) ? accept.split(o2.splitStr) : null;
 
@@ -1080,14 +1156,14 @@ o2.widget.AttachmentController = o2.widget.ATTER  = new Class({
                                     var chunks = Math.ceil(file.size / chunkSize), currentChunk = 0, spark = new SparkMD5();
 
                                     fileReader.onload = function(e) {
-                                        console.log("read chunk nr", currentChunk + 1, "of", chunks);
+                                        // console.log("read chunk nr", currentChunk + 1, "of", chunks);
                                         spark.appendBinary(e.target.result);
                                         currentChunk++;
 
                                         if (currentChunk < chunks) {
                                             loadNext();
                                         } else {
-                                            console.log("finished loading");
+                                            // console.log("finished loading");
                                             var fileMd5 = spark.end();
 
                                             restActions.invoke({
@@ -1319,7 +1395,6 @@ o2.widget.AttachmentController = o2.widget.ATTER  = new Class({
         }
     },
     changeControllerSizeToMax: function(){
-        debugger;
         if (this.options.size!="max") {
             // if (this.minActionAreaNode) this.minActionAreaNode.setStyle("display", "none");
             // if (this.minContent) this.minContent.setStyle("display", "none");
@@ -1401,6 +1476,12 @@ o2.widget.AttachmentController.Attachment = new Class({
 
         this.load();
 	},
+    setSequence: function (seq){
+        this.seq = seq;
+        if( this.controller.options.listStyle === 'sequence' && this.sequenceNode ){
+            this.sequenceNode.set('text', seq);
+        }
+    },
     _getLnkPar: function(url){
         return {
             "icon": this.getIcon(),
@@ -1418,6 +1499,7 @@ o2.widget.AttachmentController.Attachment = new Class({
 
 	    if (this.message){
             this.node = new Element("div").inject(this.message.node, "after");
+            //this.node = new Element("div").inject(this.content);
             this.message.node.destroy();
             delete this.controller.messageItemList[this.message.data.id];
         }else{
@@ -1951,6 +2033,7 @@ o2.widget.AttachmentController.AttachmentMin = new Class({
 
         if (this.message){
             this.node = new Element("div").inject(this.message.node, "after");
+            // this.node = new Element("div").inject(this.content);
             this.message.node.destroy();
             delete this.controller.messageItemList[this.message.data.id];
         }else{
@@ -2009,26 +2092,27 @@ o2.widget.AttachmentController.AttachmentMin = new Class({
 
         this.actionAreaNode = new Element("div", {"styles": this.css.minAttachmentActionAreaNode}).inject(this.node);
 
-        if( this.controller.isAttDblclickAvailable(this) ){
+        var hiddenList = this.controller.options.singleToolbarHidden;
+        if( this.controller.isAttDblclickAvailable(this) && !hiddenList.contains('open') ){
             this.openAction = this.createAction(this.actionAreaNode, "open_single", "open_single_over", o2.LP.widget.open, function (e, node) {
                 this.controller.dblclickAttachment(e, node, [this]);
             }.bind(this));
         }
 
-        if ( this.controller.isAttDownloadAvailable(this) ) {
+        if ( this.controller.isAttDownloadAvailable(this) && !hiddenList.contains('download') ) {
             this.downloadAction = this.createAction(this.actionAreaNode, "download_single", "download_single_over", o2.LP.widget.download, function (e, node) {
                 this.controller.downloadAttachment(e, node);
             }.bind(this));
         }
         //this.actions.push( this.downloadAction );
 
-        if ( this.controller.isAttDeleteAvailable(this) ) {
+        if ( this.controller.isAttDeleteAvailable(this) && !hiddenList.contains('delete')) {
             this.deleteAction = this.createAction(this.actionAreaNode, "delete_single", "delete_single_over", o2.LP.widget["delete"], function (e, node) {
                 this.controller.deleteAttachment(e, node);
             }.bind(this));
         }
 
-        if ( this.controller.isAttEditAvailable(this) ) {
+        if ( this.controller.isAttEditAvailable(this) && !hiddenList.contains('edit')) {
             this.editAction = this.createAction(this.actionAreaNode, "edit_single", "edit_single_over", o2.LP.widget["editAtt"], function (e, node) {
                 this.controller.editAttachment(e, node);
             }.bind(this));
@@ -2037,7 +2121,7 @@ o2.widget.AttachmentController.AttachmentMin = new Class({
         //this.actions.push( this.deleteAction );
 
         if (this.controller.configAttachment) {
-            if ( this.controller.isAttConfigAvailable(this) ) {
+            if ( this.controller.isAttConfigAvailable(this) && !hiddenList.contains('config')) {
                 this.configAction = this.createAction(this.actionAreaNode, "config_single", "config_single_over", o2.LP.widget.configAttachment, function (e, node) {
                     this.controller.configAttachment(e, node);
                 }.bind(this), o2.LP.widget.configAttachmentText );
@@ -2083,26 +2167,30 @@ o2.widget.AttachmentController.AttachmentMin = new Class({
 
         this.actionAreaNode = new Element("div", {"styles":this.css.minAttachmentActionAreaNode}).inject(this.node);
 
-        if( this.controller.isAttDblclickAvailable(this) ){
+        debugger;
+
+        var hiddenList = this.controller.options.singleToolbarHidden;
+
+        if( this.controller.isAttDblclickAvailable(this) && !hiddenList.contains('open') ){
             this.openAction = this.createAction(this.actionAreaNode, "open_single", "open_single_over", o2.LP.widget.open, function (e, node) {
                 this.controller.dblclickAttachment(e, node, [this]);
             }.bind(this));
         }
 
-        if ( this.controller.isAttDownloadAvailable(this) ) {
+        if ( this.controller.isAttDownloadAvailable(this) && !hiddenList.contains('download') ) {
             this.downloadAction = this.createAction(this.actionAreaNode, "download_single", "download_single_over", o2.LP.widget.download, function (e, node) {
                 this.controller.downloadAttachment(e, node);
             }.bind(this));
         }
         //this.actions.push( this.downloadAction );
 
-        if ( this.controller.isAttDeleteAvailable(this) ) {
+        if ( this.controller.isAttDeleteAvailable(this) && !hiddenList.contains('delete') ) {
             this.deleteAction = this.createAction(this.actionAreaNode, "delete_single", "delete_single_over", o2.LP.widget["delete"], function (e, node) {
                 this.controller.deleteAttachment(e, node);
             }.bind(this));
         }
 
-        if ( this.controller.isAttEditAvailable(this) ) {
+        if ( this.controller.isAttEditAvailable(this) && !hiddenList.contains('edit') ) {
             this.editAction = this.createAction(this.actionAreaNode, "edit_single", "edit_single_over", o2.LP.widget["editAtt"], function (e, node) {
                 this.controller.editAttachment(e, node);
             }.bind(this));
@@ -2112,7 +2200,7 @@ o2.widget.AttachmentController.AttachmentMin = new Class({
 
 
         if (this.controller.configAttachment) {
-            if ( this.controller.isAttConfigAvailable(this) ) {
+            if ( this.controller.isAttConfigAvailable(this) && !hiddenList.contains('config') ) {
                 this.configAction = this.createAction(this.actionAreaNode, "config_single", "config_single_over", MWF.LP.widget.configAttachment, function (e, node) {
                     this.controller.configAttachment(e, node);
                 }.bind(this));
@@ -2219,8 +2307,6 @@ o2.widget.AttachmentController.AttachmentMin = new Class({
         this.node.destroy();
         delete this.node;
         this.node = node;
-
-        debugger;
 
         switch (this.listStyle){
             case "list":

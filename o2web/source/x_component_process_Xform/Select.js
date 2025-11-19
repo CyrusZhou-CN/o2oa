@@ -58,6 +58,7 @@ MWF.xApplication.process.Xform.Select = MWF.APPSelect =  new Class(
 			this.areaNode = null;
 		}
 		this._beforeReloaded();
+		this._loadReadEditAbeld();
 		this._loadUserInterface();
 		this._loadStyles();
 		this._afterLoaded();
@@ -65,10 +66,14 @@ MWF.xApplication.process.Xform.Select = MWF.APPSelect =  new Class(
 		this.fireEvent("postLoad");
 	},
     _loadNode: function(){
-        if (this.isReadonly()){
-            this._loadNodeRead();
+		if (!this.isReadable && !!this.isHideUnreadable){
+            this.node?.addClass('hide');
         }else{
-            this._loadNodeEdit();
+            if (this.isReadonly()){
+				this._loadNodeRead();
+			}else{
+				this._loadNodeEdit();
+			}
         }
     },
 	_loadMergeReadContentNode: function( contentNode, data ){

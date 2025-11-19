@@ -6,7 +6,7 @@ MWF.xDesktop.requireApp("Calendar", "Common", null, false);
 MWF.xDesktop.requireApp("Template", "MDomItem", null, false);
 MWF.xApplication.Calendar.options.multitask = false;
 MWFCalendar.LeftNaviWidth = 250;
-MWF.xApplication.Calendar.Main = new Class({
+MWF.xApplication.Calendar.MainPc = new Class({
     Extends: MWF.xApplication.Common.Main,
     Implements: [Options, Events],
 
@@ -31,8 +31,10 @@ MWF.xApplication.Calendar.Main = new Class({
     },
     loadApplication: function(callback) {
         this.canlendarData = null;
+        this.content.style.setProperty('box-sizing', 'content-box', 'important');
+        this.content.loadCssText('.tooltipNode *{ box-sizing: content-box !important; }');
 
-        this.content.loadCss("../x_component_Calendar/$Main/default/style.css");
+        // this.content.loadCss("../x_component_Calendar/$Main/default/style.css");
 
         MWF.UD.getDataJson("calendarConfig", function(json){
             this.calendarConfig = json || {};
@@ -71,11 +73,12 @@ MWF.xApplication.Calendar.Main = new Class({
             }.bind(this));
         }.bind(this));
     },
-    listCalendar : function( callback ){
-        if( this.canlendarData ){
+    listCalendar : function( callback, refresh ){
+        if( !refresh && this.canlendarData ){
             if(callback)callback( this.canlendarData )
+            return this.canlendarData;
         }else{
-            this.actions.listMyCalendar( function( json ){
+            return this.actions.listMyCalendar( function( json ){
                 if( ( json.data.myCalendars || [] ).length == 0 ){
                     this.createDefaultCalendar(function(){
                         if(callback)callback( json.data )
@@ -89,7 +92,7 @@ MWF.xApplication.Calendar.Main = new Class({
             }.bind(this))
         }
     },
-    getSelectedCalendarId : function(){
+    getSelectedCalendarId: function(){
         if( this.leftNavi ){
             return this.leftNavi.getSelectedCalendarId();
         }else{
@@ -204,7 +207,7 @@ MWF.xApplication.Calendar.Main = new Class({
             }
         }).inject( this.titleContentNode );
 
-        this.newCalendarIcon = new Element("i.o2icon-newfiles", {
+        this.newCalendarIcon = new Element("i.ooicon-add-circle", {
             styles : this.css.newCalendarIcon
         }).inject(this.newCalendarNode, "top");
 
@@ -239,13 +242,13 @@ MWF.xApplication.Calendar.Main = new Class({
     loadTopMenus_right: function(){
         this.topMenuRight = new Element("div", {"styles": this.css.topMenuRight }).inject(this.topMenu);
 
-        this.createTopMenu_right(this.lp.addEvent, "o2icon-create", "addCalendarEvent");
+        this.createTopMenu_right(this.lp.addEvent, "ooicon-add-circle", "addCalendarEvent");
         //this.createTopMenu_right("新建日历", "icon_newapply", "addCalendar");
 
         //var refreshNode = this.createTopMenu_right(this.lp.refresh, "refresh", "refresh");
         //refreshNode.setStyle("float", "right");
 
-        var configNode = this.createTopMenu_right(this.lp.setting, "o2icon-config", "config");
+        var configNode = this.createTopMenu_right(this.lp.setting, "ooicon-config", "config");
         configNode.setStyle("float", "right");
     },
     createTopMenu_right : function(text, icon, action){
@@ -281,10 +284,10 @@ MWF.xApplication.Calendar.Main = new Class({
     loadTopMenus: function(){
         this.topMenuNodeMap = {};
         //this.createTopMenu(this.lp.myCalendar, "icon_huiyi", "toMyCalendar");
-        this.createTopMenu(this.lp.month, "o2icon-month", "toMonth");
-        this.createTopMenu(this.lp.week, "o2icon-week", "toWeek");
-        this.createTopMenu(this.lp.day, "o2icon-day", "toDay");
-        this.createTopMenu(this.lp.list, "o2icon-list", "toList");
+        this.createTopMenu(this.lp.month, "ooicon-calendar", "toMonth");
+        this.createTopMenu(this.lp.week, "ooicon-weekly", "toWeek");
+        this.createTopMenu(this.lp.day, "ooicon-clock", "toDay");
+        this.createTopMenu(this.lp.list, "ooicon-list-alt", "toList");
 
         this.loadTopMenus_middle();
         this.loadTopMenus_right();
@@ -691,6 +694,263 @@ MWF.xApplication.Calendar.Main = new Class({
         return false;
     }
 });
+const O2_CALENDAR_FORMAT_DATE = '%Y-%m-%d';
+const O2_CALENDAR_FORMAT_TIME = '%H:%M';
+MWF.xApplication.Calendar.MainMobile = new Class({
+    Extends: MWF.xApplication.Calendar.MainPc,
+    options: {
+        "style": "mobile",
+        "baseDate": ''
+    },
+    createNode: function (){},
+    loadLayout: function(){
+        if( !this.options.baseDate ){
+            this.options.baseDate = new Date().format(O2_CALENDAR_FORMAT_DATE);
+        }
+        this.content.setStyle("overflow", "hidden");
+        this.node = new Element("div", {
+            "styles": {"width": "100%", "height": "100%", "overflow": "hidden"}
+        }).inject(this.content);
+        this.node.loadCss(`../x_component_Calendar/$Main/${this.options.style}/style.css`)
+        this.loadView();
+    },
+    reload: function(){
+        this.node.empty();
+        this.loadView();
+    },
+    loadView: function(){
+        this.node.loadHtml(
+            `../x_component_Calendar/$Main/${this.options.style}/main.html`,
+            {
+                module: this,
+                bind: {
+                    lp: this.lp,
+                    weekBegin: this.calendarConfig.weekBegin || 1,
+                    defaultDate: this.currentDate || this.options.baseDate
+                }
+            },
+            ()=>{
+                this.loadFlags();
+                this.loadEvents(this.currentDate || this.options.baseDate);
+            }
+        );
+    },
+    handleViewChange: function(e){
+        const detail = e.detail;
+        if( detail.view === 'date'){
+            const els = this.calendar.querySelectorAll('.event-flag');
+            els.forEach(el=>el.destroy());
+            this.loadFlags(null, {
+                startTime: `${detail.range[0]} 00:00:00`,
+                endTime: `${detail.range[1]} 23:59:59`
+            })
+        }
+    },
+    loadFlags: function( callback, range = this.getRange() ){
+        const {myCalendars, unitCalendars, followCalendars} =  this.canlendarData;
+        return this.actions.listEventWithFilter( {
+            calendarIds : [...myCalendars, ...unitCalendars, ...followCalendars].map(c=>{return c.id;}),
+            startTime : range.startTime,
+            endTime : range.endTime,
+        }, function(json){
+            const data = json.data;
+
+            if (data.wholeDayEvents && data.wholeDayEvents.length) {
+                const first = new Date(range.startTime).clearTime();
+                const last = new Date(range.endTime).clearTime();
+
+                data.wholeDayEvents.forEach((ev) => {
+                    const start = new Date(ev.startTime).clearTime();
+                    const end = new Date(ev.endTime).clearTime();
+                    let d = (start > first) ? start.clone() : first.clone();
+
+                    while (d <= end && d <= last) {
+                        //在日历上标记日程标识
+                        this.setFlag(d.format( O2_CALENDAR_FORMAT_DATE ));
+                        d.increment('day', 1);
+                    }
+                });
+            }
+            if (data.inOneDayEvents && data.inOneDayEvents.length) {
+                data.inOneDayEvents.forEach(function (e) {
+                    if (e.inOneDayEvents && e.inOneDayEvents.length) {
+                        this.setFlag(new Date(e.eventDate).format( O2_CALENDAR_FORMAT_DATE ));
+                    }
+                }.bind(this));
+            }
+            if(callback)callback();
+        }.bind(this));
+    },
+    getRange: function () {
+        const detail = this.calendar.viewStatus;
+        return {
+            startTime: `${detail.range[0]} 00:00:00`,
+            endTime: `${detail.range[1]} 23:59:59`
+        }
+    },
+    setFlag: function (name) {
+        const flat = this.calendar.querySelector('div[slot="' + name + '"]');
+        if (!flat) {
+            const point = new Element('div.ooicon-pentagram_fill.event-flag', { 'slot': name });
+            this.calendar.appendChild(point);
+        }
+    },
+    handleDateChange: function (e){
+        this.currentDate = e.detail.value;
+        this.loadEvents(e.detail.value);
+    },
+    loadEvents: function( dateString ){
+        const p = o2.Actions.load('x_calendar_assemble_control').Calendar_EventAction.listWithFilterSample({
+            startTime: `${dateString} 00:00:00`,
+            endTime: `${dateString} 23:59:59`
+        }).then((json)=>{
+            json.data = json.data.map((d)=>{
+                const start = new Date(d.startTime);
+                const end = new Date(d.endTime);
+                d.range = {
+                    start: start.format(O2_CALENDAR_FORMAT_TIME),
+                    end: end.format(O2_CALENDAR_FORMAT_TIME),
+                }
+                const now = new Date();
+                if (start > now) {
+                    d.statusColor='var(--oo-color-success)';
+                    d.status = this.lp.status.wait;
+                }else if (start <= now && now <= end) {
+                    d.statusColor='var(--oo-color-main)';
+                    d.status = this.lp.status.doing;
+                }else if (end < now) {
+                    d.statusColor='var(--oo-color-gray-9)';
+                    d.status = this.lp.status.finish;
+                }
+                return d;
+            })
+            return json;
+        })
+        p.then( (json) => {
+            this.eventArea.empty();
+            this.eventArea.loadHtml(
+                `../x_component_Calendar/$Main/${this.options.style}/list.html`,
+                {
+                    module: this,
+                    bind: {
+                        lp: this.lp,
+                        data: json.data
+                    }
+                }
+            );
+        })
+    },
+    createEvent: function (e) {
+        const date = this.currentDate || this.options.baseDate;
+        this.openEvent(e, {}, true, {
+            startTime : Date.parse( date + " 08:00") ,
+            endTime : Date.parse( date + " 09:00")
+        });
+    },
+    handleEventClick: function (e, eventData){
+        this.actions.getEvent( eventData.id, function (json) {
+            this.openEvent(e, json.data, false);
+        }.bind(this))
+    },
+    openEvent: function (e, eventData, create, options={}){
+        var form = new MWFCalendar.EventForm(this, eventData, {
+            ...options,
+            style: 'v10_mobile',
+            hasTop: false,
+            isFull : true,
+            height: '100%',
+            width: '100%'
+        }, {
+            app: this,
+            container: $(document.body)
+        });
+        form.view = this;
+        !!create ?
+            form.create() :
+            (this.isEventEditable() ? form.edit() : form.open());
+    },
+    isEventEditable: function(eventData){
+        if( MWF.AC.isAdministrator() )return true;
+        if( (eventData.manageablePersonList || []).contains( layout.desktop.session.user.distinguishedName ) )return true;
+        if( eventData.createPerson === layout.desktop.session.user.distinguishedName )return true;
+        return false;
+    },
+    loadCalendarList: function (e){
+        this.node.empty();
+        var calendarList = new MWF.xApplication.Calendar.CalendarListMobile(this, this.node);
+        calendarList.load();
+    }
+});
+
+MWF.xApplication.Calendar.CalendarListMobile = new Class({
+    Implements: [Options, Events],
+    options : {
+        style: 'mobile'
+    },
+    initialize: function(app, node, options){
+        this.setOptions(options);
+        this.app = app;
+        this.lp = this.app.lp;
+        this.node = $(node);
+    },
+    load: function(){
+        this.app.listCalendar((data)=>{
+            this.node.loadHtml(
+                `../x_component_Calendar/$Main/${this.options.style}/calendarList.html`,
+                {
+                    module: this,
+                    bind: {
+                        lp: this.lp,
+                        data: data
+                    }
+                }
+            );
+        }, true);
+    },
+    reload: function (){
+        this.node.empty();
+        this.load();
+    },
+    handleItemClick: function (e, calendarData){
+        this.app.actions.getCalendar( calendarData.id, function( json ){
+            this.openCalendar(e, json.data, false);
+        }.bind(this))
+    },
+    createCalendar: function (e){
+        this.openCalendar(e, {}, true);
+    },
+    openCalendar: function (e, calendarData, create, options={}){
+        var form = new MWFCalendar.CalendarForm(this, calendarData, {
+            ...options,
+            hasTop: false,
+            style: 'v10_mobile',
+            height: '100%',
+            width: '100%'
+        }, {
+            app: this.app,
+            container: $(document.body)
+        });
+        form.view = this;
+        !!create ?
+            form.create() :
+            (this.isCalendarEditable() ? form.edit() : form.open());
+    },
+    isCalendarEditable: function (data) {
+        if( MWF.AC.isAdministrator() )return true;
+        if( (data.manageablePersonList || []).contains( layout.desktop.session.user.distinguishedName ) )return true;
+        if( data.createPerson === layout.desktop.session.user.distinguishedName )return true;
+        return false;
+    },
+    toMain: function (){
+        this.app.reload();
+    }
+})
+
+if ((layout.mobile || COMMON.Browser.Platform.isMobile)){
+    MWF.xApplication.Calendar.Main = MWF.xApplication.Calendar.MainMobile;
+}else{
+    MWF.xApplication.Calendar.Main = MWF.xApplication.Calendar.MainPc;
+}
 
 MWF.xApplication.Calendar.Navi = new Class({
     Implements: [Options, Events],
@@ -725,19 +985,21 @@ MWF.xApplication.Calendar.Navi = new Class({
             this.loadNode();
         }.bind(this));
 
-        o2.require("MWF.widget.ScrollBar", function(){
-            this.scrollBar = new MWF.widget.ScrollBar(this.naviContainer, {
-                "indent": false,
-                "style": "default",
-                "where": "before",
-                "distance": 60,
-                "friction": 4,
-                "axis": {"x": false, "y": true},
-                "onScroll": function (y) {
+        this.naviContainer.setStyle('overflow-y', 'auto');
 
-                }.bind(this)
-            });
-        }.bind(this));
+        // o2.require("MWF.widget.ScrollBar", function(){
+        //     this.scrollBar = new MWF.widget.ScrollBar(this.naviContainer, {
+        //         "indent": false,
+        //         "style": "default",
+        //         "where": "before",
+        //         "distance": 60,
+        //         "friction": 4,
+        //         "axis": {"x": false, "y": true},
+        //         "onScroll": function (y) {
+        //
+        //         }.bind(this)
+        //     });
+        // }.bind(this));
     },
     loadNode: function(){
         this.loadMyCalendar();
@@ -749,6 +1011,7 @@ MWF.xApplication.Calendar.Navi = new Class({
     reload : function(){
         this.node.empty();
         this.load();
+        this.resizeNode();
     },
     loadMoreCalendarNode : function(){
         this.seeMore = new Element("div.seeMore", {
@@ -778,7 +1041,7 @@ MWF.xApplication.Calendar.Navi = new Class({
             }
         }).inject( this.node );
 
-        this.seeMoreIcon = new Element("i.o2icon-calendar-add", {
+        this.seeMoreIcon = new Element("i.ooicon-onlyoffice", {
             styles : this.css.seeMoreIcon
         }).inject(this.seeMore, "top");
     },
@@ -823,7 +1086,7 @@ MWF.xApplication.Calendar.Navi = new Class({
         return ids;
     },
     loadMyCalendar : function(){
-        var listNode = this.createCategoryNode(this.lp.myCalendar);
+        var listNode = this.createCategoryNode(this.lp.myCalendar, 'ooicon-person');
 
         this.myCalendars.each( function( d ){
             this.myCalendarNaviItem.push( new MWF.xApplication.Calendar.NaviItem( this, listNode, d, {
@@ -832,7 +1095,7 @@ MWF.xApplication.Calendar.Navi = new Class({
         }.bind(this))
     },
     loadUnitCalendar : function(){
-        var listNode = this.createCategoryNode(this.lp.unitCalendar);
+        var listNode = this.createCategoryNode(this.lp.unitCalendar, 'ooicon-department');
 
         this.unitCalendars.each( function( d ){
             this.unitCalendarNaviItem.push( new MWF.xApplication.Calendar.NaviItem( this, listNode, d, {
@@ -841,7 +1104,7 @@ MWF.xApplication.Calendar.Navi = new Class({
         }.bind(this))
     },
     loadFollowCalendar : function(){
-        var listNode = this.createCategoryNode(this.lp.myFollowCalendar);
+        var listNode = this.createCategoryNode(this.lp.myFollowCalendar, 'ooicon-process-add-task-person');
 
         this.followCalendars.each( function( d ){
             this.followCalendarNaviItem.push( new MWF.xApplication.Calendar.NaviItem( this, listNode, d, {
@@ -863,14 +1126,21 @@ MWF.xApplication.Calendar.Navi = new Class({
         //    }
         //}).inject( this.naviNode );
     },
-    createCategoryNode : function( text ){
+    createCategoryNode : function( text, icon ){
         var _self = this;
 
-        var categoryNaviNode = new Element("div.categoryNaviNode", {
+        var categoryNaviNode = new Element(`div.categoryNaviNode`, {
             "styles": this.css.categoryNaviNode
         }).inject(this.naviNode);
 
-        var expendNode = new Element("div.categoryExpendNode", {
+        var iconNode = new Element(`div.${icon}`).inject(categoryNaviNode);
+
+        var textNode = new Element("div.categoryNaviTextNode",{
+            "styles": this.css.categoryNaviTextNode,
+            "text": text //this.defaultRevealData.id == "defaultList" ? this.data.name : this.defaultRevealData.showName
+        }).inject( categoryNaviNode);
+
+        var expendNode = new Element("div.ooicon-drop_down", {
             styles : this.css.categoryExpendNode
         }).inject(categoryNaviNode);
 
@@ -878,19 +1148,14 @@ MWF.xApplication.Calendar.Navi = new Class({
             var target = this.categoryNaviNode;
             if( target.retrieve("isExpended") ){
                 target.store("isExpended" , false);
-                target.retrieve("expendNode").setStyles( _self.css.categoryCollapseNode );
-                target.retrieve("listNode").setStyle("display","none")
+                target.retrieve("expendNode").removeClass('ooicon-drop_down').addClass('ooicon-arrow_forward');
+                target.retrieve("listNode").setStyle("display","none");
             }else{
                 target.store("isExpended" , true);
-                target.retrieve("expendNode").setStyles( _self.css.categoryExpendNode );
-                target.retrieve("listNode").setStyle("display","")
+                target.retrieve("expendNode").addClass('ooicon-drop_down').removeClass('ooicon-arrow_forward');
+                target.retrieve("listNode").setStyle("display","");
             }
         }.bind( { categoryNaviNode : categoryNaviNode } ));
-
-        var textNode = new Element("div.categoryNaviTextNode",{
-            "styles": this.css.categoryNaviTextNode,
-            "text": text //this.defaultRevealData.id == "defaultList" ? this.data.name : this.defaultRevealData.showName
-        }).inject( categoryNaviNode);
 
         var listNode = new Element("div.viewNaviListNode",{
             "styles" : this.css.viewNaviListNode
@@ -909,7 +1174,6 @@ MWF.xApplication.Calendar.Navi = new Class({
         }else{
             var size = this.app.node.getSize();
         }
-        //var titleSize = this.app.leftTitleNode ? this.app.leftTitleNode.getSize() : {x:0,y:0};
         this.node.setStyle("height",size.y - 80 );
         this.naviContainer.setStyle("height",size.y - 122 );
     }
@@ -1224,7 +1488,7 @@ MWF.xApplication.Calendar.CalendarMarket = new Class({
                     }).inject( middleNode );
 
                     var followedAction, followAction;
-                    var followedAction = new Element("div",{
+                    var followedAction = new Element("div.ooicon-checkmark mainColor_color",{
                         styles : this.css.marketItemFollowedAction,
                         text : lp.followed,
                         title : lp.clickToCancelFollow,
@@ -1241,7 +1505,7 @@ MWF.xApplication.Calendar.CalendarMarket = new Class({
                     }).inject(node);
                     if( !d.followed )followedAction.setStyle("display","none");
 
-                    var followAction = new Element("div",{
+                    var followAction = new Element("div.ooicon-create mainColor_color",{
                         styles : this.css.marketItemFollowAction,
                         text : lp.follow ,
                         events : {
@@ -1358,28 +1622,28 @@ MWF.xApplication.Calendar.Config = new Class({
         if( !d.disableViewList.contains( "toMonth" )  ){
             html +=
                 "   <div style='"+ viewStyle +"'>" +
-                "<input type='radio' name='configSelectDefaultView' "+((d.defaultView=="toMonth") ? "checked" : "")+" value='toMonth'>"+ ( d.toMonthViewName || this.lp.month )+
+                "<input type='radio' name='configSelectDefaultView' "+((d.defaultView=="toMonth") ? "checked" : "")+" value='toMonth'>"+ o2.txt( d.toMonthViewName || this.lp.month )+
                 "   </div>";
         }
 
         if( !d.disableViewList.contains( "toWeek" )  ){
             html +=
                 "   <div style='"+ viewStyle +"'>" +
-                "<input type='radio' name='configSelectDefaultView' "+((d.defaultView=="toWeek") ? "checked" : "")+" value='toWeek'>"+( d.toWeekViewName || this.lp.week )+
+                "<input type='radio' name='configSelectDefaultView' "+((d.defaultView=="toWeek") ? "checked" : "")+" value='toWeek'>"+o2.txt( d.toWeekViewName || this.lp.week )+
                 "   </div>";
         }
 
         if( !d.disableViewList.contains( "toDay" )  ){
             html +=
                 "   <div style='"+ viewStyle +"'>" +
-                "<input type='radio' name='configSelectDefaultView' "+((d.defaultView=="toDay") ? "checked" : "")+" value='toDay'>"+(d.toDayViewName || this.lp.day)+
+                "<input type='radio' name='configSelectDefaultView' "+((d.defaultView=="toDay") ? "checked" : "")+" value='toDay'>"+o2.txt(d.toDayViewName || this.lp.day)+
                 "   </div>";
         }
 
         if( !d.disableViewList.contains( "toList" )  ){
             html +=
                 "   <div style='"+ viewStyle +"'>" +
-                "<input type='radio' name='configSelectDefaultView' "+((d.defaultView=="toList") ? "checked" : "")+" value='toList'>"+(d.toListViewName || this.lp.list)+
+                "<input type='radio' name='configSelectDefaultView' "+((d.defaultView=="toList") ? "checked" : "")+" value='toList'>"+o2.txt(d.toListViewName || this.lp.list)+
                 "   </div>";
         }
 

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.x.base.core.entity.JpaObject;
@@ -223,12 +224,18 @@ public abstract class DataItem extends SliceJpaObject {
 		this.setItemPrimitiveType(ItemPrimitiveType.b);
 		this.setItemStringValueType(ItemStringValueType.u);
 		this.setBooleanValue(value);
+		if(value != null) {
+			this.setStringValue(String.valueOf(value));
+		}
 	}
 
 	public void value(Double value) {
 		this.setItemPrimitiveType(ItemPrimitiveType.n);
 		this.setItemStringValueType(ItemStringValueType.u);
 		this.setNumberValue(value);
+		if(value != null) {
+			this.setStringValue(String.valueOf(value));
+		}
 	}
 
 	public void value(String value) throws Exception {
@@ -236,24 +243,30 @@ public abstract class DataItem extends SliceJpaObject {
 		this.setStringValue(value);
 		this.setItemStringValueType(ItemStringValueType.s);
 		if (StringTools.utf8Length(value) < STRING_VALUE_MAX_LENGTH) {
-			Date dateTime = DateTools.parseDateTime(value);
-			if (null != dateTime) {
+			if(BooleanUtils.isTrue(DateTools.isDateTime(value))){
+				Date dateTime = DateTools.parse(value, DateTools.format_yyyyMMddHHmmss);
 				this.setItemStringValueType(ItemStringValueType.dt);
 				this.setDateTimeValue(dateTime);
-				return;
-			}
-			Date date = DateTools.parseDate(value);
-			if (null != date) {
+			}else if (BooleanUtils.isTrue(DateTools.isDate(value))) {
+				Date date = DateTools.parse(value, DateTools.format_yyyyMMdd);
 				this.setItemStringValueType(ItemStringValueType.d);
 				this.setDateValue(date);
-				return;
-			}
-			Date time = DateTools.parseTime(value);
-			if (null != time) {
+			}else if (BooleanUtils.isTrue(DateTools.isTime(value))) {
+				Date time = DateTools.parse(value, DateTools.format_HHmmss);
 				this.setItemStringValueType(ItemStringValueType.t);
 				this.setTimeValue(time);
-				return;
+			}else{
+				this.setNumberValue(convertToDouble(value));
 			}
+		}
+	}
+
+	private Double convertToDouble(String str) {
+		if (str == null) return null;
+		try {
+			return Double.parseDouble(str.trim());
+		} catch (NumberFormatException e) {
+			return null;
 		}
 	}
 

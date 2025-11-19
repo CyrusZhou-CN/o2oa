@@ -47,12 +47,16 @@ MWF.xApplication.process.Xform.Calendar = MWF.APPCalendar =  new Class(
         "moduleEvents": ["queryLoad","postLoad","load","complete", "clear", "change","show","hide"]
     },
     _loadNode: function(){
-        if (this.isReadonly()){
-            this._loadNodeRead();
+        if (!this.isReadable && !!this.isHideUnreadable){
+            this.node?.addClass('hide');
         }else{
-            this._loadNodeEdit();
-            var input = this.node.getFirst();
-            input.set("readonly", true);
+            if (this.isReadonly()){
+                this._loadNodeRead();
+            }else{
+                this._loadNodeEdit();
+                var input = this.node.getFirst();
+                input.set("readonly", true);
+            }
         }
     },
     setDescriptionEvent: function(){
@@ -109,6 +113,7 @@ MWF.xApplication.process.Xform.Calendar = MWF.APPCalendar =  new Class(
         }
     },
     getValue: function(isDate){
+        if (!this.isReadable) return '';
         if (this.moduleValueAG) return this.moduleValueAG;
         var value = this._getBusinessData();
         if( value && !isDate)return value;
@@ -304,6 +309,9 @@ MWF.xApplication.process.Xform.Calendar = MWF.APPCalendar =  new Class(
                     }.bind(this)
                 };
                 options.baseDate = this.getBaseDate();
+                if( this.json.weekBegin ){
+                    options.weekBegin = parseInt( this.json.weekBegin );
+                }
 
                 this.setRange( options );
                 /**
@@ -392,10 +400,17 @@ MWF.xApplication.process.Xform.Calendar = MWF.APPCalendar =  new Class(
     toDate: function( value ){
         if( !value )return null;
         switch (typeOf(value)) {
-            case "string": return (new Date(value) === "Invalid Date") ? null : Date.parse(value);
+            case "string": return this.isValidDate(value) ? Date.parse(value) : null;
             case "date": return value;
             default: return null;
         }
+    },
+    isValidDate: function(dateString) {
+        if( !dateString ){
+            return false;
+        }
+        var date = new Date(dateString);
+        return !isNaN(date.getTime());
     },
     getPureDate: function (date) {
         var d;

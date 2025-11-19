@@ -63,37 +63,42 @@ MWF.xApplication.process.Xform.Elradio = MWF.APPElradio =  new Class(
         this.vueApp = null;
 
         this._resetNodeEdit();
+        this._loadReadEditAbeld();
         this._loadUserInterface();
     },
     _loadNode: function(){
-        this.node.empty();
-        if (this.isReadonly()){
-            this._loadNodeRead();
+         if (!this.isReadable && !!this.isHideUnreadable){
+            this.node?.addClass('hide');
+        }else{
+            this.node.empty();
+            if (this.isReadonly()){
+                this._loadNodeRead();
 
-            if( this.json.elProperties ){
-                this.node.set(this.json.elProperties );
-            }
-            if (this.json.elStyles){
-                this.node.setStyles( this._parseStyles(this.json.elStyles) );
-            }
+                if( this.json.elProperties ){
+                    this.node.set(this.json.elProperties );
+                }
+                if (this.json.elStyles){
+                    this.node.setStyles( this._parseStyles(this.json.elStyles) );
+                }
 
-            if( !this.eventLoaded ){
-                this._loadDomEvents();
-                this.eventLoaded = true;
-            }
+                if( !this.eventLoaded ){
+                    this._loadDomEvents();
+                    this.eventLoaded = true;
+                }
 
-            this.fireEvent("postLoad");
-            if( this.moduleSelectAG && typeOf(this.moduleSelectAG.then) === "function" ){
-                this.moduleSelectAG.then(function () {
+                this.fireEvent("postLoad");
+                if( this.moduleSelectAG && typeOf(this.moduleSelectAG.then) === "function" ){
+                    this.moduleSelectAG.then(function () {
+                        this.fireEvent("load");
+                        this.isLoaded = true;
+                    }.bind(this));
+                }else{
                     this.fireEvent("load");
                     this.isLoaded = true;
-                }.bind(this));
+                }
             }else{
-                this.fireEvent("load");
-                this.isLoaded = true;
+                this._loadNodeEdit();
             }
-        }else{
-            this._loadNodeEdit();
         }
     },
     _resetNodeEdit: function(){
@@ -158,8 +163,12 @@ MWF.xApplication.process.Xform.Elradio = MWF.APPElradio =  new Class(
     },
 
     _createElementHtml: function(radioValues){
+        if (!this.json.disabled) this.json.disabled = false;
+
         var id = (this.json.id.indexOf("..")!==-1) ? this.json.id.replace(/\.\./g, "_") : this.json.id;
         id = (id.indexOf("@")!==-1) ? id.replace(/@/g, "_") : id;
+        id = (id.indexOf("（")!==-1) ? id.replace(/（/g, "_") : id;
+        id = (id.indexOf("）")!==-1) ? id.replace(/）/g, "_") : id;
         this.json["$id"] = (id.indexOf("-")!==-1) ? id.replace(/-/g, "_") : id;
 
         var html = "<el-radio-group class='o2_vue' style='box-sizing: border-box!important'";
@@ -167,6 +176,7 @@ MWF.xApplication.process.Xform.Elradio = MWF.APPElradio =  new Class(
         html += " :text-color=\"textColor\"";
         html += " :fill=\"fillColor\"";
         html += " :size=\"size\"";
+        html += " :disabled=\"disabled\"";
         html += " @change=\"change\"";
 
 
@@ -222,7 +232,7 @@ MWF.xApplication.process.Xform.Elradio = MWF.APPElradio =  new Class(
         this.moduleValueAG = null;
         this._setBusinessData(value);
         this.json[this.json.$id] = value;
-        if( this.isReadonly() ){
+        if( this.isReadonly() && this.isReadable ){
             var text = this.getText();
             this.node.set('text', text||value);
         }

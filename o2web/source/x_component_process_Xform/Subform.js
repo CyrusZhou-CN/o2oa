@@ -54,6 +54,11 @@ MWF.xApplication.process.Xform.Subform = MWF.APPSubform = new Class(
 
         this.node.empty();
 
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+
         this.modules = [];
         this.moduleList = {};
 
@@ -82,6 +87,11 @@ MWF.xApplication.process.Xform.Subform = MWF.APPSubform = new Class(
      * })
      */
     active: function (callback) {
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+
         if (!this.loaded) {
             this.reload(callback)
         } else {
@@ -90,13 +100,19 @@ MWF.xApplication.process.Xform.Subform = MWF.APPSubform = new Class(
     },
     /**
      * @summary 重新加载子表单
-     * @param {Function} callback
+     * @param {Function} callback 刷新后的回调
      * @example
      * this.form.get("fieldId").reload(function(){
      *     //do someting
      * })
      */
     reload: function (callback) {
+        this._loadReadEditAbeld();
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+        
         this.clean();
 
         this.getSubform(function () {
@@ -109,12 +125,17 @@ MWF.xApplication.process.Xform.Subform = MWF.APPSubform = new Class(
             if( module.json && module.json.type === "Subform" ){
                 if(module.clean)module.clean();
             }
-            if (this.form.all[module.json.id]) delete this.form.all[module.json.id];
-            if (this.form.forms[module.json.id])delete this.form.forms[module.json.id];
-            this.form.modules.erase(module);
         }.bind(this));
 
         Object.each(this.moduleList || {}, function (module, formKey) {
+            if (this.form.all[module.id]) delete this.form.all[module.id];
+            if (this.form.forms[module.id])delete this.form.forms[module.id];
+            this.form.modules.erase(module);
+
+            if( module.name ){
+                delete this.form.allForName[module.name];
+            }
+
             delete this.form.json.moduleList[formKey];
         }.bind(this));
 
@@ -283,7 +304,6 @@ MWF.xApplication.process.Xform.Subform = MWF.APPSubform = new Class(
             }
             this.form.checkSubformLoaded();
         }
-        //console.log( "add subformLoadedCount , this.form.subformLoadedCount = "+ this.form.subformLoadedCount)
 
         /**
          * @summary 表单是否加载（激活）过。
@@ -317,9 +337,11 @@ MWF.xApplication.process.Xform.Subform = MWF.APPSubform = new Class(
                             if (callback) callback();
                         }.bind(this));
                     } else {
+                        this.subformData = null;
                         if (callback) callback();
                     }
                 } else {
+                    this.subformData = null;
                     if (callback) callback();
                 }
             }
@@ -342,6 +364,7 @@ MWF.xApplication.process.Xform.Subform = MWF.APPSubform = new Class(
                     }.bind(this));
                 }
             } else {
+                this.subformData = null;
                 if (callback) callback();
             }
         }
@@ -474,9 +497,11 @@ MWF.xApplication.process.Xform.SubmitForm = MWF.APPSubmitform = new Class({
                             if (callback) callback();
                         }.bind(this));
                     } else {
+                        this.subformData = null;
                         if (callback) callback();
                     }
                 } else {
+                    this.subformData = null;
                     if (callback) callback();
                 }
             }
@@ -493,6 +518,7 @@ MWF.xApplication.process.Xform.SubmitForm = MWF.APPSubmitform = new Class({
                     if (callback) callback();
                 }.bind(this));
             } else {
+                this.subformData = null;
                 if (callback) callback();
             }
         }

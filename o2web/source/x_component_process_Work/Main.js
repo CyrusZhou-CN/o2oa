@@ -33,6 +33,7 @@ MWF.xApplication.process.Work.Main = new Class({
             "title": MWF.xApplication.process.Work.LP.title
         });
 		this.lp = MWF.xApplication.process.Work.LP;
+        console.log( 'this.status', this.status, 'this.options', this.options );
         if (!this.status) {
             if( this.options.readonly === "true" )this.options.readonly=true;
         } else {
@@ -46,6 +47,8 @@ MWF.xApplication.process.Work.Main = new Class({
             this.options.formid = this.status.formid;
             if( this.status.form && this.status.form.id )this.options.form = this.status.form;
             this.options.readonly = (this.status.readonly === true || this.status.readonly === "true");
+            this.options.draft = this.status.draft;
+            this.options.draftData = this.status.draftData;
         }
         this.action = MWF.Actions.get("x_processplatform_assemble_surface");
 	},
@@ -142,9 +145,10 @@ MWF.xApplication.process.Work.Main = new Class({
         }else if (this.options.draftId || this.options.draftid){
             var draftId = this.options.draftId || this.options.draftid;
             MWF.Actions.get("x_processplatform_assemble_surface").getDraft(draftId, function(json){
-                this.loadWorkByDraft(json.data.work, json.data.data);
+                this.loadWorkByDraft(json.data.work, json.data.data, json.data.attachmentList);
             }.bind(this));
         }else if (this.options.draft){
+            this.draft = typeOf(this.options.draft)==='string' ? this.options.draft : Object.clone(this.options.draft);
             this.loadWorkByDraft(this.options.draft, this.options.draftData);
         }else if (this.options.jobId || this.options.jobid || this.options.job){
             var jobId = this.options.jobId || this.options.jobid || this.options.job;
@@ -178,6 +182,7 @@ MWF.xApplication.process.Work.Main = new Class({
                 if (json_work && json_control && json_form && json_log){
                     this.parseData(json_work.data, json_control.data, json_form.data, json_log.data, json_work.data.recordList, json_work.data.attachmentList).then(function(){
                         if (this.mask) this.mask.hide();
+                
                         //if (layout.mobile) this.loadMobileActions();
                         if (layout.session && layout.session.user){
                             this.openWork();
@@ -339,14 +344,15 @@ MWF.xApplication.process.Work.Main = new Class({
             }
         }.bind(this));
     },
-    loadWorkByDraft: function(work, data){
+    loadWorkByDraft: function(work, data, attData){
+        debugger;
         o2.Actions.invokeAsync([
             //{"action": this.action, "name": (layout.mobile) ? "getFormMobile": "getForm"}
             {"action": this.action, "name": (layout.mobile) ? "getFormV2Mobile": "getFormV2"}
         ], {"success": function(json_form){
             if (json_form){
                 var workData = {
-                    "activity": {},
+                    "activity": {id: 'draft-'+work.process},
                     "data": data || {},
                     "taskList": [],
                     "work": work
@@ -359,7 +365,7 @@ MWF.xApplication.process.Work.Main = new Class({
                     "allowDelete": true
                 };
 
-                this.parseData(workData, control, json_form.data, [], [], []).then(function(){
+                this.parseData(workData, control, json_form.data, [], [], attData??[]).then(function(){
                     if (this.mask) this.mask.hide();
 
                     if (layout.session && layout.session.user){
@@ -463,6 +469,7 @@ MWF.xApplication.process.Work.Main = new Class({
         this.taskList = workData.taskList;
         this.readList = workData.readList;
         this.routeList = workData.routeList;
+        this.review = workData.review;
         this.work = workData.work;
         this.workCompleted = (workData.work.completedTime) ? workData.work : null;
 
@@ -482,14 +489,10 @@ MWF.xApplication.process.Work.Main = new Class({
                 this.relatedFormMap = formData.relatedFormMap;
                 this.relatedScriptMap = formData.relatedScriptMap;
                 this.relatedLanguage = formData.relatedLanguage;
-                delete formData.form.data;
                 this.formInfor = formData.form;
             }else{
                 this.formDataText = (formData.data) ? MWF.decodeJsonString(formData.data) : "";
                 this.form = (this.formDataText) ? JSON.decode(this.formDataText): null;
-
-                //this.form = (formData.data) ? MWF.decodeJsonString(formData.data): null;
-                delete formData.data;
                 this.formInfor = formData;
             }
         }
@@ -543,21 +546,21 @@ MWF.xApplication.process.Work.Main = new Class({
                     "                        src=\""+layout.session.user.iconUrl+"\">\n" +
                     "                    </div>\n" +
                     "                    <div\n" +
-                    "                        style=\"height: 40px; line-height: 40px; overflow: hidden; float: left; margin-left: 10px; margin-right: 30px; width: 150px; color: rgb(51, 51, 51); font-size: 16px; text-align: left;\">"+id.name+"\n" +
+                    "                        style=\"height: 40px; line-height: 40px; overflow: hidden; float: left; margin-left: 10px; margin-right: 30px; width: 150px; color: rgb(51, 51, 51); font-size: 16px; text-align: left;\">"+o2.txt(id.name)+"\n" +
                     "                    </div>\n" +
                     "                </div>\n" +
                     "                <div style=\"height: 36px; line-height: 40px; overflow: hidden; font-size: 14px;\">\n" +
                     "                    <div style=\"color: rgb(0, 0, 0); width: 40px; float: left;\">"+this.lp.org+"</div>\n" +
                     "                    <div title=\""+id.unitLevelName+"\"\n" +
-                    "                         style=\"margin-left: 40px; text-align: left; color: rgb(153, 153, 153);\">"+id.unitLevelName+"\n" +
+                    "                         style=\"margin-left: 40px; text-align: left; color: rgb(153, 153, 153);\">"+o2.txt(id.unitLevelName)+"\n" +
                     "                    </div>\n" +
                     "                </div>\n" +
                     "                <div style=\"height: 36px; line-height: 40px; overflow: hidden; font-size: 14px;\">\n" +
                     "                    <div style=\"color: rgb(0, 0, 0); width: 40px; float: left;\">"+this.lp.duty+"</div>\n" +
-                    "                    <div title=\""+duty+"\" style=\"margin-left: 40px; text-align: left; color: rgb(153, 153, 153);\">"+duty+"</div>\n" +
+                    "                    <div title=\""+duty+"\" style=\"margin-left: 40px; text-align: left; color: rgb(153, 153, 153);\">"+o2.txt(duty)+"</div>\n" +
                     "                </div>\n" +
                     "                <div class=\"mainColor_color\"\n" +
-                    "                     style=\"position: absolute; float: right; top: 14px; right: 14px;\">【"+id.unitName+"】\n" +
+                    "                     style=\"position: absolute; float: right; top: 14px; right: 14px;\">【"+o2.txt(id.unitName)+"】\n" +
                     "                </div>";
                 idNode.set("html", html);
 
@@ -691,6 +694,7 @@ MWF.xApplication.process.Work.Main = new Class({
                     "control": this.control,
                     "activity": this.activity,
                     "task": this.currentTask,
+                    "review": this.review,
                     "workLogList": this.workLogList,
                     "recordList": this.recordList,
                     "routeList" : this.routeList,
@@ -755,7 +759,9 @@ MWF.xApplication.process.Work.Main = new Class({
             "jobId": this.options.jobId,
             "draftId": this.options.draftId,
             "priorityWork": this.options.priorityWork,
-            "readonly": this.readonly
+            "readonly": this.readonly,
+            "draft": this.draft,
+            "draftData": this.options.draftData
         };
         if( this.options.formid )status.formid = this.options.formid;
         if( this.options.form && this.options.form.id )status.form = this.options.form;

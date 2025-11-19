@@ -19,6 +19,7 @@ o2.addReady(function () {
             (function () {
                 layout.load = function () {
                     var uri = href.toURI();
+                    var isEncode = uri.getData("encode")
                     var redirect = uri.getData("redirect");
                     var processId = uri.getData("processId");
                     var applicationId = uri.getData("appId");
@@ -31,8 +32,19 @@ o2.addReady(function () {
                             };
                             if (actionCallback) actionCallback();
                         };
+                        var newUrl = href
+                        if (isEncode && newUrl.indexOf('?') > -1) {
+                            var searchQuery = locate.search.substring(1)
+                            var querys = searchQuery.split('&')
+                            var querysDecode = []
+                            for (let i = 0; i < querys.length; i++) {
+                                var kv = querys[i].split('=')
+                                querysDecode.push(kv[0]+'='+decodeURIComponent(kv[1]))
+                            }
+                            newUrl = locate.origin + locate.pathname + '?' + querysDecode.join('&')
+                        }
                         action.invoke({
-                            "name": "info", "async": true, "data": { "url": href }, "success": function (json) {
+                            "name": "info", "async": true, "data": { "url": newUrl}, "success": function (json) {
                                 var _config = json.data;
                                 dd.config({
                                     agentId: _config.agentid,
@@ -106,7 +118,10 @@ o2.addReady(function () {
                                                                 uri = uri.replace("cmsdocMobile.html", "cmsdoc.html");
                                                             }
                                                             history.replaceState(null, "page", uri);
-                                                            uri.toURI().go();
+                                                            window.location.replace(uri);
+                                                            if (uri.includes("#/")) {
+                                                                window.location.reload();
+                                                            }
                                                         } else {
                                                             var uri = "../x_desktop/appMobile.html?app=process.TaskCenter";
                                                             if (dd.pc) { // 判断是否是PC端，目前测试这个参数可用

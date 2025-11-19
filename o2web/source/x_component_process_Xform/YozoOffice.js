@@ -21,11 +21,21 @@ MWF.xApplication.process.Xform.YozoOffice = MWF.APPYozoOffice =  new Class({
     },
     _loadUserInterface: function(){
         this.node.empty();
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+
         this.node.setStyles({
             "min-height": "100px"
         });
     },
     _afterLoaded: function(){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+        
         if(!layout.serviceAddressList["x_yozofile_assemble_control"]){
             this.node.set("html","<h3><font color=red>please install weboffice !!!</font></h3>");
             return false;
@@ -81,7 +91,6 @@ MWF.xApplication.process.Xform.YozoOffice = MWF.APPYozoOffice =  new Class({
             };
 
             this.action.CustomAction.createForO2(data, function( json ){
-                    debugger
                     this.documentId = json.data.fileId;
                     this.setData();
                     if (callback) callback();
@@ -100,7 +109,6 @@ MWF.xApplication.process.Xform.YozoOffice = MWF.APPYozoOffice =  new Class({
         };
         this.action.CustomAction.createForO2(data,
             function( json ){
-                debugger
                 this.documentId = json.data.fileId;
                 this.setData();
                 if (callback) callback();

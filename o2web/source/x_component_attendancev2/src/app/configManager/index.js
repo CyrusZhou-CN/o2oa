@@ -25,7 +25,9 @@ export default content({
         exceptionAlertTime: "09:30",
         appealMaxTimes: 0,
         detailStatisticCronString: "0 0 3 * * ?", //默认凌晨 3 点
-        closeOldAttendance: false, // 是否关闭旧考勤
+        closeOldAttendance: true, // 是否关闭旧考勤
+        aliFaceControlEnable: false, // 阿里云人脸扩展是否启用
+        faceDetectionEnable: false, // 打卡前是否启用人脸比对
       },
       holidayList: [],
       workDayList: [],
@@ -100,7 +102,7 @@ export default content({
       form.processName = "";
       form.appealMaxTimes = 0;
     }
-
+    form.closeOldAttendance = true
     const result = await configAction("post", form);
     console.log(result);
     o2.api.page.notice(lp.saveSuccess, "success");
@@ -209,6 +211,9 @@ export default content({
       this.bind.workDayList.splice(i, 1);
     }
   },
+  clickToAliface() {
+    layout.openApplication(null, 'aliface')
+  },
   // 是否启用补卡申请
   clickEnableAppeal() {
     this.bind.form.appealEnable = !this.bind.form.appealEnable;
@@ -271,7 +276,7 @@ export default content({
         );
     });
   },
-  clickCloseOldAttendance() {
-    this.bind.form.closeOldAttendance = !this.bind.form.closeOldAttendance;
-  },
+  clickFaceDetectionEnable() {
+    this.bind.form.faceDetectionEnable = !this.bind.form.faceDetectionEnable;
+  }
 });

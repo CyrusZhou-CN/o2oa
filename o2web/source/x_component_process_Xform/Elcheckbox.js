@@ -63,11 +63,15 @@ MWF.xApplication.process.Xform.Elcheckbox = MWF.APPElcheckbox =  new Class(
         }
     },
     _loadNode: function(){
-        this.node.empty();
-        if (this.isReadonly()){
-            this._loadNodeRead();
+        if (!this.isReadable && !!this.isHideUnreadable){
+            this.node?.addClass('hide');
         }else{
-            this._loadNodeEdit();
+            this.node.empty();
+            if (this.isReadonly()){
+                this._loadNodeRead();
+            }else{
+                this._loadNodeEdit();
+            }
         }
     },
     _loadMergeReadContentNode: function( contentNode, data ){
@@ -172,14 +176,19 @@ MWF.xApplication.process.Xform.Elcheckbox = MWF.APPElcheckbox =  new Class(
     },
 
     _createElementHtml: function(radioValues){
+        if (!this.json.disabled) this.json.disabled = false;
+
         var id = (this.json.id.indexOf("..")!==-1) ? this.json.id.replace(/\.\./g, "_") : this.json.id;
         id = (id.indexOf("@")!==-1) ? id.replace(/@/g, "_") : id;
+        id = (id.indexOf("（")!==-1) ? id.replace(/（/g, "_") : id;
+        id = (id.indexOf("）")!==-1) ? id.replace(/）/g, "_") : id;
         this.json["$id"] = (id.indexOf("-")!==-1) ? id.replace(/-/g, "_") : id;
         var html = "<el-checkbox-group class='o2_vue' style='box-sizing: border-box!important'";
         html += " v-model=\""+this.json.$id+"\"";
         html += " :text-color=\"textColor\"";
         html += " :fill=\"fillColor\"";
         html += " :size=\"size\"";
+        html += " :disabled=\"disabled\"";
         html += " @change=\"change\"";
 
 
@@ -381,7 +390,7 @@ MWF.xApplication.process.Xform.Elcheckbox = MWF.APPElcheckbox =  new Class(
 
         getExcelData: function( type ){
             var value = this.getData();
-            if( type === "value" )return value;
+            if( type === "value" )return value.join(", ");
 
             var options = this.getOptionsObj();
             return Promise.resolve(options).then(function (opts) {

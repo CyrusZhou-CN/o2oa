@@ -19,11 +19,20 @@ MWF.xApplication.process.Xform.WpsOffice2 = MWF.APPWpsOffice2 =  new Class({
     },
     _loadUserInterface: function(){
         this.node.empty();
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
         this.node.setStyles({
             "min-height": "700px"
         });
     },
     _afterLoaded: function(){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+
         if(!layout.serviceAddressList["x_wpsfile2_assemble_control"]){
             this.node.set("html","<h3><font color=red>请先安装wps私有化应用</font></h3>");
             return false;
@@ -85,7 +94,7 @@ MWF.xApplication.process.Xform.WpsOffice2 = MWF.APPWpsOffice2 =  new Class({
         }
 
         this.fireEvent("beforeOpen");
-console.log("wps:" + this.mode);
+
         this.action.CustomAction.getFileUrl(this.documentId,{"permission":this.mode} ,function( json ){
             this.wpsUrl = json.data.wpsUrl;
             this.wpsToken = json.data.token;
@@ -275,16 +284,16 @@ console.log("wps:" + this.mode);
         }.bind(this));
 
         this.wpsOffice.on('fullscreenChange', function(result) {
-            console.log(JSON.stringify(result))
+            // console.log(JSON.stringify(result))
         });
         this.wpsOffice.on('previewLimit', function(result) {
-            console.log(JSON.stringify(result))
+            // console.log(JSON.stringify(result))
         });
         this.wpsOffice.on('tabSwitch', function(result) {
-            console.log(JSON.stringify(result))
+            // console.log(JSON.stringify(result))
         });
         this.wpsOffice.on('error', function(result) {
-            console.log(JSON.stringify(result))
+            // console.log(JSON.stringify(result))
         });
         //是否显示评论
         if(this.json.isShowComment){
@@ -325,7 +334,6 @@ console.log("wps:" + this.mode);
     save: function(callback){
         var promise =  this.wpsOffice.save();
         promise.then(function(){
-            console.log("save success");
             if(callback) callback();
         });
     },
@@ -739,7 +747,6 @@ console.log("wps:" + this.mode);
         }.bind(this));
     },
     showDocumentMap : function (callback){
-        // debugger
         //连页模式
         // var promise =  async () =>{
         //     await this.wpsOffice.ready();

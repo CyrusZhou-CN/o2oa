@@ -207,6 +207,8 @@
     line-height: 30px;
     overflow: hidden;
     padding: 0 10px 0 10px;
+    display: flex;
+    align-items: center;
 }
 .o2flow-quick-select-item-active{
     background-color: #4A90E2;
@@ -218,13 +220,25 @@
 }
 
 .o2flow-quick-select-itemtitle {
-    float: left;
+
 }
 
 .o2flow-quick-select-itemtext {
+    flex: 1;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+}
+
+.o2flow-quick-select-itemaction {
+    display: none;
+    width: 30px;
+    height: 100%;
+    align-items: center;
+    justify-content: flex-end;
+}
+.o2flow-quick-select-item:hover .o2flow-quick-select-itemaction {
+    display: flex;
 }
 
 .o2flow-section-title {
@@ -256,12 +270,17 @@
 
 .o2flow-opinion-area {
     height: 230px;
+    min-height: 130px;
+}
+.o2flow-opinion-content{
+    height: calc( 100% - 40px );
 }
 .o2flow-opinion-textareawrap {
     float: left;
     width: calc(50% - 10px);
+    padding-top: 5px;
     padding-right: 10px;
-    height: 180px;
+    height: calc(100% - 10px);
     position: relative;
 }
 .o2flow-opinion-textarea {
@@ -299,6 +318,25 @@
 .o2flow-handwriting-buttontext {
     display: inline-block;
 }
+.o2flow-handwriting-preview{
+    position: absolute;
+    bottom: 50px;
+    right: 32px;
+    width: 192px;
+    height: 32px;
+    display: none;
+    z-index: 20002;
+    background: #fff;
+    border-radius: var(--oo-default-radius);
+    box-shadow: rgba(0, 0, 0, 0.25) 0 1px 3px 0;
+}
+.o2flow-handwriting-preview.show{
+    display: block;
+}
+.o2flow-handwriting-preview img{
+    width: 100%;
+    border-radius: var(--oo-default-radius);
+}
 .o2flow-opinion-select {
     overflow: auto;
     float: left;
@@ -306,13 +344,22 @@
     padding-left: 10px;
     margin-left: 10px;
     border-left: 1px solid #DEDEDE;
-    height: 180px;
+    height: 100%;
 }
 .o2flow-opinion-select-item {
     height: 22px;
     line-height: 22px;
     cursor: pointer;
     overflow: hidden;
+}
+.o2flow-opinion-empty{
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #bbb;
+    cursor: pointer;
 }
 .o2flow-handwriting-mask {
     background-color: #eee;
@@ -332,6 +379,13 @@
     overflow: hidden;
     box-shadow: rgba(0, 0, 0, 0.25) 0 0 8px 0;
     display: none;
+}
+.o2flow-handwriting-action{
+    display: flex;
+    align-items: center;
+}
+.o2flow-handwriting-action oo-checkbox-group{
+    color: #666;
 }
 .o2flow-handwriting-saveNode {
     height: 30px;

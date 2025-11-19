@@ -21,7 +21,6 @@
 
   "flowNode_Area": {
     "background-color": "#FFF",
-    "overflow": "hidden",
     "height": "100%"
   },
   "flowNode_mobile": {
@@ -34,7 +33,7 @@
     "overflow": "auto",
     "background": "#F5F5F5",
     "position": "absolute",
-    "z-index":300
+    "z-index":500
   },
 
   "processNode_from": {

@@ -105,7 +105,7 @@ MWF.xApplication.Org.PersonExplorer.Person = new Class({
         this.content = new MWF.xApplication.Org.PersonExplorer.PersonContent(this);
     },
     _loadTextNode: function(){
-        var html = "<div style='float:left; height:50px; overflow:hidden'>"+this.data.name+"</div>";
+        var html = "<div style='float:left; height:50px; overflow:hidden'>"+o2.txt(this.data.name)+"</div>";
         html += "<div style='float: right; overflow:hidden; font-size: 12px; color: #aaaaaa;'>"+(this.data.mobile || "")+"</div>";
         this.textNode.set({"html": html});
     },
@@ -982,22 +982,22 @@ MWF.xApplication.Org.PersonExplorer.PersonContent.BaseInfor = new Class({
         }.bind(this));
 
         var html = "<table width='100%' cellpadding='3px' cellspacing='5px'>";
-        html += "<tr><td class='inforTitle'>"+this.explorer.app.lp.personName+":</td><td class='inforContent infor_name'>"+(this.data.name || "")+"</td>" +
-            "<td class='inforTitle'>"+this.explorer.app.lp.personUnique+":</td><td class='inforContent infor_unique'>"+(this.data.unique || "")+"</td></tr>";
-        html += "<tr><td class='inforTitle'>"+this.explorer.app.lp.personMobile+":</td><td class='inforContent infor_mobile'>"+(this.data.mobile || "")+"</td>" +
-            "<td class='inforTitle'>"+this.explorer.app.lp.personEmployee+":</td><td class='inforContent infor_employee'>"+(this.data.employee || "")+"</td></tr>";
+        html += "<tr><td class='inforTitle'>"+this.explorer.app.lp.personName+":</td><td class='inforContent infor_name'>"+o2.txt(this.data.name || "")+"</td>" +
+            "<td class='inforTitle'>"+this.explorer.app.lp.personUnique+":</td><td class='inforContent infor_unique'>"+o2.txt(this.data.unique || "")+"</td></tr>";
+        html += "<tr><td class='inforTitle'>"+this.explorer.app.lp.personMobile+":</td><td class='inforContent infor_mobile'>"+o2.txt(this.data.mobile || "")+"</td>" +
+            "<td class='inforTitle'>"+this.explorer.app.lp.personEmployee+":</td><td class='inforContent infor_employee'>"+o2.txt(this.data.employee || "")+"</td></tr>";
         html += "<tr><td class='inforTitle'>"+this.explorer.app.lp.personGender+":</td><td class='inforContent infor_gender'>"+this.getGenderType()+"</td>" +
             "<td class='inforTitle'>"+this.explorer.app.lp.personSuperior+":</td><td class='inforContent'>"+"</td></tr>";
-        html += "<tr><td class='inforTitle'>"+this.explorer.app.lp.personMail+":</td><td class='inforContent infor_mail'>"+(this.data.mail || "")+"</td>" +
-            "<td class='inforTitle'>"+this.explorer.app.lp.personWeixin+":</td><td class='inforContent infor_weixin'>"+(this.data.weixin || "")+"</td></tr>";
-        html += "<tr><td class='inforTitle'>"+this.explorer.app.lp.personQQ+":</td><td class='inforContent infor_qq'>"+(this.data.qq || "")+"</td>" +
-            "<td class='inforTitle'>"+this.explorer.app.lp.personOfficePhone+":</td><td class='inforContent infor_officePhone'>"+(this.data.officePhone || "")+"</td></tr>";
-        html += "<tr><td class='inforTitle'>"+this.explorer.app.lp.personBoardDate+":</td><td class='inforContent infor_boardDate'>"+(this.data.boardDate || "")+"</td>" +
-            "<td class='inforTitle'>"+this.explorer.app.lp.personBirthday+":</td><td class='inforContent infor_birthday'>"+(this.data.birthday || "")+"</td></tr>";
-        html += "<tr><td class='inforTitle'>"+this.explorer.app.lp.ipAddress+":</td><td class='inforContent infor_ipAddress'>"+(this.data.ipAddress || "")+"</td>" +
-            "<td class='inforTitle'>"+this.explorer.app.lp.description+":</td><td class='inforContent infor_description'>"+(this.data.description || "")+"</td></tr>";
+        html += "<tr><td class='inforTitle'>"+this.explorer.app.lp.personMail+":</td><td class='inforContent infor_mail'>"+o2.txt(this.data.mail || "")+"</td>" +
+            "<td class='inforTitle'>"+this.explorer.app.lp.personWeixin+":</td><td class='inforContent infor_weixin'>"+o2.txt(this.data.weixin || "")+"</td></tr>";
+        html += "<tr><td class='inforTitle'>"+this.explorer.app.lp.personQQ+":</td><td class='inforContent infor_qq'>"+o2.txt(this.data.qq || "")+"</td>" +
+            "<td class='inforTitle'>"+this.explorer.app.lp.personOfficePhone+":</td><td class='inforContent infor_officePhone'>"+o2.txt(this.data.officePhone || "")+"</td></tr>";
+        html += "<tr><td class='inforTitle'>"+this.explorer.app.lp.personBoardDate+":</td><td class='inforContent infor_boardDate'>"+o2.txt(this.data.boardDate || "")+"</td>" +
+            "<td class='inforTitle'>"+this.explorer.app.lp.personBirthday+":</td><td class='inforContent infor_birthday'>"+o2.txt(this.data.birthday || "")+"</td></tr>";
+        html += "<tr><td class='inforTitle'>"+this.explorer.app.lp.ipAddress+":</td><td class='inforContent infor_ipAddress'>"+o2.txt(this.data.ipAddress || "")+"</td>" +
+            "<td class='inforTitle'>"+this.explorer.app.lp.description+":</td><td class='inforContent infor_description'>"+o2.txt(this.data.description || "")+"</td></tr>";
 
-        html += "<tr><td class='inforTitle'>"+this.explorer.app.lp.securityLabel+":</td><td class='inforContent infor_securityLabel'>"+(this.data.subjectSecurityClearance || "")+"</td>" +
+        html += "<tr><td class='inforTitle'>"+this.explorer.app.lp.securityLabel+":</td><td class='inforContent infor_securityLabel'>"+o2.txt(this.data.subjectSecurityClearance || "")+"</td>" +
             "<td class='inforTitle'>"+this.explorer.app.lp.status+":</td><td class='inforContent infor_status'>"+(statusText || "")+"</td></tr>";
 
         html += "<tr><td colspan='4' class='inforAction'></td></tr>";
@@ -1173,6 +1173,10 @@ MWF.xApplication.Org.PersonExplorer.PersonContent.BaseInfor = new Class({
         this.cancelNode.setStyle("display", "block");
     },
     save: function(){
+        if( this.saving ){
+            return;
+        }
+        this.saving = true;
         var tdContents = this.editContentNode.getElements("td.inforContent");
         var gender = "";
         var radios = tdContents[4].getElements("input");
@@ -1188,11 +1192,13 @@ MWF.xApplication.Org.PersonExplorer.PersonContent.BaseInfor = new Class({
                 var label = this.securityLabelSelectNode.options[this.securityLabelSelectNode.selectedIndex].value;
                 if (!label || !this.nameInputNode.get("value") || !this.mobileInputNode.get("value") || !this.uniqueInputNode.get("value") || !gender){
                     this.explorer.app.notice(this.explorer.app.lp.inputPersonInfor2, "error", this.explorer.propertyContentNode);
+                    this.saving = false;
                     return false;
                 }
             }else{
                 if (!this.nameInputNode.get("value") || !this.mobileInputNode.get("value") || !this.uniqueInputNode.get("value") || !gender){
                     this.explorer.app.notice(this.explorer.app.lp.inputPersonInfor, "error", this.explorer.propertyContentNode);
+                    this.saving = false;
                     return false;
                 }
             }
@@ -1208,6 +1214,7 @@ MWF.xApplication.Org.PersonExplorer.PersonContent.BaseInfor = new Class({
             this.savePerson(function(){
                 this.cancel();
                 this.content.propertyContentScrollNode.unmask();
+                this.saving = false;
             }.bind(this), function(xhr, text, error){
                 var errorText = error;
                 if (xhr){
@@ -1220,6 +1227,7 @@ MWF.xApplication.Org.PersonExplorer.PersonContent.BaseInfor = new Class({
                 }
                 MWF.xDesktop.notice("error", {x: "right", y:"top"}, errorText);
                 this.content.propertyContentScrollNode.unmask();
+                this.saving = false;
             }.bind(this));
         }.bind(this));
     },

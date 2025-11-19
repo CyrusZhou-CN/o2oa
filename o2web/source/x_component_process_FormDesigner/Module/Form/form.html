@@ -107,6 +107,13 @@
                 <td class="editTableTitle">CSS Url:</td>
                 <td class="editTableValue"><input type="text" name="cssUrl" value="text{$.cssUrl}" class="editTableInput"/></td>
             </tr>
+            <tr>
+                <td class="editTableTitle">CSS Script:</td>
+                <td class="editTableValue">
+                    <div class="MWFScriptSelect" data-name-filter=".*\.css$" data-count=0 name="cssScript"></div>
+                    <div class="MWFScriptSelectAction"><div style="color: #0b58a2; cursor: pointer; float: left">{{$.lp.copy}}</div><div style="color: #0b58a2; cursor: pointer; float: left; margin-left:10px">{{$.lp.paste}}</div></div>
+                </td>
+            </tr>
         </table>
         <div class="MWFCssArea" name="css" title="CSS"></div>
 		<!--<div class="MWFScriptArea" name="jsheader" title="JS Header"></div>-->
@@ -139,6 +146,13 @@
 
         <div style="height:24px; text-align: center; line-height: 24px; background-color: #EEE; border-top: 1px solid #999; font-weight: bold">{{$.lp.SubmitUI}}</div>
         <table width="100%" border="0" cellpadding="5" cellspacing="0" class="editTable">
+            <tr>
+                <td class="editTableTitle">{{$.lp.useQuickSelect}}:</td>
+                <td class="editTableValue">
+                    <input type="radio" name="isQuickSelect" value="yes" text{($.isQuickSelect!=='no')?'checked':''}/>{{$.lp.yes}}
+                    <input type="radio" name="isQuickSelect" value="no" text{($.isQuickSelect==='no')?'checked':''}/>{{$.lp.no}}
+                </td>
+            </tr>
             <tr>
                 <td class="editTableValue" colspan="2">
                     <input type="radio" onclick="if (this.checked) {
@@ -305,7 +319,7 @@
         <div style="color: #666">({{$.lp.checkOtherFlowNote}})</div>
 
     </div>
-    <div title="{{$.lp.action}}"  class="MWFTab" style="overflow: hidden; display: text{($.mode=='Mobile')?'block':'none'}">
+    <div title="{{$.lp.action}}"  class="MWFTab" style="overflow: hidden; display: text{($.mode=='Mobile')?'block':'block'}">
 <!--        <div class="MWFDefaultActionArea" name="defaultTools" data-target="mobileForm"></div>-->
 <!--        <div class="MWFActionArea" name="tools"></div>-->
         <div class="MWFMultiActionArea" name="multiTools" data-systemToolsAddress="../x_component_process_FormDesigner/Module/Form/toolbars.json"></div>

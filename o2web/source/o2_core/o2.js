@@ -120,8 +120,9 @@ if (!window.o2) {
          */
         this.o2.version = {
             "v": "o2oa",
-            "build": "2022.09.13",
-            "info": "O2OA 活力办公 创意无限. Copyright © 2022, o2oa.net O2 Team All rights reserved."
+            "dev": 10,
+            "build": "2025.06.28",
+            "info": "O2OA 活力办公 创意无限. Copyright © 2025, o2oa.net O2 Team All rights reserved."
         };
 
         /**
@@ -469,6 +470,9 @@ if (!window.o2) {
         var _xhr_get = function (url, success, failure, completed, sync) {
             var xhr = new _request();
             url = _filterUrl(url);
+            if (url.startsWith("/x_") || url.startsWith("/o2_")) {
+                url = '..'+url;
+            }
             xhr.open("GET", url, !sync);
 
             var _checkCssLoaded = function (_, err) {
@@ -586,7 +590,7 @@ if (!window.o2) {
                 if (!_loadingModules[key].callbacks) _loadingModules[key].callbacks = [];
                 _loadingModules[key].callbacks.push(callback);
             } else {
-                _loadingModules[key] = {callbacks: [callback]};
+                if (!_loadingModules[key]) _loadingModules[key] = {callbacks: []};
 
                 var head = (op.doc.head || op.doc.getElementsByTagName("head")[0] || op.doc.documentElement);
                 var s = op.doc.createElement('script');
@@ -602,27 +606,35 @@ if (!window.o2) {
                         _removeListener(s, 'readystatechange', _checkScriptLoaded);
                         _removeListener(s, 'load', _checkScriptLoaded);
                         _removeListener(s, 'error', _checkScriptErrorLoaded);
+
                         if (!isAbort || err) {
                             if (err) {
                                 if (s) head.removeChild(s);
-                                while (_loadingModules[key].callbacks.length) {
-                                    (_loadingModules[key].callbacks.shift())();
+                                if (callback) callback();
+                                if (_loadingModules[key]){
+                                    while (_loadingModules[key].callbacks.length) {
+                                        (_loadingModules[key].callbacks.shift())();
+                                    }
+                                    delete _loadingModules[key];
                                 }
-                                delete _loadingModules[key];
+
                                 //if (callback)callback();
                             } else {
                                 //head.removeChild(s);
-                                while (_loadingModules[key].callbacks.length) {
-                                    (_loadingModules[key].callbacks.shift())(scriptObj);
+                                if (callback) callback();
+                                if (_loadingModules[key]){
+                                    while (_loadingModules[key]?.callbacks.length) {
+                                        (_loadingModules[key].callbacks.shift())(scriptObj);
+                                    }
+                                    delete _loadingModules[key];
                                 }
-                                delete _loadingModules[key];
+
                                 //if (callback)callback(scriptObj);
                             }
                         }
                     }
                 };
                 var _checkScriptErrorLoaded = function (e, err) {
-                    console.log("Error: load javascript module: " + module);
                     _checkScriptLoaded(e, true, "error");
                 };
 
@@ -1109,7 +1121,7 @@ if (!window.o2) {
                 if (el.hasAttribute("data-o2-events")) {
 
                     var events = el.getAttribute("data-o2-events").toString();
-                    if (events) _bindToEvents(op.module, el, events, bindDataId);
+                    if (events) _bindToEvents(op.module, el, events, bindDataId, op.bind);
                     el.removeAttribute("data-o2-events");
                 }
             }
@@ -1126,7 +1138,7 @@ if (!window.o2) {
             }
         };
 
-        var _bindToEvents = function (m, node, events, bindDataId) {
+        var _bindToEvents = function (m, node, events, bindDataId, bind) {
             var p = node.getParent("div[data-o2-binddataid]");
             var data = null;
             if (p){
@@ -1151,17 +1163,13 @@ if (!window.o2) {
                     //     if (m[method]) m[method].apply(m, evs.concat([new PointerEvent("o2load"), data]));
                     // }else{
                     node.addEventListener(event, function (e) {
-                        if (m[method]) m[method].apply(m, evs.concat([e, data]));
+                        if (m[method]) m[method].apply(m, evs.concat([e, data, bind]));
                     }, false);
                     // }
                 }
             });
-            // try {
-                node.dispatchEvent(o2.customEventLoad);
-            // }catch(e){
-            //     debugger;
-            //     console.error(e)
-            // }
+            node.dispatchEvent(new CustomEvent("o2load"));
+            // node.dispatchEvent(o2.customEventLoad);
 
         }
         var _bindToModule = function (m, node, name) {
@@ -1910,6 +1918,9 @@ if (!window.o2) {
             }
 
             url = (url.indexOf("?") !== -1) ? url + "&v=" + o2.version.v : url + "?v=" + o2.version.v;
+            if (url.startsWith("/x_") || url.startsWith("/o2_")) {
+                url = '..'+url;
+            }
 
             var json = null;
             var res = new Request.JSON({
@@ -2071,7 +2082,7 @@ if (!window.o2) {
                 var resPromise = _resGetQueue[address];
                 var p = new Promise(function(resolve, reject){
                     resPromise.then(function(){
-                        resolve(resPromise.json);
+                        resolve(Object.clone(resPromise.json));
                     }, function(){
                         reject(resPromise.err);
                     });
@@ -2131,6 +2142,13 @@ if (!window.o2) {
                             delete _resGetQueue[_addr];
 
                             var xToken = this.getHeader(o2.tokenName);
+                            var xTokenExpires = this.getHeader(o2.tokenName+'-Expires');
+                            var expiresTime = xTokenExpires ? new Date(xTokenExpires) : null;
+                            if (expiresTime){
+                                // sessionStorage.setItem("o2LayoutSessionTokenExpires", expiresTime.getTime());
+                                window.localStorage?.setItem("o2LayoutSessionTokenExpires", expiresTime ? expiresTime.getTime() : null);
+                            }
+
                             if (xToken) {
                                 if (window.layout) {
                                     if (!layout.session) layout.session = {};
@@ -2151,12 +2169,94 @@ if (!window.o2) {
                         onFailure: function (xhr) {
                             _resGetQueue[_addr] = null;
                             delete _resGetQueue[_addr];
-                            if (!loadAsync){
-                                var r = o2.runCallback(callback, "failure", [xhr, "", ""], null);
-                                reject((r) ? r : {"xhr": xhr, "text": "", "error": "error"});
+
+                            if (xhr && xhr.status === 401){
+                                if (!layout.loginDlg) {
+                                    var json = JSON.decode(xhr.responseText);
+
+                                    const node = new Element("div", {styles: {height: "100%"}});
+                                    const iframe = new Element("iframe", {
+                                        "src": '../x_desktop/index.html?redirect=../x_desktop/close.html&username='+layout.session.user.name,
+                                        "width": "100%",
+                                        "height": "100%",
+                                        "frameborder": "0",
+                                        "allowtransparency": "true",
+                                        "scrolling": "no"
+                                    }).inject(node);
+
+                                    layout.loginDlg = $OOUI.dialog(json.message.trim()+o2.LP.desktop.login.loginAgain, node, null, {
+                                        buttons: '', width: '80vw', height: '80vh', zIndex: 200000,
+                                        'events': {
+                                            'close': ()=>{
+                                                if (!layout.loginDlg.isOk){
+                                                    if (!loadAsync){
+                                                        var r = o2.runCallback(callback, "failure", [xhr, "", ""], null);
+                                                        reject((r) ? r : {"xhr": xhr, "text": "", "error": "error"});
+                                                    }else{
+                                                        reject({"xhr": xhr, "text": "", "error": "error"});
+                                                    }
+                                                    if (layout.holdRequests){
+                                                        while (layout.holdRequests.length){
+                                                            var f = layout.holdRequests.shift();
+                                                            if (f) f?.reject();
+                                                        }
+                                                    }
+                                                }
+                                                layout.loginDlg = null;
+                                            }
+                                        }
+                                    });
+                                    layout.loginDlg.dlg.closeDlg = ()=>{
+                                        layout.loginDlg.isOk = true;
+                                        layout.loginDlg.dlg.close();
+                                        layout.loginDlg = null;
+
+                                        _restful(method, address, data, callback, async, withCredentials, cache);
+                                        if (layout.holdRequests){
+                                            while (layout.holdRequests.length){
+                                                var f = layout.holdRequests.shift();
+                                                if (f) f?.retry();
+                                            }
+                                        }
+                                    }
+                                }else{
+                                    if (!layout.holdRequests) layout.holdRequests = [];
+
+                                    const m = method;
+                                    const a = address;
+                                    const d = data;
+                                    const c = callback;
+                                    const as = async;
+                                    const wc = withCredentials;
+                                    const ca = cache;
+                                    const x = xhr;
+                                    const la = loadAsync;
+
+                                    console.log(d)
+
+                                    layout.holdRequests.push({
+                                        reject: ()=>{
+                                            if (!la){
+                                                var r = o2.runCallback(c, "failure", [x, "", ""], null);
+                                                reject((r) ? r : {"xhr": x, "text": "", "error": "error"});
+                                            }else{
+                                                reject({"xhr": x, "text": "", "error": "error"});
+                                            }
+                                        },
+                                        retry: ()=>{
+                                            _restful(m, a, d, c, as, wc, ca);
+                                        }
+                                    });
+                                }
                             }else{
-                                reject({"xhr": xhr, "text": "", "error": "error"});
+                                if (!loadAsync){
+                                    var r = o2.runCallback(callback, "failure", [xhr, "", ""], null);
+                                    reject((r) ? r : {"xhr": xhr, "text": "", "error": "error"});
+                                }else{
+                                    reject({"xhr": xhr, "text": "", "error": "error"});
+                                }
                             }
+
                         }.bind(this),
                         onError: function (text, error) {
                             _resGetQueue[_addr] = null;
@@ -2202,23 +2302,6 @@ if (!window.o2) {
                 }.bind(this)).catch(function (err) {
                     throw err;
                 });
-                //     .then(function (responseJSON) {
-                //
-                //     _resGetQueue[address].events.each(function(e){
-                //         var r = o2.runCallback(e.callback, "success", [responseJSON], null);
-                //         if (e.promise){
-                //             e.promise
-                //         }
-                //     });
-                //
-                //     return responseJSON;
-                // }, function(err){
-                //     var r = o2.runCallback(callback, "failure", [xhr, "", ""], null);
-                //     return r || err;
-                // }).catch(function (err) {
-                //     throw err;
-                //     //return Promise.reject(err);
-                // });
                 var oReturn = p;
                 //oReturn.res = res;
                 var resPromise = Promise.resolve(oReturn).then(function(json){
@@ -2791,6 +2874,32 @@ if (!window.o2) {
 
         };
 
+        //去除html文本中的script标签和事件处理函数
+        o2.sanitizeHTML = function (html) {
+            const template = document.createElement('template');
+            template.innerHTML = html;
+
+            const sanitizeNode = (node) => {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    // Remove script and event handler attributes
+                    if (node.tagName === 'SCRIPT') {
+                        node.remove();
+                        return;
+                    }
+                    [...node.attributes].forEach(attr => {
+                        if (attr.name.startsWith('on')) {
+                            node.removeAttribute(attr.name);
+                        }
+                    });
+                }
+                // Recursively sanitize child nodes
+                [...node.childNodes].forEach(sanitizeNode);
+            };
+
+            sanitizeNode(template.content);
+            return template.innerHTML;
+        }
+
         if (String.implement) String.implement({
             "getAllIndexOf": function (str) {
                 var idxs = [];
@@ -3286,6 +3395,23 @@ if (!window.o2) {
                     };
                 }
                 return position;
+            },
+            isDisplayNone: function() {
+                // 获取元素的计算样式
+                const computedStyle = window.getComputedStyle(this);
+
+                // 如果 display 为 'none'，则该元素不可见
+                if (computedStyle.display === 'none') {
+                    return true;
+                }
+
+                // 递归检查父元素
+                const parent = this.parentElement;
+                if (parent) {
+                    return parent.isDisplayNone();
+                }
+                // 如果所有父元素都没有 display: 'none'，则返回 false
+                return false;
             }
         });
 
@@ -3404,7 +3530,11 @@ if (!window.o2) {
             }
         }
 
-
+        o2.isMediaMobile = function(media){
+            const mediaQuery = window.matchMedia(media || 'only screen and (max-width: 767px)');
+            // 检查是否满足媒体查询条件
+            return mediaQuery.matches || layout.mobile || o2.thirdparty.isMobile();
+        }
 
         o2.common = o2.common || {};
 
@@ -3563,6 +3693,64 @@ if (!window.o2) {
             }
             o2.session.isMobile = (["mac", "win", "linux"].indexOf(Browser.Platform.name) === -1);
         }
+
+
+        /**
+         * 如果需要根据一个迭代器，渲染浏览器界面，推荐调用此方法。为防止卡顿，将渲染动作放入 requestAnimationFrame 回调种植进行。
+         * 需要提供一个回调函数，执行渲染。在下一次重绘之前，调用用户提供的回调函数。
+         *
+         * @param iterator {Iterator} 一个迭代器，对于dom对象的操作，是根据这个迭代器中的数据的。
+         * @param callback {Function} 回调函数，它接收两个参数：value，index，分别为当前迭代的值和索引（0 开始），每次迭代都会调用此函数，一般来说在此函数中进行dom修改。
+         * @param firstFrameSize {Number} 第一次调用时的迭代次数。默认100.
+         * @param time {Number} 一个数值表示没帧运行的毫秒数，操作这个数字，就不再迭代了，等待下一个 requestAnimationFrame 回调。默认 13
+         *
+         * @return {Promise} 执行完成后兑现
+         */
+        o2.nextFrame = function(iterator, callback, firstFrameSize = 500, time = 15) {
+            if (typeof iterator[Symbol.iterator] === 'function') {
+                iterator = iterator[Symbol.iterator]();
+            }
+            return new Promise((resolve) => {
+                if (!callback.requestFrameId) {
+                    let i = 0;
+                    let firstFrameCount = 0;
+                    const frame = (timestamp) => {
+                        let isDone = true;
+                        do {
+                            const {value, done} = iterator.next();
+                            isDone = done;
+                            if (!done) {
+                                callback(value, i);
+                            }
+                            i++;
+                        } while ((performance.now() - timestamp < time || ++firstFrameCount < firstFrameSize) && !isDone);
+
+                        if (!isDone) {
+                            callback.requestFrameId = requestAnimationFrame(frame);
+                        } else {
+                            resolve();
+                            callback.requestFrameId = 0;
+                        }
+                    };
+                    callback.requestFrameId = requestAnimationFrame(frame);
+                }
+            });
+        }
+
+        o2.areArraysEqual = function (arr1, arr2) {
+            if (arr1.length !== arr2.length) return false;
+            const count = {};
+            for (const s of arr1) count[s] = (count[s] || 0) + 1;
+            for (const s of arr2) {
+                if (!count[s]) return false;
+                count[s]--;
+            }
+            return true;
+        }
+
+
+
+
     })();
     o2.more = true;
 

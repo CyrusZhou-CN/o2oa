@@ -1,9 +1,12 @@
 package com.x.processplatform.service.processing.processor.begin;
 
+import com.x.base.core.project.http.EffectivePerson;
+import com.x.base.core.project.organization.OrganizationDefinition;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -21,6 +24,7 @@ import com.x.base.core.project.utils.time.WorkTime;
 import com.x.organization.core.express.Organization.ClassifyDistinguishedName;
 import com.x.processplatform.core.entity.content.Review;
 import com.x.processplatform.core.entity.content.Work;
+import com.x.processplatform.core.entity.element.Activity;
 import com.x.processplatform.core.entity.element.Begin;
 import com.x.processplatform.core.entity.element.Route;
 import com.x.processplatform.core.entity.log.Signal;
@@ -42,6 +46,7 @@ public class BeginProcessor extends AbstractBeginProcessor {
 		if (StringUtils.isNotEmpty(person)) {
 			aeiObjects.createReview(new Review(aeiObjects.getWork(), person));
 		}
+		aeiObjects.createReview(new Review(aeiObjects.getWork(), EffectivePerson.CIPHER));
 		return aeiObjects.getWork();
 	}
 
@@ -127,6 +132,22 @@ public class BeginProcessor extends AbstractBeginProcessor {
 	protected Optional<Route> inquiring(AeiObjects aeiObjects, Begin begin) throws Exception {
 		// 发送ProcessingSignal
 		aeiObjects.getProcessingAttributes().push(Signal.beginInquire(aeiObjects.getWork().getActivityToken(), begin));
+		if (StringUtils.isNotEmpty(aeiObjects.getWork().getDestinationActivity())
+				&& Objects.nonNull(aeiObjects.getWork().getDestinationActivityType())
+				&& BooleanUtils.isTrue(aeiObjects.getWork().getForceRouteEnable())) {
+			Activity activity = aeiObjects.business().element()
+					.getActivity(aeiObjects.getWork().getDestinationActivity());
+			if (null != activity) {
+				Route route = new Route();
+				route.setActivity(activity.getId());
+				route.setActivityType(activity.getActivityType());
+				// 清理掉goBackStore
+				aeiObjects.getWork().setGoBackStore(null);
+				// 清理掉退回到的activityToken标志
+				aeiObjects.getWork().setGoBackActivityToken(null);
+				return Optional.of(route);
+			}
+		}
 		return aeiObjects.getRoutes().stream().findFirst();
 	}
 
@@ -204,7 +225,8 @@ public class BeginProcessor extends AbstractBeginProcessor {
 		ExpireScriptResult expire = new ExpireScriptResult();
 		Source source = aeiObjects.business().element().getCompiledScript(aeiObjects.getWork().getApplication(),
 				aeiObjects.getProcess(), Business.EVENT_PROCESSEXPIRE);
-		GraalvmScriptingFactory.Bindings bindings = aeiObjects.bindings().putMember(GraalvmScriptingFactory.BINDING_NAME_EXPIRE, expire);
+		GraalvmScriptingFactory.Bindings bindings = aeiObjects.bindings()
+				.putMember(GraalvmScriptingFactory.BINDING_NAME_EXPIRE, expire);
 		GraalvmScriptingFactory.eval(source, bindings, o -> {
 			if (null != o) {
 				ExpireScriptResult result = gson.fromJson(o, ExpireScriptResult.class);

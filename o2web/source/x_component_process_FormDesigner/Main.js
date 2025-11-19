@@ -53,6 +53,7 @@ MWF.xApplication.process.FormDesigner.Main = new Class({
 		if (callback) callback();
 	},
     addKeyboardEvents: function(){
+        if( !MWF.shortcut )MWF.require("MWF.xDesktop.shortcut");
         this.addEvent("copy", function(){
             this.copyModule();
         }.bind(this));
@@ -432,6 +433,10 @@ MWF.xApplication.process.FormDesigner.Main = new Class({
         }.bind(this));
 
         this.formToolbarNode.setStyles({"position":"relative"});
+
+        this.formToolbarNode.querySelector('oo-button.fieldPermissionsButton')?.addEventListener('click', function(e){
+            this.form.openFieldPermissions(e);
+        }.bind(this));
     },
     changeDesignerModeToPC: function(){
         this.pcDesignerActionNode.setStyles(this.css.designerActionNode_current);
@@ -1155,6 +1160,10 @@ MWF.xApplication.process.FormDesigner.Main = new Class({
             this.designNode.setStyle("height", ""+y+"px");
         }
 
+        if(this.designMobileNode){
+            this.designMobileNode.setStyle("height", ""+Math.min(y, 680)+"px");
+        }
+
 
         var titleSize = this.toolbarTitleNode.getSize();
         var titleMarginTop = this.toolbarTitleNode.getStyle("margin-top").toFloat();
@@ -1216,6 +1225,10 @@ MWF.xApplication.process.FormDesigner.Main = new Class({
             var designMarginBottom = this.designNode.getStyle("margin-bottom").toFloat();
             y = y - designMarginTop - designMarginBottom;
             this.designNode.setStyle("height", ""+y+"px");
+        }
+
+        if(this.designMobileNode){
+            this.designMobileNode.setStyle("height", ""+Math.min(y, 680)+"px");
         }
 
         var titleSize = this.toolbarTitleNode.getSize();
@@ -1453,11 +1466,11 @@ MWF.xApplication.process.FormDesigner.Main = new Class({
     getFieldList: function(){
         //fieldTypes = ["calender", "checkbox", "datagrid", "htmledit", "number", "personfield", "radio", "select", "textarea", "textfield"];
         dataTypes = {
-             "string": ["htmledit", "radio", "select", "textarea", "textfield","imageclipper","htmleditor","tinymceeditor","ooinput","ootextarea","ooselect","ooradioGroup"],
+             "string": ["htmledit", "radio", "select", "textarea", "textfield","imageclipper","htmleditor","tinymceeditor","ooinput","ootextarea","ooselect","ooradioGroup","oocurrency"],
             "person": ["personfield","orgfield","org","ooorg"],
             "date": ["calender","oodatetime"],
-            "number": ["number","currency"],
-            "array": ["checkbox"]
+            "number": ["number","currency", "oocurrency"],
+            "array": ["checkbox","ooaddress"]
         };
         fieldList = [];
         this.pcForm.moduleList.each(function(moudle){
@@ -1539,8 +1552,9 @@ MWF.xApplication.process.FormDesigner.Main = new Class({
         }
         return txt;
     },
-	saveForm: function(){
+	saveForm: function(cb){
         if (!this.isSave){
+            this.form.reloadCss();
             var txt = this.checkSubform();
             if (txt){
                 txt = this.lp.checkFormSaveError+txt;
@@ -1677,6 +1691,8 @@ MWF.xApplication.process.FormDesigner.Main = new Class({
 
                 this.isSave = false;
 
+                if (cb && o2.typeOf(cb)==='function') cb();
+
             }.bind(this), function(xhr, text, error){
                 this.isSave = false;
 
@@ -1714,6 +1730,11 @@ MWF.xApplication.process.FormDesigner.Main = new Class({
 		//	this.options.desktopReload = true;
 		//	this.options.id = this.form.json.id;
 		//}.bind(this));
+	},
+
+    openFieldPermissions: function(){
+        debugger;
+		this.form.openFieldPermissions();
 	},
 	previewForm: function(){
 		this.form.preview();
@@ -1816,7 +1837,7 @@ MWF.xApplication.process.FormDesigner.Main = new Class({
             "<input type=\"text\" style=\"width: 68%; height: 22px; border: 1px solid #cccccc\"/>"+"</td></tr>" +
 
             "<tr><td style=\"height: 40px;\">" +this.lp.templateDescription+"</td><td>"+
-            "<textarea type=\"text\" style=\"width: 98%; height: 44px; border: 1px solid #cccccc\">"+this.pcForm.json.description+"</textarea>"+"</td></tr>" +
+            "<textarea type=\"text\" style=\"width: 98%; height: 44px; border: 1px solid #cccccc\">"+o2.txt(this.pcForm.json.description)+"</textarea>"+"</td></tr>" +
 
             "<tr><td colSpan=\"2\" id=\"form_templatePreview\">" +
             "<div style=\"position: relative; width: 180px; height: 180px; margin: 20px auto 0px auto;  overflow: hidden\"></div>" +
@@ -2175,6 +2196,7 @@ MWF.xApplication.process.FormDesigner.ToolsGroup = new Class({
                 }).inject(toolNode);
                 if (value.icon) iconNode.setStyle("background-image", "url("+this.app.path+this.app.options.style+"/icon/"+value.icon+")");
                 if (value.fontIcon){
+                    iconNode.setStyle("font-size", "1.6rem");
                     iconNode.addClass("mainColor_color");
                     iconNode.set("html", "<i class=\""+value.fontIcon+"\"></i>");
                 }

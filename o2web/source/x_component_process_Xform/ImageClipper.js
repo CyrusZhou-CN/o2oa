@@ -35,11 +35,17 @@ MWF.xApplication.process.Xform.ImageClipper = MWF.APPImageClipper =  new Class(
      */
     reload: function(){
         this.node.empty();
+        this._loadReadEditAbeld();
         this._loadUserInterface();
         this._loadStyles();
         this.fireEvent("postLoad");
     },
     _loadUserInterface: function(){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+
         this.field = true;
         this.node.empty();
         var data = this._getBusinessData();
@@ -76,6 +82,9 @@ MWF.xApplication.process.Xform.ImageClipper = MWF.APPImageClipper =  new Class(
         });
         if(this.json.buttonStyles){
             button.setStyles( this.json.buttonStyles );
+        }
+        if( this.form.json.formStyleType === 'v10' ){
+            button.addClass('form-content-button');
         }
         button.addEvent("click", function(){
             this.validationMode();
@@ -219,18 +228,25 @@ MWF.xApplication.process.Xform.ImageClipper = MWF.APPImageClipper =  new Class(
         }.bind(this));
     },
     createErrorNode: function(text){
-        var node = new Element("div");
-        var iconNode = new Element("div", {
+        node = new Element("div", {styles:{
+            "margin-top": "0.3em"  
+        }});
+        var iconNode = new Element("div.ooicon-error", {
             "styles": {
                 "width": "20px",
-                "height": "20px",
+                "height": "1.2em",
                 "float": "left",
-                "background": "url("+"../x_component_process_Xform/$Form/default/icon/error.png) center center no-repeat"
+                "color": "red",
+                "display": "flex",
+                "align-items": "center",
+                "justify-content": "center"
+                // "background": "url("+"../x_component_process_Xform/$Form/default/icon/error.png) center center no-repeat"
             }
         }).inject(node);
         var textNode = new Element("div", {
             "styles": {
-                "line-height": "20px",
+                "height": "auto",
+                "line-height": "1.2em",
                 "margin-left": "20px",
                 "color": "red",
                 "word-break": "keep-all"
@@ -347,6 +363,8 @@ MWF.xApplication.process.Xform.ImageClipper = MWF.APPImageClipper =  new Class(
         return true;
     },
     validation: function(routeName, opinion){
+        if (this.isReadonly() || this.json.showMode!=="disabled" || this.node?.isDisplayNone() || !this.isEditable) return true;
+        
         if (!this.validationConfig(routeName, opinion))  return false;
 
         if (!this.json.validation) return true;

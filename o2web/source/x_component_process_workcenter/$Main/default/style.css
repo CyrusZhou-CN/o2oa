@@ -246,6 +246,18 @@
     align-items: center;
     justify-content: center;
 }
+.listItemTop{
+    float: right;
+    margin-top: 20px;
+    height: 18px;
+    width: 18px;
+    border-radius: 5px;
+    background-color: #ccc;
+    background-size: 12px;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-image: url(../x_component_Homepage/$Main/default/icon/top.png);
+}
 .listItemActivityText{
     max-height: 38px;
     overflow: hidden;
@@ -1055,4 +1067,344 @@
 }
 .o2icon-layout:before {
   content: "\e996";
+}
+
+.index-process-starter {
+    display: flex !important;
+    justify-content: space-between;
+    width: 100%;
+    height: 100%;
+    font-size: 1rem;
+}
+.index-starter-navi {
+    flex: 1;
+    min-width: 16em;
+    max-width: 20em;
+    overflow: auto;
+    border-right: 1px solid #d3d3d3;
+}
+
+.index-starter-area {
+    flex: 4;
+    display: flex;
+    flex-direction: column;
+}
+
+.index-starter-search {
+    padding: 1em;
+}
+.index-starter-content {
+    flex: 1;
+    padding: 0 1em 1em 1em;
+    overflow: auto;
+    display: flex;
+    gap: 1em;
+    flex-wrap: wrap;
+}
+
+.index-starter-process-application {
+}
+.index-starter-process-application-title {
+    font-size: 1.125em;
+    font-weight: bold;
+    padding: 0.5em 0;
+    margin-top: 0.5em;
+}
+.index-starter-process-area {
+    display: flex;
+    gap: 1em;
+    flex-wrap: wrap;
+}
+
+.index-starter-process-area dl {
+    padding: 1em;
+    border-radius: var(--oo-default-radius);
+    background-color: #f3f3f3;
+    width: 16em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8em;
+    cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.2s;
+    overflow: hidden;
+    margin: 0;
+}
+.index-starter-process-area dt {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    max-height: 3em;
+    overflow: hidden;
+    flex: 0 0 auto;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+.index-starter-process-area dt > div:first-child {
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+.index-starter-process-area dt > div:last-child {
+    font-size: 0.875em;
+    color: var(--oo-color-text3);
+}
+.index-starter-process-area dd {
+    padding: 0;
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--oo-color-text3);
+    max-height: 2.8em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+.index-starter-process-area dl:hover {
+    background-color: var(--oo-color-hover2);
+    box-shadow: 0px 10px 20px 0px rgba(0, 0, 0, 0.03);
+}
+.index-starter-buttons{
+    display: none;
+}
+
+
+/* 手机 */
+@media only screen and (max-width: 767px) {
+    .appNode{
+        display: grid;
+        grid-template-rows: 3rem calc(100% - 3rem);
+        grid-template-columns: 100%;
+    }
+    .menuArea{
+        width: 100%;
+        max-width: unset;
+        min-width: unset;
+        color: #ffffff;
+    }
+    .menuTitle{
+        font-size: 1rem;
+        margin: 0;
+        padding: 0 20px;
+        height: 3rem;
+        line-height: 3rem;
+        color: #ffffff;
+        border-bottom: 0;
+        background-color: var(--oo-color-main);
+        display: flex;
+        align-items: center;
+    }
+    .appContent{
+        height: 100%;
+    }
+    .menuTitleText {
+        flex: 100%;
+        text-align: center;
+    }
+    .menuTitleAction {
+        text-align: right;
+        width: unset;
+        float: none;
+        cursor: pointer;
+        flex: 2rem;
+        color: #ffffff;
+        height: 3rem;
+    }
+    .o2icon-zengjia.mainColor_color{
+        color: #ffffff !important;
+        font-family: 'ooicon' !important;
+        font-style: normal;
+        font-weight: normal;
+        font-variant: normal;
+        text-transform: none;
+        line-height: 1;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    .o2icon-zengjia.mainColor_color::before {
+        content: "\e6a8";
+    }
+
+    .content{
+        margin: 0;
+    }
+    .contentTitleActionArea{
+        display: none !important;
+    }
+    .contentTitleFilterArea, .contentTitleArea, .contentTitle{
+        min-height: unset !important;
+    }
+    .contentTitle {
+        padding: 0;
+    }
+    .menuItemArea{
+        height: 18rem;
+        width: 100%;
+        border-bottom: 1px solid #dedede;
+        box-shadow: 0 0 16px 0 #cccccc;
+        background-color: #ffffff;
+        overflow: hidden;
+        position: absolute;
+        z-index: 1000;
+        scale: 0 0;
+        transform-origin: top left;
+        /* opacity: 0; */
+    }
+    .menuItemArea.transition{
+        transition: scale 0.2s ease-in-out; 
+    }
+
+    .menuItemArea.show{
+        scale: 1 1;
+        /* height: 21em; */
+    }
+    .contentTitleFilterArea{
+        display: flex;
+        white-space: nowrap;
+        overflow: auto;
+        padding: 0.5rem;
+    }
+    .ft_filterItem {
+        display: flex;
+    }
+    .contentList {
+        padding: 0;
+    }
+    .listItemFlag {
+        position: absolute;
+        right: 0.5rem;
+    }
+
+    .listItem {
+        height: unset;
+        background: #FFFFFF;
+        border-bottom: 1px solid #cccccc;
+        display: grid;
+        grid-template-columns: 1rem auto auto auto auto;
+        grid-template-rows: auto auto;
+        gap: 0.5em;
+        border-radius: 0;
+        padding: 0.5rem 1rem;
+    }
+    .selectFlag {
+        display: none;
+    }
+    .listItemApplication {
+        height: unset;
+        width: unset;
+        float: none;
+        grid-column: 1 / 3;
+        grid-row: 2 / 3;
+    }
+    .listItemApplicationIcon {
+        width: 32px;
+        height: 32px;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: 24px 24px;
+    }
+    .listItemApplicationText {
+        max-height: unset;
+        width: unset;
+        overflow: hidden;
+        font-size: inherit;
+        color: #666666;
+        line-height: unset;
+        padding-right: 0
+    }
+    .listItemLine {
+        display: none;
+    }
+    .listItemDate {
+        height: unset;
+        min-width: unset;
+        width: unset;
+        justify-content: flex-end;
+        grid-column: 4 / 6;
+        grid-row: 2 / 3;
+        color: #999999;
+    }
+    .listItemActivity {
+        display: none;
+    }
+    .listItemUnit {
+        display: none;
+    }
+    .listItemTitle {
+        height: unset;
+        grid-column: 1 / -1;
+        grid-row: 1 / 1;
+        display: flex;
+        align-items: flex-start;
+        overflow: hidden;
+        font-size: 1rem;
+    }
+    .listItemTitleProcess {
+        padding: 0;
+        max-width: unset;
+        height: unset;
+        display: flex;
+        align-items: center;
+    }
+    .listItemTitleProcessText {
+        float: none;
+        font-size: unset;
+        color: #999999;
+        height: unset;
+    }
+    .listItemTitleSubject {
+        height: unset;
+        display: block;
+        align-items: center;
+    }
+    .contentBottom {
+        height: 3.75rem;
+    }
+    .contentPageArea {
+        height: 1.25rem;
+    }
+    .contentBottom{
+        display: none;
+    }
+    .index-starter-navi {
+        display: none !important;
+    }
+    .index-starter-process-area dl{
+        width: unset;
+    }
+    .index-starter-content{
+        flex-direction: column;
+        flex-wrap: nowrap;
+    }
+    .index-starter-process-application {
+        flex: 1;
+    }
+    .index-starter-process-area {
+        display: grid;
+        gap: 1em;
+        grid-template-columns: 1fr 1fr;
+    }
+    .index-starter-search {
+        padding: 0 1em;
+    }
+
+    .index-starter-buttons{
+        padding: 1em 1em 0 1em;
+        display: flex;
+    }
+    .index-starter-buttons oo-button{
+        flex: 1;
+    }
+
+    .ft_filterContent{
+        height: 100%;
+    }
+    .ft_content{
+        height: 100%;
+        box-sizing: border-box !important;
+        display: grid;
+        grid-template-rows: 2rem calc(100% - 2rem);
+    }
+    .ft_filterItemsArea {
+        height: unset;
+    }
 }

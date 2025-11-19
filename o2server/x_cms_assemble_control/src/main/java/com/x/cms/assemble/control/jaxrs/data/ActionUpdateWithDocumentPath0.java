@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.x.base.core.container.EntityManagerContainer;
 import com.x.base.core.container.factory.EntityManagerContainerFactory;
 import com.x.base.core.project.cache.CacheManager;
+import com.x.base.core.project.exception.ExceptionAccessDenied;
 import com.x.base.core.project.http.ActionResult;
 import com.x.base.core.project.http.EffectivePerson;
 import com.x.base.core.project.jaxrs.WoId;
@@ -21,17 +22,20 @@ class ActionUpdateWithDocumentPath0 extends BaseAction {
 			if (null == document) {
 				throw new ExceptionDocumentNotExists(id);
 			}
+			if (!business.isDocumentEditor(effectivePerson, null, null, document)) {
+				throw new ExceptionAccessDenied(effectivePerson);
+			}
 			/** 先更新title,serial,objectSecurityClearance,再更新DataItem,因为旧的DataItem中也有title和serial数据. */
-			this.updateTitleSerialObjectSecurityClearance(business, document, jsonElement);
+			if(title_path.equals(path0) || subject_path.equals(path0) || objectSecurityClearance_path.equals(path0)) {
+				this.updateTitleSerialObjectSecurityClearance(business, document, jsonElement);
+			}
 			this.updateData(business, document, jsonElement, path0);
-			/** 在方法内进行了commit不需要再次进行commit */
-			// emc.commit();
 			Wo wo = new Wo();
 			wo.setId(document.getId());
 			result.setData(wo);
 
 			CacheManager.notify( Document.class );
-			
+
 			return result;
 		}
 	}

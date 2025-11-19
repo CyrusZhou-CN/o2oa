@@ -50,7 +50,9 @@ MWF.xApplication.query.ViewDesigner.LP={
 		"deleteEvent": "Are you sure you want to delete the current event?",
 		"selectProcess": "Please select an application or process",
 		"selectCMS": "Please select content management column or category",
-		"selectDateRange": "The period type is a range, please select the start date and end date"
+		"selectDateRange": "The period type is a range, please select the start date and end date",
+		"columnNameExist": "Column name exist",
+		"columnNameRepeat": "Column name repeat: {column}"
 	},
 	"actionbar": {
 		"readhide": "Set whether to display when reading",
@@ -331,7 +333,16 @@ MWF.xApplication.query.ViewDesigner.LP={
 		"headStyle": "Table header style",
 		"columnTitleStyle": "Column header style",
 		"columnContentStyle": "Column Content Style",
-		"exportNotice": "Up to 2000 items can be found everywhere at once"
+		"exportNotice": "Up to 2000 items can be found everywhere at once",
+		"orgRange": "selection range",
+		"org_unit": "organization",
+		"org_person": "personnel",
+		"org_identity": "identity",
+		"org_role": "role",
+		"org_group": "group",
+		"fulltextSearch": "Enable full-text search",
+		"enabled": "enable",
+		"disabled": "disable"
 	},
 	"viewStyle": {
 		"default": "Default",

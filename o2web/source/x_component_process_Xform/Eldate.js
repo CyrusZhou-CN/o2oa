@@ -42,6 +42,7 @@ MWF.xApplication.process.Xform.Eldate = MWF.APPEldate =  new Class(
         contentNode.set("text", d.join( this.json.rangeSeparator ? " "+this.json.rangeSeparator+" " : " 至 " ) );
     },
     _queryLoaded: function(){
+        this._loadReadEditAbeld();
         var data = this._getBusinessData();
         if (data){
             if( ["monthrange","daterange"].contains(this.json.selectType) ) {
@@ -59,14 +60,14 @@ MWF.xApplication.process.Xform.Eldate = MWF.APPEldate =  new Class(
             if( o2.typeOf(data) === "array" ){
                 if( ["monthrange","daterange"].contains(this.json.selectType) ) {
                     var ds = data.map(function (d){
-                        return this.formatDate(new Date(d), format);
+                        return this.isValidDate(d) ? this.formatDate(new Date(d), format) : d;
                     }.bind(this));
                     this.node.set("text", this.json.rangeSeparator ? ds.join(this.json.rangeSeparator) : ds);
                 }else{
-                    this.node.set("text", data ? this.formatDate(new Date(data), format) : "" );
+                    this.node.set("text", this.isValidDate(data) ? this.formatDate(new Date(data), format) : data );
                 }
             }else{
-                this.node.set("text", data ? this.formatDate(new Date(data), format) : "" );
+                this.node.set("text", this.isValidDate(data) ? this.formatDate(new Date(data), format) : data );
             }
             if( this.json.elProperties ){
                 this.node.set(this.json.elProperties );
@@ -95,6 +96,7 @@ MWF.xApplication.process.Xform.Eldate = MWF.APPEldate =  new Class(
         if (!this.json.valueFormat) this.json.valueFormat = this.json.format || "";
         if (!this.json.prefixIcon) this.json.prefixIcon = "";
         if (!this.json.description) this.json.description = "";
+        if (!this.json.popperClass) this.json.popperClass = "";
         this.json.pickerOptions = {
             firstDayOfWeek: this.json.firstDayOfWeek.toInt()
         }
@@ -103,6 +105,8 @@ MWF.xApplication.process.Xform.Eldate = MWF.APPEldate =  new Class(
                 return this.form.Macro.fire(this.json.disabledDate.code, this, date);
             }.bind(this)
         }
+
+        this._setPopperClass();
     },
     _createElementHtml: function() {
         var html = "<el-date-picker";
@@ -120,6 +124,7 @@ MWF.xApplication.process.Xform.Eldate = MWF.APPEldate =  new Class(
         html += " :value-format=\"valueFormat\"";
         html += " :format=\"format\"";
         html += " :picker-options=\"pickerOptions\"";
+        html += " :popper-class=\"popperClass\"";
         // html += " :picker-options=\"{" +
             // ":firstDayOfWeek=firstDayOfWeek," +
             // ":disabledDate=\"disabledDateFun\""+
@@ -169,6 +174,13 @@ MWF.xApplication.process.Xform.Eldate = MWF.APPEldate =  new Class(
             var value = arr.length === 0  ? arr[0] : arr;
             this.setData(value, true);
         },
+        isValidDate: function(dateString) {
+            if( !dateString ){
+                return false;
+            }
+            var date = new Date(dateString);
+            return !isNaN(date.getTime());
+        },
         formatDate: function (date, format) {
             var o = {
                 'M+': date.getMonth() + 1, // 月份
@@ -181,7 +193,7 @@ MWF.xApplication.process.Xform.Eldate = MWF.APPEldate =  new Class(
                 d: date.getDay(),
                 S: date.getMilliseconds(), // 毫秒
                 a: date.getHours() < 12 ? 'am' : 'pm', // 上午/下午
-                A: date.getHours() < 12 ? 'AM' : 'PM', // AM/PM
+                A: date.getHours() < 12 ? 'AM' : 'PM' // AM/PM
             };
             if (/(y+)/.test(format)) {
                 format = format.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length));

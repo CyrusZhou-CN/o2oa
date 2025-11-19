@@ -235,11 +235,14 @@ MWF.xApplication.service.InvokeDesigner.Invoke = new Class({
         this.designer.propertyIdNode.set("text", this.data.id || "");
         this.designer.propertyNameNode.set("value", this.data.name || "");
         this.designer.propertyAliasNode.set("value", this.data.alias || "");
+        this.designer.propertyCategoryNode.set("value", this.data.category || "");
 
         this.designer.executorListSelector.setData( this.data.executorList || []);
 
         this.designer.propertyEnableTokenNode.getElement("option[value='"+ this.data.enableToken +"']").set("selected", true );
         this.designer.propertyEnableNode.getElement("option[value='"+ this.data.enable +"']").set("selected", true );
+
+        this.designer.propertyEnableAnonymousNode.getElement("option[value='"+ this.data.enableAnonymous +"']").set("selected", true );
 
         this.designer.propertyRemoteAddrRegexNode.set("value", this.data.remoteAddrRegex || "");
 
@@ -264,8 +267,8 @@ MWF.xApplication.service.InvokeDesigner.Invoke = new Class({
         }
         if(this.page){
             //this.designer.propertyRequireBodyNode.set("value", this.page.requireBody || "");
-            if( this.designer.propertyRequireBodyScriptArea.jsEditor ){
-                this.designer.propertyRequireBodyScriptArea.jsEditor.setValue(this.page.requireBody || data.requireBodyScript || "");
+            if( this.designer.propertyRequireBodyScriptArea ){
+                this.designer.propertyRequireBodyScriptArea.setData(this.page.requireBody || data.requireBodyScript || "", true);
             }
             this.designer.propertyRunResultNode.set("text", this.page.executeResult || "");
 
@@ -353,12 +356,20 @@ MWF.xApplication.service.InvokeDesigner.Invoke = new Class({
 
             var name = this.designer.propertyNameNode.get("value");
             var alias = this.designer.propertyAliasNode.get("value");
+            var category = this.designer.propertyCategoryNode.get("value");
             var description = this.designer.propertyDescriptionNode.get("value");
             var remoteAddrRegex = this.designer.propertyRemoteAddrRegexNode.get("value");
             var enable = true;
             this.designer.propertyEnableNode.getElements("option").each( function(option){
                 if( option.selected ){
                     enable =  (option.value == "true");
+                }
+            });
+
+            var enableAnonymous = false;
+            this.designer.propertyEnableAnonymousNode.getElements("option").each( function(option){
+                if( option.selected ){
+                    enableAnonymous =  (option.value == "true");
                 }
             });
 
@@ -393,12 +404,14 @@ MWF.xApplication.service.InvokeDesigner.Invoke = new Class({
             //}
             this.data.name = name;
             this.data.alias = alias;
+            this.data.category = category;
             this.data.description = description;
             this.data.remoteAddrRegex = remoteAddrRegex;
             this.data.validated = validated;
             this.data.text = this.editor.editor.getValue();
             this.data.enable = enable;
             this.data.enableToken = enableToken;
+            this.data.enableAnonymous = enableAnonymous;
             this.data.data = JSON.stringify({
                 requireBodyScript: requireBodyScript,
                 simulaToken: simulaToken
@@ -456,12 +469,20 @@ MWF.xApplication.service.InvokeDesigner.Invoke = new Class({
 
                 var name = this.designer.propertyNameNode.get("value");
                 var alias = this.designer.propertyAliasNode.get("value");
+                var category = this.designer.propertyCategoryNode.get("value");
                 var description = this.designer.propertyDescriptionNode.get("value");
                 var remoteAddrRegex = this.designer.propertyRemoteAddrRegexNode.get("value");
                 var enable = true;
                 this.designer.propertyEnableNode.getElements("option").each( function(option){
                     if( option.selected ){
                         enable =  (option.value == "true");
+                    }
+                });
+
+                var enableAnonymous = true;
+                this.designer.propertyEnableAnonymousNode.getElements("option").each( function(option){
+                    if( option.selected ){
+                        enableAnonymous =  (option.value == "true");
                     }
                 });
 
@@ -489,10 +510,12 @@ MWF.xApplication.service.InvokeDesigner.Invoke = new Class({
                 //}
                 this.data.name = name;
                 this.data.alias = alias;
+                this.data.category = category;
                 this.data.description = description;
                 this.data.remoteAddrRegex = remoteAddrRegex;
                 this.data.validated = validated;
                 this.data.enable = enable;
+                this.data.enableAnonymous = enableAnonymous;
 
                 this.data.data = JSON.stringify({
                     requireBodyScript: requireBodyScript,

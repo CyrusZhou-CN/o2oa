@@ -45,6 +45,11 @@ MWF.xApplication.process.Xform.Log = MWF.APPLog =  new Class(
     },
 
 	_loadUserInterface: function(){
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+            return '';
+        }
+
 		this.node.empty();
         this.node.setStyle("-webkit-user-select", "text");
         if (this.form.businessData){
@@ -606,7 +611,7 @@ MWF.xApplication.process.Xform.Log = MWF.APPLog =  new Class(
                     opinion = task.properties.opinion || "";
             }
 
-            html = html.replace(/\{person\}/g, person );
+            html = html.replace(/\{person\}/g, person ).replace(/{personDn}/g, task.person || '')
             html = html.replace(/\{department\}/g, (task.unit) ? task.unit.substring(0, task.unit.indexOf("@")) : "");
             html = html.replace(/\{route\}/g, o2.txt(router));
             html = html.replace(/\{time\}/g, task.recordTime);
@@ -681,8 +686,9 @@ MWF.xApplication.process.Xform.Log = MWF.APPLog =  new Class(
         if (this.json.textTaskStyle){
             var html = this.json.textTaskStyle;
             html = html.replace(/{person}/g, person)
+            .replace(/{personDn}/g, o2.txt(task.person || ''))
             .replace(/{department}/g, o2.name.cn(task.unit))
-            .replace(/{activity}/g, task.fromActivityName)
+            .replace(/{activity}/g, o2.txt(task.fromActivityName))
             .replace(/{route}/g, MWF.xApplication.process.Xform.LP.processing + ' ...')
             .replace(/{img}/g, '')
             .replace(/{opinion}/g, '')
@@ -692,7 +698,7 @@ MWF.xApplication.process.Xform.Log = MWF.APPLog =  new Class(
             if (iconNode) iconNode.setStyle("background-image", "url(" + "../x_component_process_Xform/$Form/" + this.form.options.style + "/icon/rightRed.png)");
 
         }else{
-            html = person+"("+task.unit.substring(0, task.unit.indexOf("@"))+"), 【"+task.fromActivityName+"】" + MWF.xApplication.process.Xform.LP.processing+", "+
+            html = person+"("+task.unit.substring(0, task.unit.indexOf("@"))+"), 【"+o2.txt(task.fromActivityName)+"】" + MWF.xApplication.process.Xform.LP.processing+", "+
                 MWF.xApplication.process.Xform.LP.comeTime + ": " + task.properties.startTime;
             textNode.set("html", html);
             if(iconNode)iconNode.setStyle("background-image", "url("+"../x_component_process_Xform/$Form/"+this.form.options.style+"/icon/rightRed.png)");
@@ -1415,10 +1421,10 @@ MWF.xApplication.process.Xform.Log = MWF.APPLog =  new Class(
             }else{
                 iconNode.setStyle("background-image", "url("+"../x_component_process_Xform/$Form/"+this.form.options.style+"/icon/rightRed.png)");
             }
-            fromAvtivityNode.set("html", "<b>"+log.fromActivityName+"</b>");
+            fromAvtivityNode.set("html", "<b>"+o2.txt(log.fromActivityName)+"</b>");
             if (log.arrivedActivityName){
                 arrowNode.setStyle("background-image", "url("+"../x_component_process_Xform/$Form/"+this.form.options.style+"/icon/right.png)");
-                arrivedAvtivityNode.set("html", "<b>"+log.arrivedActivityName+"</b>");
+                arrivedAvtivityNode.set("html", "<b>"+o2.txt(log.arrivedActivityName)+"</b>");
                 timeNode.set("html", "<b>"+MWF.xApplication.process.Xform.LP.begin+": </b>"+log.fromTime+"<br/><b>"+MWF.xApplication.process.Xform.LP.end+": </b>"+log.arrivedTime)
 
             }else{
@@ -1688,10 +1694,10 @@ MWF.xApplication.process.Xform.Log = MWF.APPLog =  new Class(
             } else {
                 iconNode.setStyle("background-image", "url(../x_component_process_Xform/$Form/" + this.form.options.style + "/icon/rightRed.png)");
             }
-            fromAvtivityNode.set("html", "<b>" + log.fromActivityName + "</b>");
+            fromAvtivityNode.set("html", "<b>" + o2.txt(log.fromActivityName) + "</b>");
             if (log.arrivedActivityName) {
                 arrowNode.setStyle("background-image", "url(../x_component_process_Xform/$Form/" + this.form.options.style + "/icon/right.png)");
-                arrivedAvtivityNode.set("html", "<b>" + log.arrivedActivityName + "</b>");
+                arrivedAvtivityNode.set("html", "<b>" + o2.txt(log.arrivedActivityName) + "</b>");
                 timeNode.set("html", "<b>" + MWF.xApplication.process.Xform.LP.begin + ": </b>" + log.fromTime + "<br/><b>" + MWF.xApplication.process.Xform.LP.end + ": </b>" + log.arrivedTime)
 
             } else {
@@ -1827,7 +1833,7 @@ MWF.xApplication.process.Xform.Log = MWF.APPLog =  new Class(
             if( task.processingType !== "empower" && task.empowerFromIdentity){
                 person = person+" 代 "+o2.name.cn(task.empowerFromIdentity||"");
             }
-            html = html.replace(/\{person\}/g, person );
+            html = html.replace(/\{person\}/g, person ).replace(/{personDn}/g, task.person || '');
             html = html.replace(/\{department\}/g, task.unit.substring(0, task.unit.indexOf("@")));
             html = html.replace(/\{route\}/g, o2.txt(task.routeName));
             html = html.replace(/\{time\}/g, task.completedTime);

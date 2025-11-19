@@ -274,6 +274,7 @@ MWF.xApplication.cms.Xform.LP={
 	"importTooManyNotice ": " you import {n1} data, allowed to import {n2} data maximum ",
 	"importTooFewNotice ": "you import {n1} data, need to keep at least {n2} data ",
 	"pleaseSelect": "Please Choose",
+	"noPermissionOrDocumentNotExisted": "You do not have permission or the document does not exist",
 	"form": {
 		"close": "Close",
 		"closeTitle": "Close Document",
@@ -463,6 +464,10 @@ MWF.xApplication.cms.Xform.LP={
 		"undo": "Un Commend"
 	},
 	"requiredHint": "Please fill in the {label} field",
-	"requiredHintField": "this"
+	"requiredHintField": "this",
+	"editDatatable": "Edit data table",
+	"select": "select",
+	"editOk": "Editing completed",
+	"associatedFailureMessage": "{count} documents failed to be associated."
 }
 MWF.xApplication.cms.Xform["lp."+o2.language] = MWF.xApplication.cms.Xform.LP

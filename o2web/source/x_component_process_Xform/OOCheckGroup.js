@@ -26,6 +26,12 @@ MWF.xApplication.process.Xform.OOCheckGroup = MWF.APPOOCheckGroup = new Class({
         this.node.destroy();
         this.node = node;
 
+        if (o2.isMediaMobile() && !this.json.inDatatable){
+			this.node.setAttribute("skin-mode", 'mobile');
+		}else{
+            this.node.removeAttribute("skin-mode");
+        }
+
         if (this.json.properties) {
             this.node.set(this.json.properties);
         }
@@ -45,7 +51,11 @@ MWF.xApplication.process.Xform.OOCheckGroup = MWF.APPOOCheckGroup = new Class({
             this.node.setAttribute('count', this.json.canSelectCount);
         }
 
-        if (!this.isReadonly()){
+        if (this.json.inDatatable){
+            this.node.setAttribute('view-style', '');
+        }
+
+        if (!this.isReadonly() && this.isEditable){
             if (this.json.showMode === 'disabled') {
                 this.node.setAttribute('disabled', true);
             } else if (this.json.showMode === 'read') {
@@ -90,6 +100,25 @@ MWF.xApplication.process.Xform.OOCheckGroup = MWF.APPOOCheckGroup = new Class({
         this.node.addEventListener('validity', (e) => {
             if (this.validationText) {
                 e.target.setCustomValidity(this.validationText);
+            }
+        });
+        this.node.addEventListener('invalid', (e)=>{
+            if (this.node._props.validity){
+                e.target.setCustomValidity(this.node._props.validity);
+            }else{
+                var label = this.json.label ? `“${this.json.label.replace(/　/g, '')}”` :  MWF.xApplication.process.Xform.LP.requiredHintField;
+                const o = {
+                    valueMissing: MWF.xApplication.process.Xform.LP.requiredHint.replace('{label}', label),
+                }
+                //通过 e.detail 获取 验证有效性状态对象：ValidityState
+                for (const k in o){
+                    if (e.detail[k]){
+                        if (o[k]){
+                            
+                            break;
+                        }
+                    }
+                }
             }
         });
 
@@ -143,7 +172,7 @@ MWF.xApplication.process.Xform.OOCheckGroup = MWF.APPOOCheckGroup = new Class({
             if (i.checked) items.push(i);
         }
         return items;
-    },
+    }
     // __setData: function(data, fireChange){
     //     this.moduleValueAG = null;
     //     this._setBusinessData(data);

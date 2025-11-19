@@ -93,7 +93,7 @@ MWF.xApplication.process.FormDesigner.Property = MWF.FCProperty = new Class({
                             this.ignoreSection = !!parentNode;
                         }
                     }
-                    this.htmlString = o2.bindJson(this.htmlString, {"lp": lp});
+                    this.htmlString = o2.bindJson(this.htmlString, {"lp": lp, appType: this.form.json.appType});
                     // this.htmlString = o2.bindJson(this.htmlString, {"lp": MWF.xApplication.process.FormDesigner.LP.propertyTemplate});
                     this.JsonTemplate = new MWF.widget.JsonTemplate(this.data, this.htmlString);
                     this.propertyContent = new Element("div", {"styles": {"overflow": "hidden"}}).inject(this.propertyNode);
@@ -123,7 +123,6 @@ MWF.xApplication.process.FormDesigner.Property = MWF.FCProperty = new Class({
                     this.loadTreeData();
                     this.loadArrayList();
                     this.loadEventsEditor();
-                    debugger;
                     this.loadActionArea();
                     this.loadActionStylesArea();
                     this.loadHTMLArea();
@@ -170,6 +169,9 @@ MWF.xApplication.process.FormDesigner.Property = MWF.FCProperty = new Class({
 
                     this.loadQueryViewItem();
                     this.loadQueryStatementItem();
+                    this.loadCurrencyPreset();
+
+                    this.loadFieldPermission();
 
                     this.loadHelp();
 
@@ -1350,6 +1352,54 @@ MWF.xApplication.process.FormDesigner.Property = MWF.FCProperty = new Class({
         }
     },
 
+    loadCurrencyPreset: function (){
+        var nodes = this.propertyContent.getElements(".MWFCurrencySelect");
+        nodes.forEach(function(select){
+            var OOCurrency = window.customElements.get('oo-currency');
+
+            var name = select.get("name");
+            select.empty();
+            var map = {};
+            Object.each(OOCurrency.preset, function(preset, currency){
+                if( !map[preset.continent] ){
+                    map[preset.continent] = [];
+                }
+                map[preset.continent].push(preset);
+            }.bind(this));
+            Object.each(map, function(value, continent){
+                var optgroup = new Element('optgroup',{
+                    label: continent,
+                    styles: {
+                        "font-weight": "bold",
+                        "background-color": "#f1f1f1",
+                        "color": "#333"
+                    }
+                }).inject(select);
+                value.each(function(v){
+                   var iso = v.iso;
+                    var option = new Element("option", {
+                        "text": this.form.designer.lp.currency[iso] + "(" + iso + ")",
+                        "value": iso,
+                        "selected": (this.data[name]===iso)
+                    }).inject(select);
+                }.bind(this))
+            }.bind(this))
+        }.bind(this))
+    },
+
+
+    loadFieldPermission: function(){
+        var node = this.propertyContent.getElement(".MWFFieldPermission");
+        
+        if (node){
+            MWF.xDesktop.requireApp("process.FormDesigner", "widget.FieldPermission", function(){
+                var fieldPermission = new MWF.xApplication.process.FormDesigner.widget.FieldPermission(node, this);
+                // eventsEditor.load(eventsObj, this.data, name);
+            }.bind(this));
+        }
+        
+    },
+
     loadImageFileSelect: function(){
         // var nodes = this.propertyContent.getElements(".MWFImageFileSelect");
         // if (nodes.length){
@@ -1607,22 +1657,31 @@ MWF.xApplication.process.FormDesigner.Property = MWF.FCProperty = new Class({
         }
     },
     testSourceRestful: function(content){
-	    var service;
-        try {
-            service = JSON.parse(this.module.json.contextRoot);
-        }catch(e){
-            service = {"root": this.module.json.contextRoot, "action":"", "method": "", "url": ""};
-        }
-
-        var address = this._getO2Address(service.root);
-        var uri = this._getO2Uri(this.module, address);
-        this._invoke(this.module, uri, function(json){
+        var callback = function(json){
             content.empty();
             MWF.require("MWF.widget.JsonParse", function(){
                 var jsonParse = new MWF.widget.JsonParse(json, content, null);
                 jsonParse.load();
             }.bind(this));
-        }.bind(this));
+        }.bind(this);
+
+        if (this.module.json.sourceType === 'o2') {
+            if (this.module.json.path) {
+                var service;
+                try {
+                    service = JSON.parse(this.module.json.contextRoot);
+                }catch(e){
+                    service = {"root": this.module.json.contextRoot, "action":"", "method": "", "url": ""};
+                }
+
+                var address = this._getO2Address(service.root);
+                var uri = this._getO2Uri(this.module, address);
+                this._invoke(this.module, uri, callback);
+            }
+        } else {
+            var uriOther = this._getO2Uri(this.module, this.module.json.otherHost);
+            this._invokeOther(this.module, uriOther, callback);
+        }
     },
     _getO2Address: function(contextRoot){
         var addressObj = layout.serviceAddressList[contextRoot];
@@ -1661,6 +1720,7 @@ MWF.xApplication.process.FormDesigner.Property = MWF.FCProperty = new Class({
         var data = null;
         if (module.json.requestBody){
             if (module.json.requestBody.code){
+                this.currentPage = 1;
                 data = macro.exec(module.json.requestBody.code, this)
             }
         }
@@ -1687,6 +1747,24 @@ MWF.xApplication.process.FormDesigner.Property = MWF.FCProperty = new Class({
             //this.data = json;
             if (callback) callback(json);
         }.bind(this), true, true);
+    },
+    _invokeOther: function (module, uri, callback) {
+        if (module.json.otherHost) {
+            var o = {
+                method: module.json.httpMethod,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            };
+            if (module.json.httpMethod === 'POST' || module.json.httpMethod === 'PUT') {
+                o.body = JSON.stringify(uri.body);
+            }
+            fetch(uri.uri, o)
+                .then((response) => response.json())
+                .then((json) => {
+                    if (callback) callback(json);
+                });
+        }
     },
 
     loadUnitTypeSelector: function(){
@@ -1902,11 +1980,13 @@ MWF.xApplication.process.FormDesigner.Property = MWF.FCProperty = new Class({
                 }).inject(node);
                 if (keys.length){
                     keys.each(function(k){
-                        new Element("option", {
-                            "text": styles[k].name,
-                            "value": k,
-                            "selected": (this.data.templateType==k)
-                        }).inject(node)
+                        if( k !== 'default' ){
+                            new Element("option", {
+                                "text": styles[k].name,
+                                "value": k,
+                                "selected": (this.data.templateType==k)
+                            }).inject(node);
+                        }
                     }.bind(this));
                 }else{
                     node.getParent("tr").setStyle("display", "none");
@@ -1933,6 +2013,7 @@ MWF.xApplication.process.FormDesigner.Property = MWF.FCProperty = new Class({
         var formStyleNodes = this.propertyContent.getElements(".MWFFormStyleSelect");
         var dictionaryNodes = this.propertyContent.getElements(".MWFDictionarySelect");
         var queryImportModelNodes = this.propertyContent.getElements(".MWFQueryImportModelSelect");
+        var processActivityNodes = this.propertyContent.getElements(".MWFProcessActivitySelect");
 
 
         MWF.xDesktop.requireApp("process.ProcessDesigner", "widget.PersonSelector", function(){
@@ -2030,10 +2111,13 @@ MWF.xApplication.process.FormDesigner.Property = MWF.FCProperty = new Class({
             }.bind(this));
 
             scriptNodes.each(function(node){
+                debugger;
+                const nameFilter = node.dataset["nameFilter"] || null;
                 var ps = new MWF.xApplication.process.ProcessDesigner.widget.PersonSelector(node, this.form.designer, {
                     "type": "Script",
                     "count": node.dataset["count"] || 1,
                     "names": (!node.dataset["count"] || node.dataset["count"].toInt()==1) ? [this.data[node.get("name")]] : this.data[node.get("name")],
+                    "selectorOptions": nameFilter && {"nameFilter": nameFilter},
                     "onChange": function(ids){
                         this.saveScriptSelectItem(node, ids);
                     }.bind(this)
@@ -2261,6 +2345,67 @@ MWF.xApplication.process.FormDesigner.Property = MWF.FCProperty = new Class({
                     "values": (data.id) ? [data.id] : [],
                     "onChange": function(ids){this.saveFileItem(node, ids);}.bind(this)
                 });
+            }.bind(this));
+
+            processActivityNodes.each(function(node){
+                const appName = this.form.designer.options.name;
+                if (["portal.WidgetDesigner", "portal.PageDesigner"].includes(appName)) {
+                    //如果是门户设计器，则不加载活动选择器
+                    //因为门户设计器没有活动，只有页面
+
+                    node.textContent = "门户中无活动";
+                }else if (["cms.FormDesigner"].includes(appName)){
+                    //如果是CMS设计器，只有已发布或未发布
+                    var property = this;
+                    var jsondata = node.get("name");
+                    var name = this.data.pid+jsondata;
+                    var lp = MWF.xApplication.cms.FormDesigner.LP.propertyTemplate;
+                    [{v:"draft", t: lp.draft}, {v:"published", t: lp.published}].forEach((a)=>{
+                        var label = new Element("label").inject(node);
+                        var input = new Element("input", {
+                            "type": "checkbox",
+                            "name": name,
+                            "value": a.v,
+                            "checked": (this.data[name] && this.data[name].includes(a.v))
+                        }).inject(label);
+                        new Element("span", {"text": a.t}).inject(label);
+
+
+                        input.addEvent("change", function(e){
+                            property.setCheckboxValue(jsondata, this, true);
+                        });
+                        input.addEvent("click", function(e){
+                            property.setCheckboxValue(jsondata, this);
+                        });
+                        input.addEvent("keydown", function(e){
+                            e.stopPropagation();
+                        });
+                    });
+
+                    
+
+                }else{
+                    //如果是流程设计器，则加载活动选择器
+                    var d = this.data[node.get("name")];
+                    var data = d || [];
+                    new MWF.xApplication.process.ProcessDesigner.widget.PersonSelector(node, this.form.designer, {
+                        "type": "ProcessActivity",
+                        "names": data,
+                        "application": this.form.data.json.application,
+                        "onChange": function(ids){
+                            var values = [];
+                            ids.each(function(id){
+                                values.push(id.data);
+                            }.bind(this));
+                            var name = node.get("name");
+                            var oldValue = this.data[name];
+                            this.data[name] = values;
+                            this.checkHistory(name, oldValue, this.data[name]);
+                        }.bind(this)
+                    });
+                }
+
+                
             }.bind(this));
 
             cmsFileNodes.each(function(node){
@@ -2907,15 +3052,15 @@ MWF.xApplication.process.FormDesigner.Property = MWF.FCProperty = new Class({
         }.bind(this));
     },
     loadActionArea: function(){
-        debugger;
 	    var multiActionArea = this.propertyContent.getElements(".MWFMultiActionArea");
+        debugger;
         multiActionArea.each(function(node){
             var name = node.get("name");
             var actionContent = this.data[name];
             var oldValue = actionContent ? JSON.parse( JSON.stringify(actionContent) ) : actionContent;
             MWF.xDesktop.requireApp("process.FormDesigner", "widget.ActionsEditor", function(){
                 var options = {
-                    "iconType": this.data.iconType,
+                    "iconType": this.data.iconType || this.data.actionIconType,
                     "maxObj": this.propertyNode.parentElement.parentElement.parentElement,
                     "isSystemTool" : true,
                     "target" : node.get("data-target"),
@@ -2942,17 +3087,6 @@ MWF.xApplication.process.FormDesigner.Property = MWF.FCProperty = new Class({
             var actionContent = this.data[name];
             var oldValue = actionContent ? JSON.parse( JSON.stringify(actionContent) ) : actionContent;
             MWF.xDesktop.requireApp("process.FormDesigner", "widget.ActionsEditor", function(){
-                // var actionEditor = new MWF.xApplication.process.FormDesigner.widget.ActionsEditor(node, this.designer, {
-                //     "maxObj": this.propertyNode.parentElement.parentElement.parentElement,
-                //     "noCreate": true,
-                //     "noDelete": true,
-                //     "noCode": true,
-                //     "onChange": function(){
-                //         this.data[name] = actionEditor.data;
-                //     }.bind(this)
-                // });
-                // actionEditor.load(this.module.defaultToolBarsData);
-
                 var actionEditor = new MWF.xApplication.process.FormDesigner.widget.ActionsEditor(node, this.designer, this.data, {
                     "maxObj": this.propertyNode.parentElement.parentElement.parentElement,
                     "onChange": function(historyOptions){
@@ -2993,18 +3127,8 @@ MWF.xApplication.process.FormDesigner.Property = MWF.FCProperty = new Class({
                     }.bind(this)
                 });
                 actionEditor.load(actionContent);
-
-                // var actionEditor = new MWF.xApplication.process.FormDesigner.widget.ActionsEditor(node, this.designer, {
-                //     "maxObj": this.propertyNode.parentElement.parentElement.parentElement,
-                //     "onChange": function(){
-                //         this.data[name] = actionEditor.data;
-                //     }.bind(this)
-                // });
-                // actionEditor.load(actionContent);
             }.bind(this));
-
         }.bind(this));
-
     },
 	loadMaplist: function(){
 		var maplists = this.propertyContent.getElements(".MWFMaplist");

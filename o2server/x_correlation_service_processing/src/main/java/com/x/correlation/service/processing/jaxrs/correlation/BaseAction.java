@@ -1,5 +1,6 @@
 package com.x.correlation.service.processing.jaxrs.correlation;
 
+import com.x.base.core.project.organization.OrganizationDefinition;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,9 @@ import com.x.processplatform.core.entity.content.WorkCompleted;
 abstract class BaseAction extends StandardJaxrsAction {
 
 	protected boolean checkAllowVisitProcessPlatform(String person, String job) throws Exception {
+		if(OrganizationDefinition.isSystemUser(person)){
+			return true;
+		}
 		WrapBoolean resp = ThisApplication.context().applications()
 				.getQuery(x_processplatform_assemble_surface.class,
 						Applications.joinQueryUri("job", job, "allow", "visit", "person", person))
@@ -42,6 +46,9 @@ abstract class BaseAction extends StandardJaxrsAction {
 	}
 
 	protected boolean checkPermissionReadFromCms(String person, String document) throws Exception {
+		if(OrganizationDefinition.isSystemUser(person)){
+			return true;
+		}
 		WrapBoolean resp = ThisApplication.context().applications().getQuery(x_cms_assemble_control.class,
 				Applications.joinQueryUri("document", "cipher", document, "permission", "read", "person", person))
 				.getData(WrapBoolean.class);
@@ -51,19 +58,21 @@ abstract class BaseAction extends StandardJaxrsAction {
 	protected Map<String, Correlation> exists(Business business, String fromType, String fromBundle) throws Exception {
 		return business.entityManagerContainer()
 				.listEqualAndEqual(Correlation.class, Correlation.FROMTYPE_FIELDNAME, fromType,
-						Correlation.FROMTYPE_FIELDNAME, fromBundle)
-				.stream().collect(Collectors.toMap(o -> o.getTargetType() + o.getTargetBundle(), Function.identity()));
+						Correlation.FROMBUNDLE_FIELDNAME, fromBundle)
+				.stream().collect(Collectors
+						.toMap(o -> o.getTargetType() + o.getTargetBundle() + o.getSite(), Function.identity()));
 	}
 
 	protected Pair<List<Correlation>, List<TargetWo>> readTarget(String person, Business business,
 			List<TargetWi> targets) throws Exception {
 		List<Correlation> successList = new ArrayList<>();
 		List<TargetWo> failureList = new ArrayList<>();
+		int order = 0;
 		for (TargetWi targetWi : targets) {
 			if (StringUtils.equalsIgnoreCase(targetWi.getType(), Correlation.TYPE_PROCESSPLATFORM)) {
 				if (checkAllowVisitProcessPlatform(person, targetWi.getBundle())) {
 					successList.add(readTargetProcessPlatform(person, business, targetWi.getBundle(),
-							targetWi.getSite(), targetWi.getView()));
+							targetWi.getSite(), targetWi.getView(), order++));
 				} else {
 					TargetWo targetWo = new TargetWo();
 					targetWi.copyTo(targetWo);
@@ -72,7 +81,7 @@ abstract class BaseAction extends StandardJaxrsAction {
 			} else if (StringUtils.equalsIgnoreCase(targetWi.getType(), Correlation.TYPE_CMS)) {
 				if (checkPermissionReadFromCms(person, targetWi.getBundle())) {
 					successList.add(readTargetCms(person, business, targetWi.getBundle(), targetWi.getSite(),
-							targetWi.getView()));
+							targetWi.getView(), order++));
 				} else {
 					TargetWo targetWo = new TargetWo();
 					targetWi.copyTo(targetWo);
@@ -86,12 +95,13 @@ abstract class BaseAction extends StandardJaxrsAction {
 	}
 
 	protected Correlation readTargetProcessPlatform(String person, Business business, String bundle, String site,
-			String view) throws Exception {
+			String view, int order) throws Exception {
 		Correlation correlation = new Correlation();
 		correlation.setTargetType(Correlation.TYPE_PROCESSPLATFORM);
 		correlation.setTargetBundle(bundle);
 		correlation.setSite(site);
 		correlation.setView(view);
+		correlation.setOrderNumber(order);
 		Work work = business.entityManagerContainer().firstEqual(Work.class, Work.job_FIELDNAME, bundle);
 		if (null != work) {
 			correlation.setTargetTitle(work.getTitle());
@@ -113,18 +123,19 @@ abstract class BaseAction extends StandardJaxrsAction {
 		return correlation;
 	}
 
-	protected Correlation readTargetCms(String person, Business business, String bundle, String site, String view)
-			throws Exception {
+	protected Correlation readTargetCms(String person, Business business, String bundle, String site,
+			String view, int order) throws Exception {
 		Correlation correlation = new Correlation();
 		correlation.setTargetType(Correlation.TYPE_CMS);
 		correlation.setTargetBundle(bundle);
 		correlation.setSite(site);
 		correlation.setView(view);
+		correlation.setOrderNumber(order);
 		Document document = business.entityManagerContainer().firstEqual(Document.class, JpaObject.id_FIELDNAME,
 				bundle);
 		if (null != document) {
 			correlation.setTargetTitle(document.getTitle());
-			correlation.setTargetCategory(document.getAppName());
+			correlation.setTargetCategory(document.getCategoryName());
 			correlation.setTargetStartTime(document.getPublishTime());
 			correlation.setTargetCreatorPerson(document.getCreatorPerson());
 		} else {

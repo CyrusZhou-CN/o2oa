@@ -120,7 +120,11 @@ MWF.xApplication.process.Xform.Eltree = MWF.APPEltree =  new Class(
     },
     _loadNode: function(){
         // if (this.isReadonly()) this.json.disabled = true;
-        this._loadNodeEdit();
+        if (!this.isReadable){
+            this.node?.addClass('hide');
+        }else{
+            this._loadNodeEdit();
+        }
     },
     _appendVueData: function(){
         if (!this.json.emptyText) this.json.emptyText = "";

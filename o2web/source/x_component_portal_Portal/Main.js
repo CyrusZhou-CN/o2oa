@@ -20,6 +20,7 @@ MWF.xApplication.portal.Portal.Main = new Class({
         "isControl": false,
         "taskObject": null,
         "parameters": "",
+        "data": null,
         "isLoginPage": false,
         "readonly": false
     },
@@ -67,9 +68,27 @@ MWF.xApplication.portal.Portal.Main = new Class({
     //    //this.parseData(data);
     //    this.openPortal();
     //},
+     reload: function(data, cb){
+        if (this.appForm){
+            this.formNode.empty();
+            MWF.release(this.appForm);
+            this.appForm = null;
+            this.form = null;
+            this.$events = {};
+        }
+        if (data){
+            this.parseData(data).then(function(){
+                this.openPortal(this.options.parameters, cb);
+            }.bind(this));
+        }else{
+            this.loadPortal(this.options.parameters, cb);
+        }
+    },
+
     toPortal: function(portal, page, par, nohis){
         this.options.portalId = portal;
         this.options.pageId = page;
+        this.options.parameters = par;
         if (!nohis) this.doHistory(page,this.options.portalId, par);
 
         if (this.appForm) this.appForm.fireEvent("beforeClose");
@@ -122,6 +141,7 @@ MWF.xApplication.portal.Portal.Main = new Class({
 
                     if (page){
                         this.options.pageId = (pageJson.data && pageJson.data.page) ? pageJson.data.page.id : "";
+                        this.options.parameters = par;
 
                         if (this.appForm) this.appForm.fireEvent("beforeClose");
                         Object.keys(this.$events).each(function(k){
@@ -185,12 +205,12 @@ MWF.xApplication.portal.Portal.Main = new Class({
             this.page = (this.pageDataText) ? JSON.decode(this.pageDataText): null;
             this.relatedFormMap = pageJson.data.relatedWidgetMap;
             this.relatedScriptMap = pageJson.data.relatedScriptMap;
-            delete pageJson.data.page.data;
+            // delete pageJson.data.page.data;
             this.pageInfor = pageJson.data.page;
         }else{
             this.pageDataText = (pageJson.data.data) ? MWF.decodeJsonString(pageJson.data.data): "";
             this.page = (this.pageDataText) ? JSON.decode(this.pageDataText): null;
-            delete pageJson.data.data;
+            // delete pageJson.data.data;
             this.pageInfor = pageJson.data;
         }
         this.openPortal(par, callback);
@@ -256,7 +276,6 @@ MWF.xApplication.portal.Portal.Main = new Class({
     },
 
     openPortal: function(par, callback){
-        debugger;
         if (this.page){
             //MWF.xDesktop.requireApp("process.Xform", "Form", function(){
                 this.appForm = new MWF.APPForm(this.formNode, this.page, {
@@ -268,8 +287,9 @@ MWF.xApplication.portal.Portal.Main = new Class({
                         "allowSave": true
                     },
                     "pageInfor": this.pageInfor,
-                    "data": {}
+                    "data": this.options.data ?? {}
                 };
+                this.appForm.businessData.originalData = Object.clone(this.appForm.businessData.data);
 
 
                 this.appForm.workAction = this.action;
@@ -279,7 +299,6 @@ MWF.xApplication.portal.Portal.Main = new Class({
                 this.appForm.load();
 
                 this.addEvent('resize', function(){
-                    debugger;
                     this.appForm.fireEvent('resize');
                 }.bind(this));
 
@@ -290,6 +309,7 @@ MWF.xApplication.portal.Portal.Main = new Class({
     },
     recordStatus: function(){
         return {"portalId": this.options.portalId, "pageId": this.options.pageId, "parameters" : this.options.parameters};
+        // return Object.clone(this.options);
     },
     onPostClose: function(){
         if (this.appForm){

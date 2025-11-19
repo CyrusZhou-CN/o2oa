@@ -1,5 +1,6 @@
 package com.x.processplatform.assemble.designer.jaxrs;
 
+import com.x.processplatform.assemble.designer.jaxrs.itemaccess.ItemAccessAction;
 import java.util.Set;
 
 import javax.ws.rs.ApplicationPath;
@@ -16,6 +17,7 @@ import com.x.processplatform.assemble.designer.jaxrs.formversion.FormVersionActi
 import com.x.processplatform.assemble.designer.jaxrs.id.IdAction;
 import com.x.processplatform.assemble.designer.jaxrs.input.InputAction;
 import com.x.processplatform.assemble.designer.jaxrs.mapping.MappingAction;
+import com.x.processplatform.assemble.designer.jaxrs.mergeitemplan.MergeItemPlanAction;
 import com.x.processplatform.assemble.designer.jaxrs.output.OutputAction;
 import com.x.processplatform.assemble.designer.jaxrs.process.ProcessAction;
 import com.x.processplatform.assemble.designer.jaxrs.processversion.ProcessVersionAction;
@@ -42,11 +44,12 @@ public class ActionApplication extends AbstractActionApplication {
 		classes.add(IdAction.class);
 		classes.add(InputAction.class);
 		classes.add(OutputAction.class);
-//		classes.add(ProjectionAction.class);
 		classes.add(MappingAction.class);
 		classes.add(ElementToolAction.class);
 		classes.add(WorkCompletedAction.class);
 		classes.add(DesignerAction.class);
+		classes.add(MergeItemPlanAction.class);
+		classes.add(ItemAccessAction.class);
 		return classes;
 	}
 

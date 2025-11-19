@@ -10,7 +10,9 @@ MWF.xApplication.process.TaskCenter.ProcessStarter = new Class({
         "workData" : null,
         "identity": null,
         "latest": false,
-        "skipDraftCheck": null
+        "skipDraftCheck": null,
+        "correlationTargetList": null,
+        "attachmentList": null
 	},
     initialize: function(data, app, options){
         this.setOptions(options);
@@ -59,6 +61,12 @@ MWF.xApplication.process.TaskCenter.ProcessStarter = new Class({
                                 if( this.options.workData ){
                                     data.data = this.options.workData;
                                     if (data.data.title || data.data.subject) data.title = data.data.title || data.data.subject;
+                                }
+                                if( this.options.attachmentList ){
+                                    data.attachmentList = this.options.attachmentList;
+                                }
+                                if( this.options.correlationTargetList ){
+                                    data.correlationTargetList = this.options.correlationTargetList;
                                 }
 
                                 this.mask = new MWF.widget.Mask({"style": "desktop"});
@@ -141,7 +149,7 @@ MWF.xApplication.process.TaskCenter.ProcessStarter = new Class({
         }).inject(app.content);
     },
     createAreaNode: function(){
-        this.areaNode = new Element("div#area", {
+        this.areaNode = new Element("div#area.start-process-area", {
             "styles": this.css.areaNode
         });
     },
@@ -166,7 +174,7 @@ MWF.xApplication.process.TaskCenter.ProcessStarter = new Class({
 
         var html = "<table width=\"100%\" height=\"90%\" border=\"0\" cellPadding=\"0\" cellSpacing=\"0\">" +
             "<tr><td style=\"height: 50px; line-height: 50px; text-align: left; font-size: 16px; color:#333333; \">" +
-            this.lp.start+" - "+this.data.name+"</td></tr>" +
+            this.lp.start+" - "+o2.txt(this.data.name)+"</td></tr>" +
             "<tr><td style=\"height: 60px; color: #0044cc; line-height: 80px; text-align: left; font-size: 16px; color:#333333; display: block; overflow: hidden\"><div style='padding-left:30px; line-height:80px'>" +
             this.lp.selectStartIdentity+"</div></td></tr>" +
             "<tr><td id=\"form_startIdentity\"></td></tr>" +
@@ -284,6 +292,12 @@ MWF.xApplication.process.TaskCenter.ProcessStarter = new Class({
         if( this.options.workData ){
             data.data = this.options.workData;
             if (data.data.title || data.data.subject) data.title = data.data.title || data.data.subject;
+        }
+        if( this.options.attachmentList ){
+            data.attachmentList = this.options.attachmentList;
+        }
+        if( this.options.correlationTargetList ){
+            data.correlationTargetList = this.options.correlationTargetList;
         }
 
         if (!data.identity){

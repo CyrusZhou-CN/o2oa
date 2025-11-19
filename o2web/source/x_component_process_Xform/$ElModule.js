@@ -63,6 +63,7 @@ o2.xApplication.process.Xform.$ElModule = MWF.APP$ElModule =  new Class(
 
         this.vueApp = null;
 
+        this._loadReadEditAbeld();
         this._loadUserInterface();
     },
     _checkVmodel: function(text){
@@ -82,17 +83,24 @@ o2.xApplication.process.Xform.$ElModule = MWF.APP$ElModule =  new Class(
     },
 
     _loadUserInterface: function(){
-        this.node.appendHTML(this._createElementHtml(), "before");
-        var input = this.node.getPrevious();
+        if (!this.isReadable && !!this.isHideUnreadable){
+            this.node?.addClass('hide');
+        }else{
+            var html = this._createElementHtml();
+            if (html){
+                this.node.appendHTML(this._createElementHtml(), "before");
+                var input = this.node.getPrevious();
 
-        this.node.destroy();
-        this.node = input;
-        this.node.set({
-            "id": this.json.id,
-            "MWFType": this.json.type
-        });
-        this.node.addClass("o2_vue");
-        this._createVueApp();
+                this.node.destroy();
+                this.node = input;
+                this.node.set({
+                    "id": this.json.id,
+                    "MWFType": this.json.type
+                });
+                this.node.addClass("o2_vue");
+                this._createVueApp();
+            }
+        }
     },
     _createVueApp: function(){
         if (this.json.vueSlot) this._checkVmodel(this.json.vueSlot);
@@ -100,16 +108,23 @@ o2.xApplication.process.Xform.$ElModule = MWF.APP$ElModule =  new Class(
     },
 
     _loadVue: function(callback){
-        var flag = (o2.session.isDebugger && this.form.app.inBrowser);
-        var vue = flag ? "vue_develop" : "vue";
+        // var flag = (o2.session.isDebugger && this.form.app.inBrowser);
+        // var vue = flag ? "vue_develop" : "vue";
+
         //var vueName = flag ? "Vue" : "Cn";
         // if (!window.Vue || window.Vue.name!==vueName){
         //     o2.loadAll({"css": "../o2_lib/vue/element/index.css", "js": [vue, "elementui"]}, { "sequence": true }, callback);
         // }else{
         //     if (callback) callback();
         // }
-        var elcssUrl = this.form.json.elementCssUrl || "../o2_lib/vue/element/index.css";
-        o2.loadAll({"css": elcssUrl, "js": [vue, "elementui"]}, { "sequence": true }, callback);
+        if (!window.Vue || window.Vue.name!=='Vue'){
+            var elcssUrl = this.form.json.elementCssUrl || "../o2_lib/vue/element/index.css";
+            o2.loadAll({"css": elcssUrl, "js": ['vue', "elementui"]}, { "sequence": true }, callback);
+        }else{
+            if (callback) callback();
+        }
+        // var elcssUrl = this.form.json.elementCssUrl || "../o2_lib/vue/element/index.css";
+        // o2.loadAll({"css": elcssUrl, "js": [vue, "elementui"]}, { "sequence": true }, callback);
     },
     _mountVueApp: function(){
         if (!this.vueApp) this.vueApp = this._createVueExtend();
@@ -228,5 +243,87 @@ o2.xApplication.process.Xform.$ElModule = MWF.APP$ElModule =  new Class(
     _createElementHtml: function(){
         return "";
     },
-    _afterCreateVueExtend: function (app) {}
+    _afterCreateVueExtend: function (app) {},
+    _setPopperClass: function () {
+        var popperClass = this._getPopperClass();
+        if( !!popperClass ){
+            this.json.popperClass = this.json.popperClass ?
+                (this.json.popperClass + " " + popperClass) :
+                popperClass;
+        }
+        if( !!popperClass ){
+            this._loadVuePopperCss();
+        }
+    },
+    _getPopperClass: function () {
+        if(this.json.vueCss && this.json.vueCss.code){
+            return "css" + this.form.json.id + '_' + this.json.id;
+        }else{
+            return '';
+        }
+    },
+    _loadVuePopperCss: function () {
+        var cssText = this.json.vueCss ? this.json.vueCss.code : "";
+        var popperClass = this._getPopperClass();
+        var styleNode = $("style" + popperClass);
+        if (!styleNode && cssText) {
+            cssText = cssText.replace(/\/\*[\s\S]*?\*\//g, '')  // 移除多行注释
+                .replace(/\/\/.*/g, '')           // 移除单行注释
+                .replace(/\\n/g, '');             // 移除\n
+
+            cssText = this.form.parseCSS(cssText);
+
+            var rex = new RegExp("(.+)(?=\\{)", "g");
+            var match;
+            var id = popperClass;
+            var prefix = "."+popperClass + " ";
+
+            while ((match = rex.exec(cssText)) !== null) {
+                var rulesStr = match[0];
+                var startWith = rulesStr.substring(0, 1);
+                if (startWith === "@" || startWith === ":" || rulesStr.indexOf("%") !== -1) {
+
+                }else if (rulesStr.trim()==='from' || rulesStr.trim()==='to'){
+
+                } else {
+                    if (rulesStr.indexOf(",") != -1) {
+                        //var rules = rulesStr.split(/\s*,\s*/g);
+                        var rules = rulesStr.split(/,/g);
+                        rules = rules.map(function (r) {
+                            return prefix + r;
+                        });
+                        var rule = rules.join(",");
+                        cssText = cssText.substring(0, match.index) + rule + cssText.substring(rex.lastIndex, cssText.length);
+                        rex.lastIndex = rex.lastIndex + (prefix.length * rules.length);
+
+                    } else {
+                        var rule = prefix + match[0];
+                        cssText = cssText.substring(0, match.index) + rule + cssText.substring(rex.lastIndex, cssText.length);
+                        rex.lastIndex = rex.lastIndex + prefix.length;
+                    }
+                }
+            }
+
+            styleNode = document.createElement("style");
+            styleNode.setAttribute("type", "text/css");
+            styleNode.id = "style" + popperClass;
+            styleNode.inject(document.head, "bottom");
+
+            if (styleNode.styleSheet) {
+                var setFunc = function () {
+                    styleNode.styleSheet.cssText = cssText;
+                };
+                if (styleNode.styleSheet.disabled) {
+                    setTimeout(setFunc, 10);
+                } else {
+                    setFunc();
+                }
+            } else {
+                var cssTextNode = document.createTextNode(cssText);
+                styleNode.appendChild(cssTextNode);
+            }
+            return "css" + id;
+        }
+        return "css" + popperClass;
+    }
 });

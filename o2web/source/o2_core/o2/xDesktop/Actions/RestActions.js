@@ -190,14 +190,14 @@ MWF.xDesktop.Actions.RestActions = new Class({
         }
         //@upload message
         if (messageItem && messageItem.moduleMessage){
-            if (messageItem.moduleMessage.setMessageText) messageItem.moduleMessage.setMessageText();
+            if (messageItem.moduleMessage.setMessageText) messageItem.moduleMessage.setMessageText(text);
         }
     },
     setMessageTitle: function(messageItem, text){
         if (messageItem && messageItem.message) messageItem.subjectNode.set("text", text);
         //@upload message
         if (messageItem && messageItem.moduleMessage){
-            if (messageItem.moduleMessage.setMessageTitle) messageItem.moduleMessage.setMessageTitle();
+            if (messageItem.moduleMessage.setMessageTitle) messageItem.moduleMessage.setMessageTitle(text);
         }
     },
     clearMessageProgress: function(messageItem){
@@ -664,19 +664,48 @@ MWF.xDesktop.Actions.RestActions.Callback = new Class({
         if (flag && !this.appendFailure){
             if (xhr.status!=0){
                 var errorText = error;
-                if (xhr){
+                if (xhr && xhr.status === 401){
+                    // if (!layout.loginDlg) {
+                    //     var json = JSON.decode(xhr.responseText);
+                        
+                    //     const node = new Element("div", {styles: {height: "100%"}});
+                    //     const iframe = new Element("iframe", {
+                    //         "src": '/x_desktop/index.html?redirect=/x_desktop/close.html&username='+layout.session.user.name,
+                    //         "width": "100%",
+                    //         "height": "100%",
+                    //         "frameborder": "0",
+                    //         "allowtransparency": "true",
+                    //         "scrolling": "no"
+                    //     }).inject(node);
+
+                    //     layout.loginDlg = $OOUI.dialog(json.message.trim()+o2.LP.desktop.login.loginAgain, node, null, {
+                    //         buttons: '', width: '80vw', height: '80vh', zIndex: 200000,
+                    //         'events': {
+                    //             'close': ()=>{
+                    //                 console.log("close iframe")
+                    //                 layout.loginDlg = null;
+                    //             }
+                    //         }
+                    //     });
+                    //     layout.loginDlg.dlg.closeDlg = ()=>{
+                    //         layout.loginDlg.dlg.close();
+                    //         layout.loginDlg = null;
+                    //     }
+                    // }
+
+                }else{
                     var json = JSON.decode(xhr.responseText);
                     if (json){
                         errorText = json.message.trim() || "request json error";
                     }else{
                         errorText = "request json error: "+xhr.responseText;
                     }
+
+                    errorText = errorText.replace(/\</g, "&lt;");
+                    errorText = errorText.replace(/\</g, "&gt;");
+                    if (layout.session && layout.session.user) MWF.xDesktop.notice("error", {x: "right", y:"top"}, errorText);
                 }
-                errorText = errorText.replace(/\</g, "&lt;");
-                errorText = errorText.replace(/\</g, "&gt;");
-                if (layout.session && layout.session.user) MWF.xDesktop.notice("error", {x: "right", y:"top"}, errorText);
             }
-            //	throw "request error: "+errorText;
         }
         return  {"xhr": xhr, "text": text, "error":error};
     }

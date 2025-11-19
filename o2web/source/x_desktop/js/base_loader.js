@@ -156,6 +156,18 @@ if (!layout.isReady) {
                 layout.session.user = data;
                 layout.session.token = data.token;
                 layout.desktop.session = layout.session;
+
+                return o2.Actions.load("x_organization_assemble_express").PersonAction.detail(layout.session.user.distinguishedName, null, function (json) {
+                    layout.session.userDetail = json.data;
+                    layout.session.userDetail.list = [].concat(
+                        layout.session.userDetail.groupList || [], 
+                        layout.session.userDetail.identityList || [],
+                        layout.session.userDetail.personAttributeList || [],
+                        layout.session.userDetail.roleList || [],
+                        layout.session.userDetail.unitDutyList || [],
+                        layout.session.userDetail.unitList || []
+                    )
+                });
                 //_loadApp();
             }, function () {
                 //允许匿名访问
@@ -302,7 +314,7 @@ if (!layout.isReady) {
             loadAllModules(loadO2Modules);
         };
 
-        o2.load('/o2_lib/ooui/ooui.iife.js', {}, ()=>{
+        o2.load('../o2_lib/ooui/ooui.iife.js', {}, ()=>{
             $OOUI.defineComponent();
         });
         o2.getJSON("../x_desktop/res/config/config.json", function (config) {
@@ -347,5 +359,18 @@ if (!layout.isReady) {
                 _load();
             });
         });
+
+        //每分钟检测token过期时间
+        window.setInterval(function () {
+            var tokenExpiresTime = localStorage.getItem("o2LayoutSessionTokenExpires");
+            if (tokenExpiresTime) {
+                var now = new Date().getTime();
+                var n = tokenExpiresTime - now;
+                if (n>0 && n <= 1000 * 60 * 3.2) {
+                    //过期时间小于1分钟，重新获取token
+                    MWF.xDesktop.notice("notice", {x: "right", y:"top"}, o2.LP.desktop.login.tokenWillExpire, null, null, {delayClose: 40000});
+                }
+            }
+        }, 1000 * 30);
     });
 }

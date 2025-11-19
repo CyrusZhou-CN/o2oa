@@ -31,10 +31,14 @@ MWF.xApplication.process.Xform.Address = MWF.APPAddress =  new Class(
         this.fieldModuleLoaded = false;
     },
     _loadNode: function(){
-        if (this.isReadonly()){
-            this._loadNodeRead();
+        if (!this.isReadable && !!this.isHideUnreadable){
+            this.node?.addClass('hide');
         }else{
-            this._loadNodeEdit();
+            if (this.isReadonly()){
+                this._loadNodeRead();
+            }else{
+                this._loadNodeEdit();
+            }
         }
     },
     _loadNodeRead: function(){

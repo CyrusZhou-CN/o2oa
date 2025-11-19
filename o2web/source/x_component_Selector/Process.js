@@ -20,8 +20,14 @@ MWF.xApplication.Selector.Process = new Class({
     },
     loadSelectItems: function(addToNext){
         this.processAction.listApplicationStartable(function(json){
-            if (json.data.length){
-                json.data.each(function(data){
+            var applications = json.data;
+            if (this.options.application){
+                applications = applications.filter(function(app){
+                    return app.name === this.options.application;
+                }.bind(this));
+            }
+            if (applications.length){
+                applications.each(function(data){
                     if (data.processList && data.processList.length){
                         var category = this._newItemCategory(data, this, this.itemAreaNode);
                         data.processList.each(function(d){
@@ -99,7 +105,6 @@ MWF.xApplication.Selector.Process.Item = new Class({
 
         var selectedItem = this.selector.selectedItems.filter(function(item, index){
             //return (item.data.id === this.data.id);
-            debugger;
             if( item.data.id && this.data.id){
                 return item.data.id === this.data.id;
             }else{
@@ -126,7 +131,6 @@ MWF.xApplication.Selector.Process.ItemSelected = new Class({
     check: function(){
         if (this.selector.items.length){
             var items = this.selector.items.filter(function(item, index){
-                debugger;
                 if( item.data.id && this.data.id){
                     return item.data.id === this.data.id;
                 }else{

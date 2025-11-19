@@ -30,6 +30,7 @@ MWF.xApplication.Selector.LP={
 	"empty": "Vaciar",
 	"remove": "Eliminar",
 	"selected2": "Seleccionado",
+	"searchResult": "Resultado de búsqueda",
 	"identity": "Identidad",
 	"person": "Persona",
 	"duty": "Trabajo",
@@ -42,13 +43,16 @@ MWF.xApplication.Selector.LP={
 	"role": "Rol",
 	"group": "Grupo",
 	"unit": "Organización",
+	"unitDuty": "Deberes de unidad",
 	"systemList": "Lista de sistemas",
 	"quantifier": {
 		"person": "persona",
 		"identity": "identidad",
 		"unit": "unidad",
 		"group": "grupo",
-		"role": "rol"
+		"role": "rol",
+		"processActivity": "Actividades del proceso",
+		"activity": "Actividades del proceso"
 	},
 	"appType": {
 		"process": "Proceso",
@@ -75,6 +79,12 @@ MWF.xApplication.Selector.LP={
 	"agent": "Agente",
 	"selectFieldProperty": "Seleccionar atributos de campo",
 	"searchDescriptionFieldProperty": "El formulario ampliado puede buscar componentes",
-	"currentForm": "Formulario actual"
+	"currentForm": "Formulario actual",
+	"selectPanFile": "Seleccionar archivo de disco de red",
+	"personFile": "Documentos personales",
+	"unitFile": "Documentos empresariales",
+	"selectWidget": "Seleccionar componentes",
+	"processActivity": "Actividades del proceso",
+	"activity": "Actividades del proceso"
 }
 MWF.xApplication.Selector["lp."+o2.language] = MWF.xApplication.Selector.LP

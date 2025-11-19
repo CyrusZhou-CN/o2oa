@@ -62,6 +62,7 @@ MWF.xApplication.cms.FormDesigner.Main = new Class({
         if (callback) callback();
     },
     addKeyboardEvents: function(){
+        if( !MWF.shortcut )MWF.require("MWF.xDesktop.shortcut");
         this.addEvent("copy", function(){
             this.copyModule();
         }.bind(this));
@@ -1160,6 +1161,10 @@ MWF.xApplication.cms.FormDesigner.Main = new Class({
             this.designNode.setStyle("height", ""+y+"px");
         }
 
+        if(this.designMobileNode){
+            this.designMobileNode.setStyle("height", ""+Math.min(y, 680)+"px");
+        }
+
 
         var titleSize = this.toolbarTitleNode.getSize();
         var titleMarginTop = this.toolbarTitleNode.getStyle("margin-top").toFloat();
@@ -1222,6 +1227,10 @@ MWF.xApplication.cms.FormDesigner.Main = new Class({
             //y = designerHeight - allFormToolberSize.totalHeight - formToolbarMarginTop - formToolbarMarginBottom - designMarginTop - designMarginBottom;
             y = y - designMarginTop - designMarginBottom;
             this.designNode.setStyle("height", ""+y+"px");
+        }
+
+        if(this.designMobileNode){
+            this.designMobileNode.setStyle("height", ""+Math.min(y, 680)+"px");
         }
 
         var titleSize = this.toolbarTitleNode.getSize();
@@ -1439,8 +1448,8 @@ MWF.xApplication.cms.FormDesigner.Main = new Class({
              "string": ["htmledit", "radio", "select", "textarea", "textfield","imageclipper","htmleditor","tinymceeditor","ooinput","ootextarea","ooselect","ooradioGroup"],
             "person": ["personfield","orgfield","org","ooorg"],
             "date": ["calender","oodatetime"],
-            "number": ["number","currency"],
-            "array": ["checkbox"]
+            "number": ["number","currency","oocurrency"],
+            "array": ["checkbox","ooaddress"]
         };
         fieldList = [];
         this.pcForm.moduleList.each(function(moudle){
@@ -1701,7 +1710,7 @@ MWF.xApplication.cms.FormDesigner.Main = new Class({
             "<input type=\"text\" style=\"width: 68%; height: 22px; border: 1px solid #cccccc\"/>"+"</td></tr>" +
 
             "<tr><td style=\"height: 40px;\">" +this.lp.templateDescription+"</td><td>"+
-            "<textarea type=\"text\" style=\"width: 98%; height: 44px; border: 1px solid #cccccc\">"+this.pcForm.json.description+"</textarea>"+"</td></tr>" +
+            "<textarea type=\"text\" style=\"width: 98%; height: 44px; border: 1px solid #cccccc\">"+o2.txt(this.pcForm.json.description)+"</textarea>"+"</td></tr>" +
 
             "<tr><td colSpan=\"2\" id=\"form_templatePreview\">" +
             "<div style=\"position: relative; width: 180px; height: 180px; margin: 20px auto 0px auto;  overflow: hidden\"></div>" +

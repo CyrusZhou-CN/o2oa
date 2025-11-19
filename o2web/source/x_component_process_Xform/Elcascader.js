@@ -104,6 +104,8 @@ MWF.xApplication.process.Xform.Elcascader = MWF.APPElcascader =  new Class(
         if (!this.json.props.disabled) this.json.props.disabled = "disabled";
         if (!this.json.props.leaf) this.json.props.leaf = "leaf";
 
+        this._setPopperClass();
+
         this._loadOptions();
 
         //if (this.json.props.multiple===true) if (!this.json[this.json.id] || !this.json[this.json.id].length) this.json[this.json.id] = [];
@@ -113,15 +115,22 @@ MWF.xApplication.process.Xform.Elcascader = MWF.APPElcascader =  new Class(
         if (this.json.filterMethod && this.json.filterMethod.code){
             var fn = this.form.Macro.exec(this.json.filterMethod.code, this);
             methods.$filterMethod = function(){
-                fn.apply(this, arguments);
+                return fn.apply(this, arguments);
             }.bind(this);
         }
+
+        this.loadedOptionsMap = {};
         if (this.json.lazyLoadScript && this.json.lazyLoadScript.code){
             var fn = this.form.Macro.exec(this.json.lazyLoadScript.code, this);
-            this.json.props.lazyLoad = function(){
-                fn.apply(this, arguments);
+            this.json.props.lazyLoad = function(node, resolve){
+                fn.apply(this, [node, function (json){
+                    var key = node.path.join(this.json.separator);
+                    this.loadedOptionsMap[key] = json;
+                    resolve(json);
+                }.bind(this)]);
             }.bind(this);
         }
+
         if (this.json.beforeFilter && this.json.beforeFilter.code){
             var fn = this.form.Macro.exec(this.json.beforeFilter.code, this);
             methods.$beforeFilter = function(){
@@ -259,8 +268,11 @@ MWF.xApplication.process.Xform.Elcascader = MWF.APPElcascader =  new Class(
             var opLabel = (prefixLabel) ? prefixLabel + separator + op[this.json.props.label] : op[this.json.props.label];
             if (opValue == v) {
                 text.push(opLabel);
-            }else if (v.startsWith(opValue) && op[this.json.props.children] && op[this.json.props.children].length){
-                text = text.concat(this.__getOptionsTextValue(op[this.json.props.children], values, opValue, opLabel));
+            }else if (v.startsWith(opValue)){
+                var children = op[this.json.props.children] || this.loadedOptionsMap[opValue];
+                if( children && children.length ){
+                    text = text.concat(this.__getOptionsTextValue(children, values, opValue, opLabel));
+                }
             }
         }.bind(this));
         if (!this.json.showAllLevels){
@@ -271,18 +283,20 @@ MWF.xApplication.process.Xform.Elcascader = MWF.APPElcascader =  new Class(
             return text;
         }
     },
-    __getLastOptionsTextValue: function (options, value) {
+    __getLastOptionsTextValue: function (options, value, key) {
         var text;
         for( var i=0; i<options.length; i++ ){
             var op = options[i];
-            if( op[this.json.props.children] && op[this.json.props.children].length ){
-                text = this.__getLastOptionsTextValue( op[this.json.props.children], value );
+            var k = (key ? key + '/' : '') + op[this.json.props.value];
+            var children = op[this.json.props.children] || this.loadedOptionsMap[k];
+            if( children && children.length ){
+                text = this.__getLastOptionsTextValue( children, value, k);
                 if( text )return text;
             }else{
                 var opValue = op[this.json.props.value];
                 var opLabel = op[this.json.props.label];
                 if( opValue === value ){
-                    text = opLabel;
+                   return opLabel;
                 }
             }
         }
@@ -391,7 +405,7 @@ MWF.xApplication.process.Xform.Elcascader = MWF.APPElcascader =  new Class(
         getExcelData: function( type ){
             var data = this.json[this.json.$id];
             if( !data )return "";
-		    if( type === "value" )return data;
+		    if( type === "value" )return typeOf(data) === "array" ? data.join(", ") : (data || "");
 
             var text = this._getText();
             return typeOf(text) === "array" ? text.join(", ") : (text || "");

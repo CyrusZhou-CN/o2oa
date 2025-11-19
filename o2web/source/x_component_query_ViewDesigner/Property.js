@@ -23,6 +23,7 @@ MWF.xApplication.query.ViewDesigner.Property = MWF.FVProperty = new Class({
         }
 
         this.maplists = {};
+        this.styleMaplists = {};
 
         this.designer = designer;
 
@@ -49,6 +50,12 @@ MWF.xApplication.query.ViewDesigner.Property = MWF.FVProperty = new Class({
         } else {
             if (callback) callback();
         }
+    },
+    reload: function (){
+        this.maplists = {};
+        this.styleMaplists = {};
+        this.propertyContent.empty();
+        this.load();
     },
     show: function () {
         if (!this.propertyContent) {
@@ -945,6 +952,7 @@ MWF.xApplication.query.ViewDesigner.Property = MWF.FVProperty = new Class({
                     });
                     maps.push({"key": k, "map": maplist});
                     maplist.load(v);
+                    this.styleMaplists[k] = maplist;
                 }.bind(this));
             }.bind(this));
 
@@ -953,7 +961,6 @@ MWF.xApplication.query.ViewDesigner.Property = MWF.FVProperty = new Class({
     },
     loadMaplist: function(){
         var maplists = this.propertyContent.getElements(".MWFMaplist");
-        debugger;
         maplists.each(function(node){
             var title = node.get("title");
             var name = node.get("name");
@@ -1080,11 +1087,14 @@ MWF.xApplication.query.ViewDesigner.Property = MWF.FVProperty = new Class({
             var name = node.get("name");
             var actionContent = this.data[name];
             MWF.xDesktop.requireApp("process.FormDesigner", "widget.ActionsEditor", function(){
+
                 var actionEditor = new MWF.xApplication.process.FormDesigner.widget.ActionsEditor(node, this.designer, this.data, {
+                    "iconType": this.data.iconType,
                     "maxObj": this.designer.editContentNode || this.propertyNode.parentElement.parentElement.parentElement,
                     "scriptMaxObj": this.designer.editContentNode,
                     "systemToolsAddress": "../x_component_query_ViewDesigner/$View/toolbars.json",
                     "isSystemTool" : true,
+                    "target" : node.get("data-target"),
                     "noEditShow": true,
                     "noReadShow": true,
                     "onChange": function(){
@@ -1144,6 +1154,7 @@ MWF.xApplication.query.ViewDesigner.Property = MWF.FVProperty = new Class({
                     "noDelete": false,
                     "noCode": true,
                     "noReadShow": true,
+                    "target" : node.get("data-target"),
                     "noEditShow": true,
                     "onChange": function () {
                         this.data[name] = actionEditor.data;
@@ -1433,7 +1444,7 @@ MWF.xApplication.query.ViewDesigner.Property.Filter = new Class({
             "<td style='padding:3px;border-right:1px solid #CCC;border-bottom:1px solid #999; width:60px'>" + this.data.logic + "</td>" +
             "<td style='padding:3px;border-right:1px solid #CCC;border-bottom:1px solid #999; width:30px'>"+lp.columnValue+"</td>" +
             "<td style='padding:3px;border-right:1px solid #CCC;border-bottom:1px solid #999;'>" + this.data.comparison + "</td>" +
-            "<td style='padding:3px;border-bottom:1px solid #999;'>" + this.data.value + "</td>";
+            "<td style='padding:3px;border-bottom:1px solid #999;'>" + o2.txt(this.data.value) + "</td>";
         this.node.set("html", html);
         var tds = this.node.getElements("td");
 

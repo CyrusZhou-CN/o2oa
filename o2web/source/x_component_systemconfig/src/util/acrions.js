@@ -55,6 +55,26 @@ async function saveConfig(name, path, value) {
         fileContent: JSON.stringify(config, null, "\t")
     });
 }
+
+async function saveConfigValues(name, pathList, valueList) {
+    const config = (configs[name]) ? configs[name] : (await loadConfig(name));
+    let configData = config;
+    pathList.forEach((path, i)=>{
+        const value = valueList[i];
+        const paths = path.split('.');
+        const key = paths.pop();
+        paths.forEach((p)=>{
+            // if (!config[p]) config[p] = {};
+            configData = configData[p] || (configData[p] = {});
+        });
+        configData[key] = value;
+    });
+    o2.Actions.load('x_program_center').ConfigAction.save({
+        fileName: `${name}.json`,
+        fileContent: JSON.stringify(config, null, "\t")
+    });
+}
+
 async function delConfig(name, path) {
     const config = (configs[name]) ? configs[name] : (await loadConfig(name));
     let configData = config;
@@ -123,25 +143,50 @@ async function dispatchComponentFile(file) {
     const result = await action.dispatchResource(false, formData, file);
     return result.data;
 }
-async function deployWebResource(data) {
-    var action = o2.Actions.load("x_program_center").ModuleAction;
+function deployWebResource(data, success, failure) {
+    var action = o2.Actions.load("x_program_center").DeployAction;
     const formData = new FormData();
     const file = data.file[0];
     formData.append('file', file);
     formData.append('fileName', file.name);
     formData.append('filePath', data.path);
-    const result = await action.dispatchResource(data.overwrite, formData, file);
-    return result.data;
+    formData.append('remark', data.remark);
+    formData.append('title', data.title);
+    formData.append('version', data.version);
+    return action.deployWebResource(data.overwrite, formData, file, success, failure);
 }
-async function deployWarResource(data) {
-    var action = o2.Actions.load("x_program_center").CommandAction;
+function deployWarResource(data, success, failure) {
+    var action = o2.Actions.load("x_program_center").DeployAction;
     const formData = new FormData();
     const file = data.file[0];
     formData.append('file', file);
     formData.append('fileName', file.name);
+    formData.append('remark', data.remark);
+    formData.append('title', data.title);
+    formData.append('version', data.version);
     //formData.append('filePath', data.path);
-    const result = await action.upload(formData, file);
-    return result.data;
+    return action.deployServerResource(formData, file, success, failure);
+}
+function deployO2Server(data, success, failure) {
+    var action = o2.Actions.load("x_program_center").DeployAction;
+    const formData = new FormData();
+    const file = data.file[0];
+    formData.append('file', file);
+    formData.append('fileName', file.name);
+    formData.append('remark', data.remark);
+    formData.append('title', data.title);
+    formData.append('version', data.version);
+    //formData.append('filePath', data.path);
+    return action.deployO2Server(formData, file, success, failure);
+}
+
+async function listDeployLog(page, size){
+    return await o2.Actions.load("x_program_center").DeployAction.listPaging(page, size);
+}
+
+async function getDeployLogData(id){
+    const json = await o2.Actions.load("x_program_center").DeployAction.get(id);
+    return json.data;
 }
 
 function getPublicData(name){
@@ -290,6 +335,7 @@ export {
     getConfig,
     getConfigData,
     saveConfig,
+    saveConfigValues,
     delConfig,
     saveConfigData,
     loadComponents,
@@ -299,6 +345,9 @@ export {
     dispatchComponentFile,
     deployWebResource,
     deployWarResource,
+    deployO2Server,
+    listDeployLog,
+    getDeployLogData,
     getPublicData,
     clearPublicData,
     loadProcessApplication,

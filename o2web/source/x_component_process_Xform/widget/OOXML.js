@@ -94,7 +94,6 @@ o2.xApplication.process.Xform.widget.OOXML.WordprocessingML = o2.OOXML.WML = new
             o2.load(["../o2_lib/jszip/jszip.min.js", "../o2_lib/jszip/FileSaver.js"], function(){
                 //this.getZipTemplate();
                 this.getZipTemplate().then(function(zip){
-                    //console.log(zip.files);
                     this.zip = zip;
                     return this.processDocument(data);
                 }.bind(this)).then(function(oo_content){
@@ -312,6 +311,9 @@ o2.xApplication.process.Xform.widget.OOXML.WordprocessingML = o2.OOXML.WML = new
 
 
         var oo_body = oo_doc.documentElement.querySelector("body");
+        var oo_p = oo_body.querySelector("p");
+        if (oo_p) oo_p.destroy();
+
         // var dom_div;
         // if (o2.typeOf(data) === "string"){
         var dom_div = new Element("div", {"styles": {
@@ -583,7 +585,10 @@ o2.xApplication.process.Xform.widget.OOXML.WordprocessingML = o2.OOXML.WML = new
     getPPrs: function(dom){
         var pPrs = {};
 
-        var align = dom.getStyle("text-align");
+        var styles = window.getComputedStyle(dom);
+
+        var align = styles.textAlign;
+        // var align = dom.getStyle("text-align");
         if (align){
             var jc = "start"
             switch (align){
@@ -594,7 +599,9 @@ o2.xApplication.process.Xform.widget.OOXML.WordprocessingML = o2.OOXML.WML = new
             }
             pPrs.jc = {"val": jc};
         }
-        var left = dom.getStyle("margin-left");
+
+        var left = styles.marginLeft;
+        // var left = dom.getStyle("margin-left");
         if (left && left.toFloat()){
             var left = this.pxToPt(left)*20;
             if (left) {
@@ -603,7 +610,8 @@ o2.xApplication.process.Xform.widget.OOXML.WordprocessingML = o2.OOXML.WML = new
             }
         }
 
-        var right = dom.getStyle("margin-left");
+        var right = styles.marginRight;
+        // var right = dom.getStyle("margin-left");
         if (right && right.toFloat()){
             var right = this.pxToPt(right)*20;
             if (right) {
@@ -612,7 +620,8 @@ o2.xApplication.process.Xform.widget.OOXML.WordprocessingML = o2.OOXML.WML = new
             }
         }
 
-        var indent = dom.getStyle("text-indent");
+        var indent = styles.textIndent;
+        // var indent = dom.getStyle("text-indent");
         if (indent && indent.toFloat()){
             var indent = this.pxToPt(indent)*20;
             if (indent) {
@@ -625,11 +634,10 @@ o2.xApplication.process.Xform.widget.OOXML.WordprocessingML = o2.OOXML.WML = new
             }
         }
 
-        var line = (dom.currentStyle) ? dom.currentStyle["line-height"] : dom.getStyle("line-height");
-        //var line = dom.getStyle("line-height");
-
         var msoStyle = this.getMsoStyle(dom);
         var lineRule = msoStyle["mso-line-rule"] || "exact";
+
+        var line = msoStyle["mso-line-height"]  ? msoStyle["mso-line-height"]  : ((dom.currentStyle) ? dom.currentStyle["line-height"] : dom.getStyle("line-height"));
 
         if (line && parseFloat(line)){
             var line = this.pxToPt(line)*20;
@@ -706,14 +714,17 @@ o2.xApplication.process.Xform.widget.OOXML.WordprocessingML = o2.OOXML.WML = new
         return oo_p;
     },
     getTableTblW: function(table){
+        debugger;
         var type = "dxa";
-        var w = table.style.width;
+        var w = this.getMsoStyle(table)["mso-width"];
+
+        if (!w) w = table.style.width;
         if (!w){
             w = table.get("width");
         }
-        if (!w){
-            w = this.getMsoStyle(table)["mso-width"];
-        }
+        // if (!w){
+        //     w = this.getMsoStyle(table)["mso-width"];
+        // }
 
         if (w && o2.typeOf(w)==="string"){
             var u = w.substring(w.length-1, w.length);
@@ -999,15 +1010,6 @@ o2.xApplication.process.Xform.widget.OOXML.WordprocessingML = o2.OOXML.WML = new
                     rowspanObj = rowspan[nextIdx];
                 }
 
-                // if (cspan && parseInt(cspan)>1){
-                //     if (rowspan[tdIdx]){
-                //         rowspan[tdIdx].count = (rowspan[tdIdx].count)*parseInt(cspan);
-                //         for (var n=1; n<parseInt(cspan); n++){
-                //             rowspan[tdIdx+n] = rowspan[tdIdx];
-                //         }
-                //     }
-                // }
-
                 tdIdx = nextIdx-1;
                 tdIdx++;
             }
@@ -1019,10 +1021,18 @@ o2.xApplication.process.Xform.widget.OOXML.WordprocessingML = o2.OOXML.WML = new
             for (var x1=0; x1<x; x1++){
                 var flag = 0;
                 for (var y1=0; y1<y; y1++){
-                    if (tableMatrix[y1][x1].type!==0){
-                        flag=1;
-                        break;
+                    if (!tableMatrix[y1][x1]){
+                        tableMatrix[y1].push({"td": tableMatrix[y1][x1-1].td, type: 0});
+                        var cspan = tableMatrix[y1][x1-1].td.get("colspan");
+                        var colspan = !!cspan ? 2 : parseInt(cspan)+1;
+                        tableMatrix[y1][x1-1].td.set("colspan", colspan);
+                    }else{
+                        if (tableMatrix[y1][x1].type!==0){
+                            flag=1;
+                            break;
+                        }
                     }
+                    
                 }
                 if (flag===0){
                     for (var y1=0; y1<y; y1++){

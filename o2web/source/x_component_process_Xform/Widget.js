@@ -51,30 +51,65 @@ MWF.xApplication.process.Xform.Widget = MWF.APPWidget =  new Class(
         this.modules = [];
         this.moduleList = {};
 
-        this.getWidget(function(){
-            this.loadWidget();
-        }.bind(this));
+        if (this.json.isDelay) {
+            if (this.form.widgetLoadedCount) {
+                this.form.widgetLoadedCount++;
+            } else {
+                this.form.widgetLoadedCount = 1
+            }
+            this.form.checkSubformLoaded();
+            this.checked = true;
+        } else {
+            this.getWidget(function(){
+                this.loadWidget();
+            }.bind(this));
+        }
+    },
+    /**
+     * @summary 当部件被设置为延迟加载，通过active方法激活
+     * @param {Function} callback 激活后的回调方法，另外已经激活过该方法还会被执行。
+     * @example
+     * var widget = this.form.get("fieldId");
+     * widget.active(function(){
+     *     //do someting
+     * })
+     */
+    active: function (callback) {
+        if (!this.loaded) {
+            this.reload(callback)
+        } else {
+            if (callback) callback();
+        }
     },
     /**
      * @summary 重新加载部件
+     * @param callback {Function} 刷新后的回调.
      * @example
      * this.form.get("fieldId").reload()
      */
-    reload: function(){
+    reload: function( callback ){
         this.clean();
 
         this.getWidget(function(){
-            this.loadWidget();
+            this.loadWidget( callback );
         }.bind(this));
     },
     clean: function(){
         (this.modules || []).each(function(module){
-            if (this.form.all[module.json.id]) delete this.form.all[module.json.id];
-            if (this.form.forms[module.json.id])delete this.form.forms[module.json.id];
-            this.form.modules.erase(module);
+            if( module.json && module.json.type === "Widget" ){
+                if(module.clean)module.clean();
+            }
         }.bind(this));
 
         Object.each(this.moduleList || {}, function (module, formKey) {
+            if (this.form.all[module.id]) delete this.form.all[module.id];
+            if (this.form.forms[module.id])delete this.form.forms[module.id];
+            this.form.modules.erase(module);
+
+            if( module.name ){
+                delete this.form.allForName[module.name];
+            }
+
             delete this.form.json.moduleList[formKey];
         }.bind(this));
 
@@ -177,7 +212,7 @@ MWF.xApplication.process.Xform.Widget = MWF.APPWidget =  new Class(
         }
         return parentpageIdList;
     },
-    loadWidget: function(){
+    loadWidget: function( callback ){
         if (this.widgetData ){
             if( this.checkWidgetNested( this.widgetData.json.id ) ){
                 //this.form.addEvent("postLoad", function(){
@@ -237,6 +272,8 @@ MWF.xApplication.process.Xform.Widget = MWF.APPWidget =  new Class(
 
                 this.fireEvent("afterModulesLoad");
 
+                if(callback)callback();
+
                 //}.bind(this));
             }else{
                 this.form.notice(MWF.xApplication.process.Xform.LP.widgetNestedError, "error");
@@ -269,9 +306,11 @@ MWF.xApplication.process.Xform.Widget = MWF.APPWidget =  new Class(
                             if (callback) callback();
                         }.bind(this));
                     }else{
+                        this.widgetData = null;
                         if (callback) callback();
                     }
                 }else{
+                    this.widgetData = null;
                     if (callback) callback();
                 }
             }
@@ -296,6 +335,7 @@ MWF.xApplication.process.Xform.Widget = MWF.APPWidget =  new Class(
                     }.bind(this));
                 }
             }else{
+                this.widgetData = null;
                 if (callback) callback();
             }
         }
@@ -335,6 +375,7 @@ MWF.xApplication.process.Xform.Widget = MWF.APPWidget =  new Class(
                 params = this.form.Macro.exec(code, this);
             }
         }
-        return params;
+        return (this.widgetData.json.defaultParameters) ? Object.assign({}, this.widgetData.json.defaultParameters, params) : params;
+        // return params;
     }
 });

@@ -26,6 +26,8 @@ MWF.xApplication.process.Xform.LP = {
 
     "browserNotActiveX": "您的浏览器不支持ActiveX控件，不能加载Office控件，请使用IE浏览器",
 
+    "associatedFailureMessage": "有{count}份文档关联失败。",
+
     "activity": "活动",
     "dataSaved": "数据保存成功",
     "taskProcessed": "文件已提交",
@@ -58,6 +60,7 @@ MWF.xApplication.process.Xform.LP = {
     "selectRollbackActivity" : "请选择文件要回溯到的位置：",
     "tryToProcess" : "并尝试继续流转",
     "in": "在",
+    "select": "选择",
 
     "andSoForth" : "等",
 
@@ -349,7 +352,7 @@ MWF.xApplication.process.Xform.LP = {
         "deleteTitle": "删除文件",
         "terminate": "终止文件",
         "terminateTitle": "结束文件流转",
-        "print": "打印",
+        "print": "打印预览",
         "printTitle": "打印文档",
         "press": "催促办理",
         "pressTitle": "催促办理",
@@ -359,6 +362,7 @@ MWF.xApplication.process.Xform.LP = {
         "resumeTitle": "从挂起状态恢复",
         "downloadAll": "一键下载",
         "downloadAllTitle": "一键下载",
+        "downloadAllText": "需要先保存表单，是否继续？",
         "monitor": "流程监控",
         "monitorTitle": "流程监控",
         "addTask": "加签",
@@ -389,6 +393,9 @@ MWF.xApplication.process.Xform.LP = {
         "excludeBranches": "排除已有分支",
         "yes": "是",
         "no": "否",
+
+        "printWork": "打印预览",
+        "printWorkInfo": "您好，该表单未设置打印表单，将使用原表单打开。",
 
         "readIdentity": "待阅人",
         "sendReadNotify": "发送待阅通知",
@@ -463,8 +470,8 @@ MWF.xApplication.process.Xform.LP = {
     "score": "关联度",
     "updateTime": "更新时间",
 
-    "documentType": "文档类型",
-    "processName": "流程名称",
+    "documentType": "类型",
+    "processName": "流程",
     "draftTime": "拟稿时间",
     "draftPerson": "拟稿人",
     "categoryName": "分类",
@@ -478,8 +485,15 @@ MWF.xApplication.process.Xform.LP = {
     "selectDocNote": "请先选择文档",
     "associatedDocument": "关联文档",
     "docDeleted": "文档已经被删除或您没有权限打开此文档。",
+    "empty": "清空",
+    "associatedCount": "已关联{count}条",
+    "associatedDocumentCompleted": "关联完成",
 
-    "uploading": "正在上传附件，请等待附件上传完成后再执行此操作。"
+    "uploading": "正在上传附件，请等待附件上传完成后再执行此操作。",
+
+    "editDatatable": "编辑数据表格",
+    "addLine": "添加",
+    "editOk": "编辑完成"
 
 };
 MWF.xApplication.process.Xform["lp."+o2.language] = MWF.xApplication.process.Xform.LP;

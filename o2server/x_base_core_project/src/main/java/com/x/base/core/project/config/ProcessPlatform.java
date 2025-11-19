@@ -58,6 +58,8 @@ public class ProcessPlatform extends ConfigObject {
 
 	public static final Integer DEFAULT_ASYNCHRONOUSTIMEOUT = 60;
 
+	public static final Integer DEFAULT_PROCESSINGTIMEOUT = 15 * 60;
+
 	public static ProcessPlatform defaultInstance() {
 		return new ProcessPlatform();
 	}
@@ -76,6 +78,7 @@ public class ProcessPlatform extends ConfigObject {
 		this.expire = new Expire();
 		this.touchDelay = new TouchDelay();
 		this.merge = new Merge();
+		this.mergeItem = new MergeItem();
 		this.touchDetained = new TouchDetained();
 		this.deleteDraft = new DeleteDraft();
 		this.passExpired = new PassExpired();
@@ -83,6 +86,7 @@ public class ProcessPlatform extends ConfigObject {
 		this.handoverConfig = new HandoverConfig();
 		this.processingSignalPersistEnable = DEFAULT_PROCESSINGSIGNALPERSISTENABLE;
 		this.asynchronousTimeout = DEFAULT_ASYNCHRONOUSTIMEOUT;
+		this.processingTimeout = DEFAULT_PROCESSINGTIMEOUT;
 	}
 
 	public Integer getExecutorCount() {
@@ -159,6 +163,9 @@ public class ProcessPlatform extends ConfigObject {
 	@FieldDescribe("合并任务设置,定时触发合并任务,将已完成工作的Data从Item表中提取合并到WorkCompleted的Data字段中,默认工作完成后2年开始进行合并.")
 	private Merge merge;
 
+	@FieldDescribe("将已完成工作的Data从Item表中提取合并到WorkCompleted的Data字段中.")
+	private MergeItem mergeItem;
+
 	@FieldDescribe("清除草稿状态的工作.")
 	private DeleteDraft deleteDraft;
 
@@ -194,6 +201,16 @@ public class ProcessPlatform extends ConfigObject {
 			this.asynchronousTimeout = DEFAULT_ASYNCHRONOUSTIMEOUT;
 		}
 		return asynchronousTimeout;
+	}
+
+	@FieldDescribe("流转超时")
+	private Integer processingTimeout;
+
+	public Integer getProcessingTimeout() {
+		if ((processingTimeout == null) || (processingTimeout < 1)) {
+			this.processingTimeout = DEFAULT_PROCESSINGTIMEOUT;
+		}
+		return processingTimeout;
 	}
 
 	public Boolean getProcessingSignalPersistEnable() {
@@ -246,8 +263,13 @@ public class ProcessPlatform extends ConfigObject {
 		return this.logLongDetained == null ? new LogLongDetained() : this.logLongDetained;
 	}
 
+	@Deprecated
 	public Merge getMerge() {
 		return this.merge == null ? new Merge() : this.merge;
+	}
+
+	public MergeItem getMergeItem() {
+		return this.mergeItem == null ? new MergeItem() : this.mergeItem;
 	}
 
 	public Press getPress() {
@@ -359,6 +381,7 @@ public class ProcessPlatform extends ConfigObject {
 
 	}
 
+	@Deprecated
 	public static class Merge extends ConfigObject {
 
 		private static final long serialVersionUID = -5858277850858377338L;
@@ -412,6 +435,43 @@ public class ProcessPlatform extends ConfigObject {
 
 		public Integer getThresholdDays() {
 			return (null == thresholdDays || thresholdDays < 0) ? DEFAULT_THRESHOLDDAYS : thresholdDays;
+		}
+
+	}
+
+	public static class MergeItem extends ConfigObject {
+
+		private static final long serialVersionUID = -961812513267653913L;
+
+		public static MergeItem defaultInstance() {
+			return new MergeItem();
+		}
+
+		public MergeItem() {
+			this.enable = DEFAULT_ENABLE;
+			this.cron = DEFAULT_CRON;
+		}
+
+		public static final Boolean DEFAULT_ENABLE = false;
+
+		public static final String DEFAULT_CRON = "30 */10 * * * ?";
+
+		@FieldDescribe("是否启用")
+		private Boolean enable = DEFAULT_ENABLE;
+
+		@FieldDescribe("定时cron表达式")
+		private String cron = DEFAULT_CRON;
+
+		public String getCron() {
+			if (StringUtils.isNotEmpty(this.cron) && CronExpression.isValidExpression(this.cron)) {
+				return this.cron;
+			} else {
+				return DEFAULT_CRON;
+			}
+		}
+
+		public Boolean getEnable() {
+			return BooleanUtils.isTrue(this.enable);
 		}
 
 	}

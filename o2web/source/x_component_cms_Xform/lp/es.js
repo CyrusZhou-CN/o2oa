@@ -273,6 +273,7 @@ MWF.xApplication.cms.Xform.LP={
 	"importTooManyNotice": "En esta ocasión ha importado {n1} datos, se permiten importar como máximo {n2} datos",
 	"importTooFewNotice": "En esta ocasión ha importado {n1} datos, es necesario conservar al menos {n2} datos",
 	"pleaseSelect": "Seleccione por favor",
+	"noPermissionOrDocumentNotExisted": "No tienes permiso o el documento no existe.",
 	"form": {
 		"close": "Cerrar",
 		"closeTitle": "Cerrar el documento",
@@ -461,6 +462,10 @@ MWF.xApplication.cms.Xform.LP={
 		"undo": "Cancelar 'Me gusta'"
 	},
 	"requiredHint": "Rellene el campo (...) de la etiqueta",
-	"requiredHintField": "Esto"
+	"requiredHintField": "Esto",
+	"editDatatable": "Editar tabla de datos",
+	"select": "Selección",
+	"editOk": "Edición completada",
+	"associatedFailureMessage": "Hubo una asociación de documentos fallida."
 }
 MWF.xApplication.cms.Xform["lp."+o2.language] = MWF.xApplication.cms.Xform.LP

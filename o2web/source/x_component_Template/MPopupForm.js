@@ -155,6 +155,8 @@ MWF.xApplication.Template.MPopupForm = MPopupForm = new Class({
         this.fireEvent("postEdit");
     },
     _open: function () {
+        debugger;
+
         this.fireEvent("queryLoad");
         if(this._queryLoad)this._queryLoad();
 
@@ -192,6 +194,9 @@ MWF.xApplication.Template.MPopupForm = MPopupForm = new Class({
         this.formAreaNode = new Element("div.formAreaNode", {
             "styles": this.css.formAreaNode
         });
+        if(layout.mobile && this.css.invisible){
+            this.formAreaNode.setStyles(this.css.invisible);
+        }
 
         this.createFormNode();
 
@@ -200,16 +205,18 @@ MWF.xApplication.Template.MPopupForm = MPopupForm = new Class({
         }else{
             this.formAreaNode.inject( this.container || this.app.content );
         }
-        if (this.options.ifFade){
-            this.formAreaNode.fade("in");
-        }else{
-            this.formAreaNode.setStyle("opacity", 1);
-        }
-
 
         this.setFormNodeSize();
         this.setFormNodeSizeFun = this.setFormNodeSize.bind(this);
         if( this.app && this.app.addEvent )this.app.addEvent("resize", this.setFormNodeSizeFun);
+
+        if(layout.mobile && this.css.visible){
+            this.formAreaNode.setStyles(this.css.visible);
+        }else if (this.options.ifFade){
+            this.formAreaNode.fade("in");
+        }else{
+            this.formAreaNode.setStyle("opacity", 1);
+        }
 
         if (this.options.draggable && this.formTopNode) {
             var size = (this.container || this.app.content).getSize();
@@ -516,6 +523,57 @@ MWF.xApplication.Template.MPopupForm = MPopupForm = new Class({
             }.bind(this));
         }
     },
+    formatMobileButton: function (node, container) {
+        const setButtonStyle = (button)=>{
+            if( button.tagName === 'button' || button.tagName === 'oo-button' ){
+                button.setStyles(this.css.popupAction);
+            }else{
+                const bs = button.querySelectorAll("button, oo-button");
+                bs.forEach(b=>b.setStyles(this.css.popupAction));
+            }
+        }
+        const visibleButtons = node.getChildren().filter(function (button) {
+            return button.getStyle("display") !== "none";
+        });
+        if( visibleButtons.length === 1 ){
+            setButtonStyle(visibleButtons[0]);
+        }else if( visibleButtons.length > 2 ){
+
+            var maskNode;
+            new Element("div.moreActionNode", {
+                text: '…',
+                styles: this.css.moreActionNode,
+                events: {
+                    click: function (e) {
+                        if( !moreArea.offsetParent ){
+                            maskNode = new Element("div.moreMaskNode", {
+                                styles: this.css.moreActionMask,
+                                events: {
+                                    click: function (e) {
+                                        moreArea.setStyle('display', 'none');
+                                        maskNode?.destroy();
+                                    }
+                                }
+                            }).inject(moreArea, 'before');
+                        }else if(!!maskNode){
+                            maskNode.destroy();
+                        }
+                        moreArea.setStyle('display', moreArea.offsetParent ? 'none' : 'flex');
+                    }.bind(this)
+                }
+            }).inject(node);
+            const moreArea = new Element("div.moreActionArea", {
+                styles: this.css.moreActionArea
+            }).inject(container || document.body);
+            visibleButtons.forEach(function (button, i) {
+                if( i > 1 ){
+                    button.inject(moreArea);
+                    setButtonStyle(button);
+                }
+            }.bind(this));
+
+        }
+    },
     cancel: function (e) {
         this.fireEvent("queryCancel");
         this.close();
@@ -627,6 +685,7 @@ MWF.xApplication.Template.MPopupForm = MPopupForm = new Class({
         this.fireEvent("afterResize");
     },
     setSize: function(width, height){
+        debugger;
         if( width )this.options.width = width;
         if( height )this.options.height = height;
         this.setFormNodeSize(width, height);

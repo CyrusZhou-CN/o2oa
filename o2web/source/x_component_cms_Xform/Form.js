@@ -243,6 +243,21 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                 var cssClass = "";
                 if (this.json.css && this.json.css.code) cssClass = this.loadCss();
                 if (this.json.cssUrl) this.container.loadCss(this.json.cssUrl);
+                if (this.json.cssScript){
+                    const actions = {
+                        'portal': o2.Actions.load("x_portal_assemble_designer").ScriptAction,
+                        'process': o2.Actions.load("x_processplatform_assemble_designer").ScriptAction,
+                        'cms': o2.Actions.load("x_cms_assemble_control").ScriptAction,
+                        'service': o2.Actions.load("x_program_center").ScriptAction
+                    }
+
+                    this.json.cssScript.forEach((s)=>{
+                        var action = actions[s.appType];
+                        action.get(s.id).then((json)=>{
+                            this.container.loadCssText(json.data.text);
+                        });
+                    });
+                } 
                 if (this.json.cssLink) this.container.loadCss(this.json.cssLink);
 
                 this.container.set("html", this.html);
@@ -262,7 +277,7 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
 
                     this.loadContent(callback);
                 }
-        
+
             }.bind(this));
         },
         loadLanguage: function(callback){
@@ -446,8 +461,10 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
 
                 var moduleAgList = [];
                 this.modules.each( function(module){
-                    if( module.moduleValueAG )moduleAgList.push( module.moduleValueAG );
-                    if( module.moduleSelectAG && module.moduleValueAG !== module.moduleSelectAG )moduleAgList.push(module.moduleSelectAG);
+                    if (module){
+                        if( module.moduleValueAG )moduleAgList.push( module.moduleValueAG );
+                        if( module.moduleSelectAG && module.moduleValueAG !== module.moduleSelectAG )moduleAgList.push(module.moduleSelectAG);
+                    }
                 });
 
 
@@ -1026,6 +1043,7 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
             return data;
         },
         saveFormData: function (callback, sync) {
+            this.saving = true;
             var data = this.getData();
             var specialData = this.getSpecialData();
             var documentData = this.getDocumentData(data);
@@ -1046,9 +1064,12 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                     module.save();
                 });
             }
+            var copyData = Object.clone(data);
             this.documentAction.saveDocument(documentData, function () {
                 this.businessData.data.isNew = false;
-
+                this.businessData.originalData = null;
+                this.businessData.originalData = copyData;
+                this.saving = false;
                 if (callback && typeof callback === "function") callback();
             }.bind(this), null, !sync);
         },
@@ -1066,6 +1087,8 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                 if (callback  && typeof callback === "function") callback();
                 return false;
             }
+
+            this.saving = true;
             var data = this.getData();
             var specialData = this.getSpecialData();
             var documentData = this.getDocumentData(data);
@@ -1088,13 +1111,17 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                     module.save();
                 });
             }
+            var copyData = Object.clone(data);
             this.documentAction.saveDocument(documentData, function () {
                 //this.documentAction.saveData(function(json){
                 if(!silent)this.app.notice(MWF.xApplication.cms.Xform.LP.dataSaved, "success");
                 this.businessData.data.isNew = false;
+                this.businessData.originalData = null;
+                this.businessData.originalData = copyData;
                 this.fireEvent("afterSave", [this, documentData]);
                 if (this.app) if (this.app.fireEvent) this.app.fireEvent("afterSave",[this, documentData]);
                 if (callback && typeof callback === "function") callback();
+                this.saving = false;
                 if( !this.json.notReloadWhenSave ){
                     this._reloadReadForm();
                 }
@@ -1193,7 +1220,6 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
 
             MWF.xDesktop.requireApp("cms.Document", "DelayPublishForm", null, false);
 
-            debugger;
             var form = new MWF.xApplication.cms.Document.DelayPublishForm(this, {}, {
                 publishTime :  this.businessData.document.publishTime || "",
                 onPostOk : function( publishTime ){
@@ -1208,6 +1234,7 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
 
         },
         _publishDocumentDelayed: function( publishTime ){
+            this.saving = true;
             var data = this.getData();
             var specialData = this.getSpecialData();
             //this.documentAction.saveData(function(json){
@@ -1232,12 +1259,15 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                     module.save();
                 });
             }
-
+            var copyData = Object.clone(data);
             this.documentAction.publishDocumentComplex(documentData, function (json) {
 
                 this.businessData.data.isNew = false;
+                this.businessData.originalData = null;
+                this.businessData.originalData = copyData;
                 this.fireEvent("afterWaitPublish", [this, json.data]);
                 if (this.app) if (this.app.fireEvent) this.app.fireEvent("afterWaitPublish",[this, json.data]);
+                this.saving = false;
                 // if (callback) callback(); // 传进来不是function
                 if (layout.mobile) {
                     // this.app.content.unmask();
@@ -1250,8 +1280,9 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                     }
                     this.options.saveOnClose = false;
 
-                    debugger;
-                    if( layout.inBrowser ){
+                    if( this.app.embeded ){
+
+                    }else if( layout.inBrowser ){
                         try{
                             if( window.opener && window.opener.o2RefreshCMSView ){
                                 window.opener.o2RefreshCMSView();
@@ -1269,7 +1300,6 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
         },
         publishDocument: function (callback, slience) {
             this.fireEvent("beforePublish");
-            debugger;
             if (layout.mobile) {
                 document.body.mask({
                     "inject": {"where": "bottom", "target": document.body},
@@ -1306,6 +1336,8 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                 return false;
             }
 
+            this.saving = true;
+
             var data = this.getData();
             var specialData = this.getSpecialData();
             //this.documentAction.saveData(function(json){
@@ -1315,6 +1347,7 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
             documentData.pictureList = specialData.pictures;
             documentData.summary = specialData.summary;
             documentData.cloudPictures = specialData.cloudPictures;
+            documentData.publishTime = new Date().format('db');
             documentData.docData = data;
             delete documentData.attachmentList;
             //this.documentAction.saveDocument(documentData, function(){
@@ -1326,14 +1359,18 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                 });
             }
 
+            var copyData = Object.clone(data);
             this.documentAction.publishDocumentComplex(documentData, function (json) {
 
                 this.sendNotice(function () {
 
                     this.businessData.data.isNew = false;
+                    this.businessData.originalData = null;
+                    this.businessData.originalData = copyData;
                     this.fireEvent("afterPublish", [this, json.data]);
                     if (this.app) if (this.app.fireEvent) this.app.fireEvent("afterPublish",[this, json.data]);
                     if (o2.typeOf(callback) === "function") callback(json); // 传进来不是function
+                    this.saving = false;
                     if (layout.mobile) {
                         document.body.unmask();
                         this.closeWindowOnMobile();
@@ -1347,8 +1384,10 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                         }
                         this.options.saveOnClose = false;
 
-                        debugger;
-                        if( layout.inBrowser ){
+                        //如果是嵌入，不关闭
+                        if( this.app.embeded ){
+
+                        }else if( layout.inBrowser ){
                             try{
                                 if( window.opener && window.opener.o2RefreshCMSView ){
                                     window.opener.o2RefreshCMSView();
@@ -1501,7 +1540,6 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                     "clientY": p.y - 200
                 }
             };
-            debugger;
             this.app.confirm("infor", event, MWF.xApplication.cms.Xform.LP.deleteDocumentTitle, MWF.xApplication.cms.Xform.LP.deleteDocumentText, 380, 120, function () {
                 if (layout.mobile) {
                     _self.deleteDocumentForMobile();
@@ -1517,14 +1555,17 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                     if (_self.app && _self.app.fireEvent) _self.app.fireEvent("beforeDelete");
 
                     _self.documentAction.removeDocument(_self.businessData.document.id, function (json) {
-                        debugger;
                         _self.fireEvent("afterDelete");
                         if (_self.app && _self.app.fireEvent) _self.app.fireEvent("afterDelete");
                         _self.app.notice(MWF.xApplication.cms.Xform.LP.documentDelete + ": “" + o2.txt(_self.businessData.document.title) + "”", "success");
                         _self.options.autoSave = false;
                         _self.options.saveOnClose = false;
                         _self.fireEvent("postDelete");
-                        _self.app.close();
+                        if( _self.app.embeded && typeOf(_self.app.refresh) === 'function' ){
+                            _self.app.refresh();
+                        }else{
+                            _self.app.close();
+                        }
                         this.close();
                     }.bind(this));
                 }
@@ -1543,7 +1584,7 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
          */
         editDocument: function () {
             this.fireEvent("editDocument");
-            if (this.app.inBrowser) {
+            if (this.app.inBrowser || this.app.embeded) {
                 this.modules.each(function (module) {
                     MWF.release(module);
                 });
@@ -1793,7 +1834,42 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                 window.open(downloadUrl);
             }.bind(this));
         },
-
+        // 分享到IM聊天
+        shareToIMChat: function() {
+            // app端 分享到聊天
+            if (window.o2android && window.o2android.postMessage) {
+                var body = {
+                    type: "shareToIM",
+                }
+                window.o2android.postMessage(JSON.stringify(body));
+            } else {
+                this._shareToIMOnPc()
+            }
+        },
+        // override _shareToIM 给shareToIMChat函数使用
+        // 把当前文档分享到聊天会话中
+        _shareToIMOnPc: async function () {
+            const document = this.businessData.document
+            if (!document) {
+                console.error('文档对象不存在！！！！！！')
+                this.app.notice(MWF.xApplication.process.Xform.LP.noPermissionOrDocumentNotExisted, "warn");
+                return
+            }
+            const jsonBody = {
+                type: 'cms',
+                title: document.title,
+                docId: document.id, // cms 文档id
+                appId: document.appId, // cms 应用id
+                appName: document.appName, // cms 应用名称
+                appAlias: document.appAlias, // cms 应用别名
+                categoryId: document.categoryId, // cms 分类id
+                categoryName: document.categoryName, // cms 分类名称
+                categoryAlias: document.categoryAlias, // cms 分类别名
+                body: JSON.stringify(document)
+            };
+            console.log('发送的消息体', jsonBody)
+            this._imSendMessage(jsonBody);
+        },
         /**
          * 移动端处理关闭
          */

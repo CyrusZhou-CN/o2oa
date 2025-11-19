@@ -19,6 +19,15 @@ if (!window.layout || !layout.desktop || !layout.addReady) {
 
     (function (layout) {
         layout.readys = [];
+            layout.postMessage = function(message, origin){
+            var msgEvent = new MessageEvent("message", {
+                data: message,
+                origin: origin ?? window.location.origin,
+                source: window
+            });
+            window.dispatchEvent(msgEvent);
+        }
+        
         layout.addReady = function () {
             for (var i = 0; i < arguments.length; i++) {
                 if (o2.typeOf(arguments[i]) === "function") {
@@ -105,7 +114,8 @@ if (!window.layout || !layout.desktop || !layout.addReady) {
                 var body = {
                     type: "openO2Work",
                     data: {
-                        title : options.title || ""
+                        title : options.title || "",
+                        formid: options.formid || ""
                     }
                 };
                 if (options.workId) {
@@ -135,6 +145,7 @@ if (!window.layout || !layout.desktop || !layout.addReady) {
                         "work": options.workId,
                         "workCompleted": "",
                         "draftId": options.draftId,
+                        "formid": options.formid || "",
                         "title": options.title || options.docTitle || ""
                     });
                 } else if (options.workCompletedId) {
@@ -142,6 +153,7 @@ if (!window.layout || !layout.desktop || !layout.addReady) {
                         "work": "",
                         "workCompleted": options.workCompletedId,
                         "draftId": options.draftId,
+                        "formid": options.formid || "",
                         "title": options.title || options.docTitle || ""
                     });
                 }
@@ -276,6 +288,33 @@ if (!window.layout || !layout.desktop || !layout.addReady) {
             }
         };
 
+        var _openPortal = function (appNames, options, statusObj) {
+            if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
+                const body = {
+                    type: "navigation.openInnerApp",
+                    data: {
+                        appKey: 'portal',
+                        portalFlag: options.portalId,
+                        portalPage: options.pageId,
+                    }
+                }
+                window.flutter_inappwebview.callHandler('o2mUtil', JSON.stringify(body));
+            } else if (window.o2mUtil && window.o2mUtil.postMessage) {
+                const body = {
+                    type: "navigation.openInnerApp",
+                    data: {
+                        appKey: 'portal',
+                        portalFlag: options.portalId,
+                        portalPage: options.pageId,
+                    }
+                }
+                window.o2mUtil.postMessage(JSON.stringify(body));
+            } else {
+                var par = "app=" + encodeURIComponent(appNames) + "&status=" + encodeURIComponent((statusObj) ? JSON.encode(statusObj) : "") + "&option=" + encodeURIComponent((options) ? JSON.encode(options) : "");
+                window.location = o2.filterUrl("../x_desktop/appMobile.html?" + par + ((layout.debugger) ? "&debugger" : ""));
+            }
+        }
+
         var _openApplicationMobile = function (appNames, options, statusObj) {
             switch (appNames) {
                 case "process.Work":
@@ -295,6 +334,9 @@ if (!window.layout || !layout.desktop || !layout.addReady) {
                     break;
                 case "process.TaskCenter":
                     _openTaskCenter(appNames, options, statusObj);
+                    break;
+                case "portal.Portal":
+                    _openPortal(appNames, options, statusObj);
                     break;
                 default:
                     var optionsStr, statusStr;
@@ -321,6 +363,19 @@ if (!window.layout || !layout.desktop || !layout.addReady) {
         var _openApplicationPC = function (appNames, options, statusObj) {
             if (options) delete options.docTitle;
             var par = "app=" + encodeURIComponent(appNames) + "&status=" + encodeURIComponent((statusObj) ? JSON.encode(statusObj) : "") + "&option=" + encodeURIComponent((options) ? JSON.encode(options) : "");
+            
+            // if (appNames==='process.Work' && options.onAfterProcess){
+            //     //处理浏览器打开工作时，可能需要的回调操作
+            //     const afterProcess = (e)=>{
+            //         if (e.origin !== window.location.origin) return;
+            //         if (e.data.type==='onAfterProcess' && e.data.id===options.workId){
+            //             options.onAfterProcess();
+            //             window.removeEventListener('message', afterProcess);
+            //         }
+            //     }
+            //     window.addEventListener('message', afterProcess);
+            // }
+            
             switch (appNames) {
                 case "process.Work":
                     var url = "../x_desktop/work.html";

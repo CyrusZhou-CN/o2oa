@@ -104,6 +104,7 @@ MWF.xApplication.portal.PageDesigner.Module.Page = MWF.PCPage = new Class({
 		this.json = data.json;
 		this.html = data.html;
 		this.json.mode = this.options.mode;
+		this.json.appType = this.designer.options.name;
 		if (!this.json.css) this.json.css = {"code":""};
 
 		this.isNewPage = (this.json.id) ? false : true;
@@ -454,7 +455,7 @@ MWF.xApplication.portal.PageDesigner.Module.Page = MWF.PCPage = new Class({
 		var o = {
 			"expand": true,
 			"title": this.json.id,
-			"text": "<"+this.json.type+"> "+this.json.name+" ["+this.options.mode+"] ",
+			"text": "<"+this.json.type+"> "+o2.txt(this.json.name)+" ["+this.options.mode+"] ",
 			"icon": (this.options.mode=="Mobile") ? "mobile.png": "pc.png"
 		};
 		o.action = function(){
@@ -1170,7 +1171,7 @@ MWF.xApplication.portal.PageDesigner.Module.Page = MWF.PCPage = new Class({
 				}.bind(this))
 			}
 		}
-		if (name==="css"){
+		if (name==="css" || name==="cssUrl" || name==="cssScript"){
 			this.reloadCss();
 		}
 		this._setEditStyle_custom(name, obj, oldValue);
@@ -1239,6 +1240,7 @@ MWF.xApplication.portal.PageDesigner.Module.Page = MWF.PCPage = new Class({
 			var match;
 			var id = this.json.id.replace(/\-/g, "");
 			var prefix = ".css" + id + " ";
+			var className = "css" + id;
 
 			while ((match = rex.exec(cssText)) !== null) {
 				var rulesStr = match[0];
@@ -1284,8 +1286,39 @@ MWF.xApplication.portal.PageDesigner.Module.Page = MWF.PCPage = new Class({
 				var cssTextNode = document.createTextNode(cssText);
 				styleNode.appendChild(cssTextNode);
 			}
+
+			this.container.addClass(className);
 		}
-		if (this.json.cssUrl) this.container.loadCss(this.json.cssUrl);
+		if (this.json.cssUrl){
+			if (this.cssUrlStyleNode) this.cssUrlStyleNode.remove();
+			this.container.loadCss(this.json.cssUrl, {reload: true}, function(o){
+				this.cssUrlStyleNode = o.style;
+			});
+		} 
+		if (this.json.cssScript){
+			if (this.cssScriptStyleNodes){
+				this.cssScriptStyleNodes.forEach(function(n){ n.remove(); });
+				this.cssScriptStyleNodes = [];
+			}
+
+			const actions = {
+				'portal': o2.Actions.load("x_portal_assemble_designer").ScriptAction,
+				'process': o2.Actions.load("x_processplatform_assemble_designer").ScriptAction,
+				'cms': o2.Actions.load("x_cms_assemble_control").ScriptAction,
+				'service': o2.Actions.load("x_program_center").ScriptAction
+			}
+
+			this.json.cssScript.forEach((s)=>{
+				var action = actions[s.appType];
+				action.get(s.id).then((json)=>{
+					this.container.loadCssText(json.data.text, null, (style)=>{
+						if (!this.cssScriptStyleNodes) this.cssScriptStyleNodes = [];
+						this.cssScriptStyleNodes.push(style);
+					});
+				});
+			});
+		} 
+		
 	},
 
 	setAllStyles: function(){
@@ -1412,9 +1445,16 @@ MWF.xApplication.portal.PageDesigner.Module.Page = MWF.PCPage = new Class({
 			var formData = JSON.parse(json.data.data);
 			//this.action.FormAction.update(version.form, formData,function( json ){
 			this.designer.notice(MWF.APPPOD.LP.version["resumeSuccess"]);
-			var data = JSON.decode(MWF.decodeJsonString(formData.data));
-			data.isNewForm = false;
-			this.reload(data);
+			this.designer.pageData = JSON.decode(MWF.decodeJsonString(formData.data));
+			this.designer.pageData.isNewForm = false;
+			if(this.designer.pcPage)this.designer.pcPage.reload(this.designer.pageData);
+
+			if (formData.mobileData){
+				this.designer.pageMobileData = JSON.decode(MWF.decodeJsonString(formData.mobileData));
+				this.designer.pageMobileData.isNewForm = false;
+				if(this.designer.mobilePage)this.designer.mobilePage.reload(this.designer.pageMobileData);
+			}
+
 			this.dlg.close();
 			//}.bind(this), null, false);
 		}.bind(this), null, false);

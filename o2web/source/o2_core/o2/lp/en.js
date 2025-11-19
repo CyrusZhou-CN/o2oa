@@ -251,7 +251,9 @@ o2.LP={
 			"camera_loginSuccess": "{name} Hello, is to sign you in ...",
 			"camera_loginError": "Unable to verify your identity, please log in through other means ...",
 			"camera_loginError2": "Login failed, please log in through other means ...",
-			"camera_loginError_camera": "Unable to open the camera, probably already in use ..."
+			"camera_loginError_camera": "Unable to open the camera, probably already in use ...",
+			"loginAgain": "Please log in again",
+			"tokenWillExpire": "Your login status is about to expire, please save your information as soon as possible"
 		},
 		"action": {
 			"uploadTitle": "Uploading",
@@ -374,6 +376,7 @@ o2.LP={
 		"open": "open",
 		"choiceWork": "choice document open",
 		"workcompleted": "Process completed",
+		"noWork": "Document not found or you do not have permission to view it",
 		"months": [
 			"Jan",
 			"Feb",
@@ -462,7 +465,10 @@ o2.LP={
 		"notUploadNotice": "The current status does not allow uploading attachments",
 		"unit": "organization",
 		"duty": "post",
-		"selectIdentity": "Choose Identity"
+		"selectIdentity": "Choose Identity",
+		"selectFromDriver": "Choose from enterprise cloud storage",
+		"collect": "Collect",
+		"noCollect": "No files are currently in the Favorites folder"
 	},
 	"authentication": {
 		"LoginFormTitle": "Welcome",

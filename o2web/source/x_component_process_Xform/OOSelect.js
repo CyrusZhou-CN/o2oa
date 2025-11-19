@@ -23,7 +23,9 @@ MWF.xApplication.process.Xform.OOSelect = MWF.APPOOSelect =  new Class({
 			this.areaNode.empty();
 			this.areaNode = null;
 		}
+		this.node.empty();
 		this._beforeReloaded();
+		this._loadReadEditAbeld();
 		this._loadUserInterface();
 		this._loadStyles();
 		this._afterLoaded();
@@ -36,7 +38,13 @@ MWF.xApplication.process.Xform.OOSelect = MWF.APPOOSelect =  new Class({
 	},
 
     _loadNode: function(){
-		this._loadNodeEdit();
+		if (!this.isReadable && !!this.isHideUnreadable){
+            this.node?.addClass('hide');
+        }else{
+            this._loadNodeEdit();
+        }
+
+		// this._loadNodeEdit();
     },
 	_loadMergeReadContentNode: function( contentNode, data ){
 		// this._showValue(contentNode, data.data);
@@ -93,10 +101,27 @@ MWF.xApplication.process.Xform.OOSelect = MWF.APPOOSelect =  new Class({
 		});
 
 	},
+	addModuleEvent: function(key, fun){
+        if (this.options.moduleEvents.indexOf(key)!==-1){
+            this.addEvent(key, function(event){
+                return (fun) ? fun(this, event) : null;
+            }.bind(this));
+        }else{
+			this.node.addEvent(key, function(event){
+                return (fun) ? fun(this, event) : null;
+            }.bind(this));
+        }
+    },
     _loadNodeEdit: function(){
 		this._resetNodeEdit();
-
+		this.node.setAttribute('value', undefined);
 		this.node.removeAttribute("placeholder");
+
+		if (o2.isMediaMobile() && !this.json.inDatatable){
+			this.node.setAttribute("skin-mode", 'mobile');
+		}else{
+            this.node.removeAttribute("skin-mode");
+        }
 
 		if (this.json.properties) {
 			this.node.set(this.json.properties);
@@ -108,10 +133,14 @@ MWF.xApplication.process.Xform.OOSelect = MWF.APPOOSelect =  new Class({
 			this.node.setAttribute('label', this.json.label);
 		}
 
+		if (this.json.inDatatable){
+            this.node.setAttribute('view-style', '');
+        }
+
 		this.node.setAttribute('readonly', false);
 		this.node.setAttribute('readmode', false);
 		this.node.setAttribute('disabled', false);
-		if (!this.isReadonly()){
+		if (!this.isReadonly() && this.isEditable){
 			if (this.json.showMode === 'readonlyMode') {
 				this.node.setAttribute('readonly', true);
 			} else if (this.json.showMode === 'disabled') {
@@ -146,6 +175,16 @@ MWF.xApplication.process.Xform.OOSelect = MWF.APPOOSelect =  new Class({
 			this.node.removeAttribute("required");
 		}
 
+		if (this.json.allowInput) {
+            this.node.setAttribute('allow-input', 'true');
+        }else{
+			this.node.removeAttribute('allow-input');
+		}
+
+		if (this.json.innerHTML){
+			this.node.set("html", this.json.innerHTML);
+		}
+
         this.node.addEvent("change", function( ev ){
 			var v = this.getInputData("change");
 			this._setBusinessData(v);
@@ -172,6 +211,25 @@ MWF.xApplication.process.Xform.OOSelect = MWF.APPOOSelect =  new Class({
 				e.target.setCustomValidity(this.validationText);
 			}
 		});
+		this.node.addEventListener('invalid', (e)=>{
+            if (this.node._props.validity){
+                e.target.setCustomValidity(this.node._props.validity);
+            }else{
+                var label = this.json.label ? `“${this.json.label.replace(/　/g, '')}”` :  MWF.xApplication.process.Xform.LP.requiredHintField;
+                const o = {
+                    valueMissing: MWF.xApplication.process.Xform.LP.requiredHint.replace('{label}', label),
+                }
+                //通过 e.detail 获取 验证有效性状态对象：ValidityState
+                for (const k in o){
+                    if (e.detail[k]){
+                        if (o[k]){
+                            
+                            break;
+                        }
+                    }
+                }
+            }
+        });
 
 		this.setOptions();
 	},
@@ -189,6 +247,7 @@ MWF.xApplication.process.Xform.OOSelect = MWF.APPOOSelect =  new Class({
 					var option = new Element("oo-option", {
 						"value": value
 					});
+					option.setAttribute('value', value);
 					option.setAttribute('text', text);
 					option.inject(this.node);
 
@@ -211,6 +270,8 @@ MWF.xApplication.process.Xform.OOSelect = MWF.APPOOSelect =  new Class({
             "value": value || text,
             "text": text
         }).inject(this.node);
+		option.setAttribute('value', value || text);
+		option.setAttribute('text', text || value);
 		this.fireEvent("addOption", [text, value])
 	},
 
@@ -260,7 +321,7 @@ MWF.xApplication.process.Xform.OOSelect = MWF.APPOOSelect =  new Class({
 		return {"value": this.node.value , "text": this.node.text};
 	},
 	getText: function(){
-		return this.node.text;
+		return this.node.text || '';
 	},
     getInputData: function(){
 		return this.node.value;
@@ -284,11 +345,21 @@ MWF.xApplication.process.Xform.OOSelect = MWF.APPOOSelect =  new Class({
 	},
 
 	notValidationMode: function (text) {
-		this.validationText = text;
-		this.node.checkValidity();
+        if(!this.isNotValidationMode){
+            this.isNotValidationMode = true;
+            this.validationText = text;
+            this.node.checkValidity();
+        }
 	},
 	validationMode: function () {
-		this.validationText = '';
-		this.node.unInvalidStyle();
-	}
+        if(this.isNotValidationMode){
+            this.isNotValidationMode = false;
+            this.validationText = '';
+            this.node.unInvalidStyle();
+        }
+    }
 });
+
+function mergeUniqueArrays(arr1, arr2) {
+	return Array.from(new Set([...arr1, ...arr2]));
+}

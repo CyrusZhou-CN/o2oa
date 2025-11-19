@@ -105,6 +105,7 @@ MWF.xApplication.query.Query.Statement = MWF.QStatement = new Class(
         } else {
             this.getView(callback);
         }
+        o2.loadCss('../x_component_process_FormDesigner/Module/Form/skin/v10/view.css');
     },
     loadMacro: function (callback) {
         MWF.require("MWF.xScript.Macro", function () {
@@ -164,7 +165,6 @@ MWF.xApplication.query.Query.Statement = MWF.QStatement = new Class(
 
         // this._initPage();
 
-        debugger;
         this.loadParameter(d);
         this.loadFilter(d);
 
@@ -206,7 +206,6 @@ MWF.xApplication.query.Query.Statement = MWF.QStatement = new Class(
         // }.bind(this));
     },
     loadFilter: function (data) {
-        debugger;
         this.filterList = [];
         (data.filterList || []).each(function (d) {
             var pName = d.path.replace(/\./g, "_");
@@ -253,7 +252,6 @@ MWF.xApplication.query.Query.Statement = MWF.QStatement = new Class(
     },
     loadParameter: function () {
         this.parameter = {};
-        debugger;
         var parameter = this.json.parameter ? Object.clone(this.json.parameter) : {};
         //系统默认的参数
         (this.viewJson.parameterList || []).each(function (f) {
@@ -594,7 +592,6 @@ MWF.xApplication.query.Query.Statement = MWF.QStatement = new Class(
         }
     },
     searchView: function(){
-        debugger;
         if (this.viewJson.customFilterList) {
             var key = this.viewSearchInputNode.get("value");
             if (key && key !== this.lp.searchKeywork) {
@@ -634,11 +631,11 @@ MWF.xApplication.query.Query.Statement = MWF.QStatement = new Class(
                     })
                 }
 
-                this.createViewNode({"filterList": filterData});
+                this.createViewNode({"filterList": filterData}, null, true);
             }else{
                 this.filterItems = [];
                 var filterData = this.json.filter ? this.json.filter.clone() : [];
-                this.createViewNode( {"filterList": filterData} );
+                this.createViewNode( {"filterList": filterData}, null, true );
             }
         }
     },
@@ -735,15 +732,16 @@ MWF.xApplication.query.Query.Statement = MWF.QStatement = new Class(
      * @param {(ViewFilter[]|ViewFilter|Null)} [filter] 过滤条件
      * @param {StatementParameter} [parameter] 过滤条件。
      * @param {Function} callback 过滤完成并重新加载数据后的回调方法。
+     * @param {Boolean} [keepSelected] 可选,是否保留选择结果
      */
-    setFilter: function (filter, parameter, callback) {
+    setFilter: function (filter, parameter, callback, keepSelected) {
         if (this.lookuping || this.pageloading) return;
         if (!filter) filter = [];
         if (!parameter) parameter = {};
         this.json.filter = filter;
         this.json.parameter = parameter;
         if (this.viewAreaNode) {
-            this.createViewNode({"filterList": this.json.filter.clone()}, callback);
+            this.createViewNode({"filterList": this.json.filter.clone()}, callback, keepSelected);
         }
     },
 
@@ -807,7 +805,6 @@ MWF.xApplication.query.Query.Statement = MWF.QStatement = new Class(
                             MWF.xDesktop.notice("error", {"x": "left", "y": "top"}, lp.startLargetThanEndNotice, node, {"x": 0, "y": 85});
                             return false;
                         }
-                        debugger;
                         this.exportExcelStart = start;
                         this.exportExcelEnd = end;
                         this._exportView(start, end, filename);
@@ -1197,6 +1194,7 @@ MWF.xApplication.query.Query.Statement.Item = new Class(
         //if (this.view.json.select==="single" || this.view.json.select==="multi"){
         this.selectTd = new Element("td", {"styles": viewContentTdNode}).inject(this.node);
         this.selectTd.setStyles({"cursor": "pointer"});
+        this.selectTd.setStyles(this.css.viewSelectTdNode);
         if (this.view.json.itemStyles) this.selectTd.setStyles(this.view.json.itemStyles);
 
         //var selectFlag = this.view.json.select || this.view.viewJson.select ||  "none";
@@ -1205,8 +1203,14 @@ MWF.xApplication.query.Query.Statement.Item = new Class(
             var viewStyles = this.view.viewJson.viewStyles;
             if (viewStyles) {
                 if (selectFlag === "single") {
+                    if (viewStyles["radioNode"] && viewStyles["radioNode"].className){
+                        this.selectTd.addClass(viewStyles["radioNode"].className);
+                    }
                     this.selectTd.setStyles(viewStyles["radioNode"]);
                 } else {
+                    if (viewStyles["checkboxNode"] && viewStyles["checkboxNode"].className){
+                        this.selectTd.addClass(viewStyles["checkboxNode"].className);
+                    }
                     this.selectTd.setStyles(viewStyles["checkboxNode"]);
                 }
             } else {
@@ -1355,6 +1359,10 @@ MWF.xApplication.query.Query.Statement.Item = new Class(
         this.view.selectedItems.push(this);
         var viewStyles = this.view.viewJson.viewStyles;
         if( viewStyles ){
+            this.selectTd.removeClass( viewStyles["checkboxNode"].className );
+            if (viewStyles["checkedCheckboxNode"].className){
+                this.selectTd.addClass( viewStyles["checkedCheckboxNode"].className );
+            }
             this.selectTd.setStyles( viewStyles["checkedCheckboxNode"] );
             this.node.setStyles( viewStyles["contentSelectedTr"] );
         }else{
@@ -1383,9 +1391,18 @@ MWF.xApplication.query.Query.Statement.Item = new Class(
         }
         var viewStyles = this.view.viewJson.viewStyles;
         if( this.view.viewJson.selectBoxShow !=="always" ){
+            this.selectTd.removeClass( viewStyles["checkedCheckboxNode"].className );
             this.selectTd.setStyles({"background": "transparent"});
         }else{
+            this.selectTd.setStyles({opacity: 1});
             if (viewStyles) {
+                this.selectTd.removeClass( viewStyles["checkedCheckboxNode"].className );
+                if (viewStyles["checkboxNode"].className){
+                    this.selectTd.addClass( viewStyles["checkboxNode"].className );
+                }
+                if (viewStyles["checkboxNode"].className){
+                    this.selectTd.addClass(viewStyles["checkboxNode"].className);
+                }
                 this.selectTd.setStyles(viewStyles["checkboxNode"]);
             }else{
                 this.selectTd.setStyles({"background": "url(" + "../x_component_query_Query/$Viewer/default/icon/checkbox.png) center center no-repeat"});
@@ -1475,6 +1492,18 @@ MWF.xApplication.query.Query.Statement.Item = new Class(
     },
     setOpenWork: function (td, column) {
         td.setStyle("cursor", "pointer");
+        td.addEvents({
+            "mouseover": function(){
+                td.setStyles({
+                    "color": "var(--oo-color-main)"
+                });
+            }.bind(this),
+            "mouseout": function(){
+                td.setStyles({
+                    "color": "unset"
+                });
+            }.bind(this)
+        })
         if (column.clickCode) {
             if (!this.view.Macro) {
                 MWF.require("MWF.xScript.Macro", function () {

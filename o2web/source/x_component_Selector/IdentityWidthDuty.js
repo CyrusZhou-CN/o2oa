@@ -24,7 +24,10 @@ MWF.xApplication.Selector.IdentityWidthDuty = new Class({
     },
     _init : function(){
         this.selectType = "identity";
-        this.className = "IdentityWidthDuty"
+        this.className = "IdentityWidthDuty";
+        if( !this.options.expandSubEnable ){
+            this.options.forceSearchInItem = true;
+        }
     },
     loadSelectItems: function(addToNext){
         this.loadingCountDuty = "wait";
@@ -84,8 +87,6 @@ MWF.xApplication.Selector.IdentityWidthDuty = new Class({
                     var unitName = typeOf(u) === "string" ? u : (u.distinguishedName || u.unique || u.levelName || u.id);
                     if (unitName)unitList.push( unitName )
                 });
-
-                debugger;
 
                 if( !this.options.expandSubEnable ){
                     this.allUnitNames = unitList;
@@ -154,22 +155,38 @@ MWF.xApplication.Selector.IdentityWidthDuty = new Class({
 
     search: function(){
         var key = this.searchInput.get("value");
-        if (key){
-            this.initSearchArea(true);
-            var createdId = this.searchInItems(key) || [];
-            if( this.options.include && this.options.include.length ){
-                this.includeObject.listByFilter( "key", key, function( array ){
-                    array.each( function(d){
-                        if( !createdId.contains( d.distinguishedName ) ){
-                            if( !this.isExcluded( d ) ) {
-                                this._newItem( d, this, this.itemSearchAreaNode);
-                            }
-                        }
-                    }.bind(this))
-                }.bind(this))
+        if( this.options.forceSearchInItem ){
+            if (key){
+                this.initSearchArea(true);
+                this.searchInItems(key);
+                this.changeSearchMode(true);
+            }else{
+                this.initSearchArea(false);
+                this.changeSearchMode(false);
             }
         }else{
-            this.initSearchArea(false);
+            if (key){
+                this.initSearchArea(true);
+                var createdId = this.searchInItems(key) || [];
+                if( this.options.include && this.options.include.length ){
+                    var p = this.initExclude();
+                    Promise.resolve(p).then(function(){
+                        this.includeObject.listByFilter( "key", key, function( array ){
+                            array.each( function(d){
+                                if( !createdId.contains( d.distinguishedName ) ){
+                                    if( !this.isExcludedSearchItem( d ) ) {
+                                        this._newItem( d, this, this.itemSearchAreaNode);
+                                    }
+                                }
+                            }.bind(this));
+                        }.bind(this));
+                    }.bind(this));
+                }
+                this.changeSearchMode(true);
+            }else{
+                this.initSearchArea(false);
+                this.changeSearchMode(false);
+            }
         }
     },
     listPersonByPinyin: function(node){
@@ -285,7 +302,6 @@ MWF.xApplication.Selector.IdentityWidthDuty = new Class({
     },
     _addSelectedCountWithDuty: function( itemOrItemSelected, count, items ){
         var itemData = itemOrItemSelected.data;
-        debugger;
         items.each(function(item){
             if(item.category && item.category._addSelectedCount && item.category.className === "ItemCategory"){
                 item.category._addSelectedCount( count );
@@ -313,8 +329,14 @@ MWF.xApplication.Selector.IdentityWidthDuty.Item = new Class({
 });
 MWF.xApplication.Selector.IdentityWidthDuty.SearchItem = new Class({
     Extends: MWF.xApplication.Selector.Identity.Item,
+    _init: function (){
+        this.clazz = "SearchItem";
+    },
     _getShowName: function(){
         return this.data.name+((this.data.unitLevelName) ? "("+this.data.unitLevelName+")" : "");
+    },
+    _getDescription: function () {
+        return this.data.unitLevelName || '';
     }
 });
 
@@ -322,6 +344,9 @@ MWF.xApplication.Selector.IdentityWidthDuty.ItemSelected = new Class({
     Extends: MWF.xApplication.Selector.Identity.ItemSelected,
     _getShowName: function(){
         return this.data.name+((this.data.unitLevelName) ? "("+this.data.unitLevelName+")" : "");
+    },
+    _getDescription: function () {
+        return this.data.unitLevelName || '';
     },
     _getTtiteText: function(){
         return this.data.name+((this.data.unitLevelName) ? "("+this.data.unitLevelName+")" : "");

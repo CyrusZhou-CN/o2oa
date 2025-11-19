@@ -64,11 +64,20 @@ MWF.xApplication.process.Xform.WpsOffice = MWF.APPWpsOffice =  new Class(
         },
         _loadUserInterface: function(){
             this.node.empty();
+            if (!this.isReadable){
+                this.node?.addClass('hide');
+                return '';
+            }
             this.node.setStyles({
                 "min-height": "700px"
             });
         },
         _afterLoaded: function(){
+            if (!this.isReadable){
+                this.node?.addClass('hide');
+                return '';
+            }
+
             if(!layout.serviceAddressList["x_wpsfile_assemble_control"]){
                 this.node.set("html","<h3><font color=red>please install wps application</font></h3>");
                 return false;
@@ -128,6 +137,10 @@ MWF.xApplication.process.Xform.WpsOffice = MWF.APPWpsOffice =  new Class(
 
         },
         reload : function (){
+            if (!this.isReadable){
+                this.node?.addClass('hide');
+                return '';
+            }
             this.setData();
             this.node.empty();
             this.createUpload();
@@ -171,7 +184,6 @@ MWF.xApplication.process.Xform.WpsOffice = MWF.APPWpsOffice =  new Class(
             );
         },
         loadDocument: function () {
-
             o2.Actions.load(this.appToken).AttachmentAction.getOnlineInfo(this.documentId, function( json ){
 
                 this.documentData = json.data;
@@ -192,6 +204,10 @@ MWF.xApplication.process.Xform.WpsOffice = MWF.APPWpsOffice =  new Class(
 
             if(this.version === "wpsWebOffice"){
                 o2.load(["../x_component_WpsOfficeEditor/web-office-sdk-solution-v2.0.2.umd.min.js"], {"sequence": true}, function () {
+                    if (callback) callback();
+                }.bind(this));
+            }else if(this.version === "jbWps"){
+                o2.load(["../x_component_WpsOfficeEditor/open-jssdk-v0.1.2.umd.js"], {"sequence": true}, function () {
                     if (callback) callback();
                 }.bind(this));
             }else {
@@ -398,6 +414,21 @@ MWF.xApplication.process.Xform.WpsOffice = MWF.APPWpsOffice =  new Class(
                     "mode" : this.mode
                 };
                 this.wpsOffice = WebOfficeSDK.init(config);
+            }else if(this.version === "jbWps"){
+                this.action.CustomAction.getJbWpsFileUrl(this.documentId,{
+                    "mode" : this.mode,
+                    "appToken" : this.appToken
+                },function( json ){
+                    this.wpsUrl = json.data.wpsUrl;
+                    config.url = this.wpsUrl+ "&_w_tokentype=1";
+
+                }.bind(this),null,false);
+    
+                this.wpsOffice = OpenSDK.config(config);
+                this.wpsOffice.setToken({
+                    token: layout.session.token,
+                    timeout: 100 * 60 * 1000 // token超时时间, 可配合refreshToken配置函数使用，当超时前将调用refreshToken
+                });
             }else {
                 this.action.CustomAction.getWpsFileUrl(this.documentId,{
                     "mode" : this.mode,
@@ -407,7 +438,7 @@ MWF.xApplication.process.Xform.WpsOffice = MWF.APPWpsOffice =  new Class(
                     config.url = this.wpsUrl;
 
                 }.bind(this),null,false);
-                // console.log(this.wpsUrl)
+    
                 this.wpsOffice = WebOfficeSDK.config(config);
                 this.wpsOffice.setToken({
                     token: layout.session.token,
@@ -426,16 +457,16 @@ MWF.xApplication.process.Xform.WpsOffice = MWF.APPWpsOffice =  new Class(
             }.bind(this));
 
             this.wpsOffice.on('fullscreenChange', function(result) {
-                console.log(JSON.stringify(result))
+                // console.log(JSON.stringify(result))
             });
             this.wpsOffice.on('previewLimit', function(result) {
-                console.log(JSON.stringify(result))
+                // console.log(JSON.stringify(result))
             });
             this.wpsOffice.on('tabSwitch', function(result) {
-                console.log(JSON.stringify(result))
+                // console.log(JSON.stringify(result))
             });
             this.wpsOffice.on('error', function(result) {
-                console.log(JSON.stringify(result))
+                // console.log(JSON.stringify(result))
             });
             //是否显示评论
             if(this.json.isShowComment){
@@ -491,7 +522,6 @@ MWF.xApplication.process.Xform.WpsOffice = MWF.APPWpsOffice =  new Class(
         save: function(callback){
             var promise =  this.wpsOffice.save();
             promise.then(function(){
-                console.log("save success");
                 if(callback) callback();
             });
         },
@@ -519,8 +549,6 @@ MWF.xApplication.process.Xform.WpsOffice = MWF.APPWpsOffice =  new Class(
             await this.wpsOffice.ready();
             const app = this.wpsOffice.Application;
             const totalPages = await app.ActiveDocument.Range.Information(app.Enum.WdInformation.wdNumberOfPagesInDocument);
-
-            console.log(totalPages)
             return totalPages;
         },
         /**
@@ -535,7 +563,6 @@ MWF.xApplication.process.Xform.WpsOffice = MWF.APPWpsOffice =  new Class(
             const currentPage = await app.ActiveDocument.ActiveWindow.Selection.Information(
                 app.Enum.WdInformation.wdActiveEndPageNumber
             )
-            console.log(currentPage)
             return currentPage;
         },
         /**

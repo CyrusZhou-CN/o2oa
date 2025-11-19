@@ -9,7 +9,7 @@ Object.assign(o2.APP$Elinput.prototype, o2.APP$Input.prototype);
 
 Object.assign(o2.APP$Elinput.prototype, {
     isReadonly : function(){
-        return !!(this.readonly || this.json.isReadonly || this.form.json.isReadonly || this.isSectionMergeRead() );
+        return !!(!this.isEditable || this.readonly || this.json.isReadonly || this.form.json.isReadonly || this.isSectionMergeRead() );
     },
     reload: function(){
         if (this.vm) {
@@ -22,6 +22,7 @@ Object.assign(o2.APP$Elinput.prototype, {
 
         this.vueApp = null;
 
+        this._loadReadEditAbeld();
         this._loadUserInterface();
     },
     __setValue: function(value){
@@ -83,6 +84,8 @@ Object.assign(o2.APP$Elinput.prototype, {
     _loadNodeEdit: function(){
         var id = (this.json.id.indexOf("..")!==-1) ? this.json.id.replace(/\.\./g, "_") : this.json.id;
         id = (id.indexOf("@")!==-1) ? id.replace(/@/g, "_") : id;
+        id = (id.indexOf("（")!==-1) ? id.replace(/（/g, "_") : id;
+        id = (id.indexOf("）")!==-1) ? id.replace(/）/g, "_") : id;
         this.json["$id"] = (id.indexOf("-")!==-1) ? id.replace(/-/g, "_") : id;
         this.node.appendHTML(this._createElementHtml(), "before");
         var input = this.node.getPrevious();
@@ -119,6 +122,7 @@ Object.assign(o2.APP$Elinput.prototype, {
         }
     },
     getValue: function(){
+        if (!this.isReadable) return '';
         if (this.moduleValueAG) return this.moduleValueAG;
         var value = this._getBusinessData();
         if (value || value===false || value===0){

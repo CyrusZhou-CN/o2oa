@@ -42,7 +42,7 @@ function check_language_pack(token){
 
 var downloadHost = "g.o2oa.net";
 var protocol = "https";
-var commonUrl = "/o2oa/evn-o2server-commons/-/archive/9.2/evn-o2server-commons-9.2.tar.gz?path=commons";
+var commonUrl = "/o2oa/evn-o2server-commons/-/archive/9.3/evn-o2server-commons-9.3.tar.gz?path=commons";
 var jvmUrls = {
     "all": "/o2oa/evn-o2server-jvm/-/archive/master/evn-o2server-jvm-master.tar.gz?path=jvm",
     "linux_java11": "/o2oa/evn-o2server-jvm/-/archive/master/evn-o2server-jvm-master.tar.gz?path=jvm/linux_java11",
@@ -291,7 +291,7 @@ function move_commons(){
     console.log(`---------------------------------------------------------------------
   . move commons files to o2server/commons ...
 ---------------------------------------------------------------------`);
-    return gulp.src("o2server/tmp/evn-o2server-commons-9.2-commons/commons/**/*")
+    return gulp.src("o2server/tmp/evn-o2server-commons-9.3-commons/commons/**/*")
         .pipe(gulp.dest("o2server/commons/"));
 }
 function move_jvm(){
@@ -308,7 +308,7 @@ function move_jvm(){
         .pipe(gulp.dest("o2server/jvm/"));
 }
 async function clear_commons_git(cb) {
-    var dest = ['o2server/tmp/evn-o2server-commons-9.2-commons/', 'o2server/commons_git.tar.gz'];
+    var dest = ['o2server/tmp/evn-o2server-commons-9.3-commons/', 'o2server/commons_git.tar.gz'];
     await del(dest, {force: true});
     cb();
 }
@@ -714,12 +714,13 @@ function build_concat_basework_action(){
         .pipe(gulp.dest('o2web/source/x_desktop/'));
 }
 
-function build_concat_basework_clean(cb) {
+async function build_concat_basework_clean(cb) {
     var dest = [
         'o2web/source/x_desktop/js/base_work_actions_temp.js',
         'o2web/source/x_desktop/js/base_work_style_temp.js'
     ];
-    return del(dest, cb);
+    await del(dest, { force: true });
+    cb();
 }
 
 
@@ -798,7 +799,7 @@ function build_concat_basework_body() {
         'o2web/source/o2_core/o2/xScript/Actions/ScriptActions.js',
         'o2web/source/o2_core/o2/xScript/Actions/CMSScriptActions.js',
         'o2web/source/o2_core/o2/xScript/Actions/PortalScriptActions.js',
-        'o2web/source/o2_core/o2/xScript/Environment.js',
+        //'o2web/source/o2_core/o2/xScript/Environment.js',
         'o2web/source/x_component_Template/MTooltips.js',
         'o2web/source/x_component_Template/MSelector.js',
 
@@ -854,12 +855,13 @@ function build_concat_baseportal_action(){
         .pipe(gulp.dest('o2web/source/x_desktop/'));
 }
 
-function build_concat_baseportal_clean(cb) {
+async function build_concat_baseportal_clean(cb) {
     var dest = [
         'o2web/source/x_desktop/js/base_portal_actions_temp.js',
         'o2web/source/x_desktop/js/base_portal_style_temp.js'
     ];
-    return del(dest, cb);
+    await del(dest, { force: true });
+    cb();
 }
 
 function build_concat_baseportal_body() {
@@ -918,6 +920,7 @@ function build_concat_baseportal_body() {
         'o2web/source/x_desktop/js/base_portal_actions_temp.js',
 
         'o2web/source/x_desktop/js/base.js',
+        'o2web/source/o2_core/o2/framework.js',
         'o2web/source/x_desktop/js/base_loader.js'
     ];
     var dest = 'target/o2server/servers/webServer/x_desktop/js/';
@@ -956,12 +959,14 @@ function build_concat_basedocument_action(){
         .pipe(gulp.dest('o2web/source/x_desktop/'));
 }
 
-function build_concat_basedocument_clean(cb) {
+async function build_concat_basedocument_clean(cb) {
     var dest = [
         'o2web/source/x_desktop/js/base_document_actions_temp.js',
         'o2web/source/x_desktop/js/base_document_style_temp.js'
     ];
-    return del(dest, cb);
+    // return del(dest, { force: true }, cb);
+    await del(dest, { force: true });
+    cb();
 }
 
 function build_concat_basedocument_body() {

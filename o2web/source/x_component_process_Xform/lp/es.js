@@ -51,6 +51,7 @@ MWF.xApplication.process.Xform.LP={
 	"selectRollbackActivity": "Por favor seleccione la posición en la que desea retroceder el archivo:",
 	"tryToProcess": "y tratar de continuar el proceso",
 	"in": "en",
+	"select": "Elegir ",
 	"andSoForth": "y así sucesivamente",
 	"noIdentitySelectRange": "No se puede determinar el rango de selección de identidad",
 	"noIdentityDutySelectRange": "No se puede determinar el rango de selección de posición de identidad",
@@ -308,6 +309,7 @@ MWF.xApplication.process.Xform.LP={
 		"resumeTitle": "Reanudar desde el estado suspendido",
 		"downloadAll": "Descargar todo",
 		"downloadAllTitle": "Descargar todo",
+		"downloadAllText": "Primero debe guardar el formulario. ¿Desea continuar?",
 		"monitor": "Monitor de proceso",
 		"monitorTitle": "Monitor de proceso",
 		"addTask": "Agregar asignación",
@@ -330,6 +332,8 @@ MWF.xApplication.process.Xform.LP={
 		"excludeBranches": "Excluir ramas existentes",
 		"yes": "Sí",
 		"no": "No",
+		"printWork": "Vista previa de impresión",
+		"printWorkInfo": "No se ha configurado ningún formulario de impresión. Se usará el formulario original para abrir.",
 		"readIdentity": "Persona para leer",
 		"sendReadNotify": "Enviar notificación de lectura pendiente",
 		"reviewIdentity": "Lector",
@@ -412,6 +416,9 @@ MWF.xApplication.process.Xform.LP={
 	"attachmentSecurity": "Identificación del nivel de confidencialidad del Anexo",
 	"uploading": "Se está cargando el anexo, por favor espere a que se complete la carga del anexo antes de realizar esta operación.",
 	"requiredHint": "Por favor, rellene el campo \"(...).",
-	"requiredHintField": "Esto"
+	"requiredHintField": "Esto",
+	"editDatatable": "Editar tabla de datos",
+	"editOk": "Edición completada",
+	"associatedFailureMessage": "Hubo una asociación de documentos fallida."
 }
 MWF.xApplication.process.Xform["lp."+o2.language] = MWF.xApplication.process.Xform.LP

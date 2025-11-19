@@ -13,6 +13,16 @@
                 <td class="editTableTitle">{{$.lp.description}}:</td>
                 <td class="editTableValue"><input type="text" name="description" value="text{$.description}" class="editTableInput"/></td>
             </tr>
+
+            <tr>
+                <td class="editTableTitle">{{$.lp.maxHeight}}:</td>
+                <td class="editTableValue"><input type="text" name="maxHeight" value="text{$.maxHeight}" class="editTableInput"/></td>
+            </tr>
+            <tr>
+                <td class="editTableTitle">{{$.lp.minWidth}}:</td>
+                <td class="editTableValue"><input type="text" name="minWidth" value="text{$.minWidth}" class="editTableInput"/></td>
+            </tr>
+
             <tr>
                 <td class="editTableTitle">{{$.lp.datatableEditMode}}:</td>
                 <td class="editTableValue">
@@ -219,6 +229,9 @@
         <div id="text{$.pid}sectionDisplayerArea" class="MWFSectionDisplayerArea" style="display: text{($.section=='yes')?'':'none'};"></div>
         <div id="text{$.pid}sectionMergeArea" class="MWFSectionMergeArea" style="display: text{($.section=='yes')?'none':''};"></div>
 
+    </div>
+    <div title="{{$.lp.power}}"  class="MWFTab">
+        <div class="MWFFieldPermission"></div>
     </div>
     <div title="{{$.lp.event}}"  class="MWFTab">
         <div class="MWFEventsArea" name="events"></div>

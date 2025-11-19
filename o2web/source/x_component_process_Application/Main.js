@@ -57,6 +57,7 @@ MWF.xApplication.process.Application.Main = new Class({
 	},
 	initAcl : function (callback){
 		this.acl = {
+			"allowArchive" : layout.config.allowArchive
 		}
 		this.action.ApplicationAction.isManager(this.options.id).then(function (json){
 			this.acl.isAppManager = json.data.value;
@@ -1175,14 +1176,14 @@ MWF.xApplication.process.Application.WorkCompletedList = new Class({
 			"default":[
 				["delCompletedWork"],
 				["rollback","sendRead","addReview"],
-				["manage"]
+				["manage","adjustTime"]
 			],
 			"unSelect":[
 			],
 			"selected":[
 				["delCompletedWork"],
 				["rollback","sendRead","addReview"],
-				["manage"]
+				["manage","adjustTime"]
 			],
 			"mulSelect":[
 				["delCompletedWork"],
@@ -1359,6 +1360,39 @@ MWF.xApplication.process.Application.SerialList = new Class({
 
 	},
 });
+MWF.xApplication.process.Application.ArchiveList = new Class({
+	Extends: MWF.xApplication.process.Application.List,
+	loadData: function(){
+		var _self = this;
+		return o2.Actions.load("x_processplatform_assemble_designer").MergeItemPlanAction.listWithApplicationPaging(this.application.id,this.page,this.size).then(function(json){
+			_self.fireEvent("loadData");
+			_self.total = json.count;
+			return json.data;
+		}.bind(this));
+
+	},
+	loadFilter: function () {
+		this.searchNode.setStyle("height","10px");
+	},
+	_initToolBar : function (){
+
+		this.toolbarItems = {
+			"default":[
+			],
+			"unSelect":[
+				["addArchive"]
+			],
+			"selected":[
+				["delArchive"],
+				["setArchive"],
+			],
+			"mulSelect":[
+				["delArchive"],
+			]
+		}
+
+	},
+});
 MWF.xApplication.process.Application.Toolbar = new Class({
 	Extends: MWF.widget.Common,
 	Implements: [Options, Events],
@@ -1413,6 +1447,11 @@ MWF.xApplication.process.Application.Toolbar = new Class({
 				text : this.lp.actionList.addReview,
 				icon : "icon-upload"
 			},
+			adjustTime :{
+				action : "adjustTime",
+				text : this.lp.actionList.adjustTime,
+				icon : "icon-upload"
+			},
 			endWork :{
 				action : "endWork",
 				text : this.lp.actionList.endWork,
@@ -1446,6 +1485,21 @@ MWF.xApplication.process.Application.Toolbar = new Class({
 			addSerial : {
 				action : "addSerial",
 				text : this.lp.actionList.add,
+				icon : "icon-upload"
+			},
+			addArchive : {
+				action : "addArchive",
+				text : this.lp.actionList.add,
+				icon : "icon-upload"
+			},
+			delArchive : {
+				action : "delArchive",
+				text : this.lp.actionList.delete,
+				icon : "icon-upload"
+			},
+			setArchive : {
+				action : "setArchive",
+				text : "修改配置",
 				icon : "icon-upload"
 			},
 			rollback : {
@@ -1515,6 +1569,17 @@ MWF.xApplication.process.Application.Toolbar = new Class({
 
 		this.loadRightNode()
 	},
+	addArchive: function(){
+
+		var _self = this;
+		var data = this.explorer.selectedList[0];
+		var form = new MWF.xApplication.process.Application.AddArchiveForm(this.explorer, data, {
+		}, {
+			app: this.app
+		});
+		form.edit()
+
+	},
 	addSerial: function(){
 
 		var _self = this;
@@ -1532,6 +1597,22 @@ MWF.xApplication.process.Application.Toolbar = new Class({
 		if (this.explorer.selectedList && this.explorer.selectedList.length){
 			var data = this.explorer.selectedList[0];
 			var form = new MWF.xApplication.process.Application.SetSerSialForm(this.explorer, data, {
+			}, {
+				app: this.app
+			});
+			form.edit()
+		}else {
+			this.app.notice("请先选择文件","error");
+			return;
+		}
+
+	},
+	setArchive : function(){
+
+		var _self = this;
+		if (this.explorer.selectedList && this.explorer.selectedList.length){
+			var data = this.explorer.selectedList[0];
+			var form = new MWF.xApplication.process.Application.SetArchiveForm(this.explorer, data, {
 			}, {
 				app: this.app
 			});
@@ -1750,6 +1831,25 @@ MWF.xApplication.process.Application.Toolbar = new Class({
 			this.close();
 		});
 	},
+	delArchive : function (e){
+		var _self = this;
+		var dataList = this.explorer.selectedList;
+		this.app.confirm("warn", e, "删除确认", "是否删除选中的"+dataList.length+"个配置？删除后不能恢复。", 350, 120, function () {
+			var count = 0;
+			dataList.each( function(data){
+				o2.Actions.load("x_processplatform_assemble_designer").MergeItemPlanAction.delete( data.id , function(){
+					count++;
+					if( dataList.length == count ){
+						_self.app.notice("成功删除"+count+"个配置。");
+						_self.explorer.refresh();
+					}
+				});
+			}.bind(this));
+			this.close();
+		}, function () {
+			this.close();
+		});
+	},
 	delSerial : function (e){
 		var _self = this;
 		var dataList = this.explorer.selectedList;
@@ -1955,6 +2055,20 @@ MWF.xApplication.process.Application.Toolbar = new Class({
 			form = new MWF.xApplication.process.Application.ManageWorkForm({app: this.app}, this.explorer.selectedList[0] );
 		}
 		form.open();
+	},
+	adjustTime : function(){
+		var _self = this;
+		if (this.explorer.selectedList && this.explorer.selectedList.length){
+			var data = this.explorer.selectedList[0];
+			var form = new MWF.xApplication.process.Application.AdjustTimeForm(this.explorer, data, {
+			}, {
+				app: this.app
+			});
+			form.edit()
+		}else {
+			this.app.notice("请先选择文件","error");
+			return;
+		}
 	},
 	jump: function(){
 
@@ -2426,6 +2540,223 @@ MWF.xApplication.process.Application.Toolbar = new Class({
 		new Element("icon",{"class":"o2Drive icon-grid"}).inject(this.tileViewTypeNode);
 	}
 });
+MWF.xApplication.process.Application.AddArchiveForm = new Class({
+	Extends: MPopupForm,
+	Implements: [Options, Events],
+	options: {
+		"style": "attendanceV2",
+		"width": 800,
+		"height": 650,
+		"hasTop": true,
+		"hasIcon": false,
+		"draggable": true,
+		"title" : "新增归档配置",
+		"id" : ""
+	},
+	_createTableContent: function () {
+
+		var html = `<div class="formTable">
+                    <div item='name'></div>
+					<div item='startTime'></div>
+					<div item='completedTime'></div> 
+                    <div item='process'></div>
+                    <div item='enable'></div>
+                </div>`
+		this.formTableArea.set("html", html);
+		var selectValue = [];
+		var selectText = [];
+		this.app.processList.each(function(d) {
+			selectValue.push(d.id);
+			selectText.push(d.name);
+		});
+		this.form = new MForm(this.formTableArea, this.data || {}, {
+			isEdited: true,
+			style : "attendance",
+			hasColon : true,
+			itemTemplate: {
+				name: {text: "名称", notEmpty: true, type: "oo-input", style: {"width": "100%"}},
+				enable: {
+					text: "是否启用",
+					notEmpty: true,
+					type: "oo-radiogroup",
+					selectValue: ["true", "false"],
+					selectText: ["是", "否"]
+				},
+				startTime: {text: "开始时间", style: {"width": "100%"}, notEmpty: true, type: "oo-datetime"},
+				completedTime: {text: "结束时间", style: {"width": "100%"}, notEmpty: true, type: "oo-datetime"},
+				process: {
+					"text": "流程",
+					"type": "oo-select",
+					"selectValue": selectValue,
+					"selectText": selectText,
+					"style": {"min-width": "150px"},
+				}
+			}
+		}, this.app);
+		this.form.load();
+
+	},
+	_createBottomContent: function () {
+
+		if (this.isNew || this.isEdited) {
+
+			this.okActionNode = new Element("button.inputOkButton", {
+				"styles": this.css.inputOkButton,
+				"text": "确定"
+			}).inject(this.formBottomNode);
+
+			this.okActionNode.addEvent("click", function (e) {
+				this.save(e);
+			}.bind(this));
+		}
+
+		this.cancelActionNode = new Element("button.inputCancelButton", {
+			"styles": (this.isEdited || this.isNew || this.getEditPermission() ) ? this.css.inputCancelButton : this.css.inputCancelButton_long,
+			"text": "关闭"
+		}).inject(this.formBottomNode);
+
+		this.cancelActionNode.addEvent("click", function (e) {
+			this.close(e);
+		}.bind(this));
+
+	},
+	save: function(){
+
+		var data = this.form.getResult(true,null,true,false,true);
+		var processName ;
+		this.app.processList.each(function(d) {
+			if(d.id  === data.process){
+				processName = d.name;
+			}
+		});
+
+		if( data ){
+			o2.Actions.load("x_processplatform_assemble_designer").MergeItemPlanAction.create({
+				"application" : this.app.application.id,
+				"applicationName" : this.app.application.name,
+				"process" : data.process,
+				"processName" : processName,
+				"name" : data.name,
+				"enable" : data.enable,
+				"startTime" : data.startTime,
+				"completedTime" : data.completedTime,
+			}).then(function (){
+				this.app.notice("添加成功");
+				this.explorer.refresh();
+				this.close();
+			}.bind(this));
+		}
+	}
+});
+MWF.xApplication.process.Application.SetArchiveForm = new Class({
+	Extends: MPopupForm,
+	Implements: [Options, Events],
+	options: {
+		"style": "attendanceV2",
+		"width": 800,
+		"height": 650,
+		"hasTop": true,
+		"hasIcon": false,
+		"draggable": true,
+		"title" : "修改归档配置",
+		"id" : ""
+	},
+	_createTableContent: function () {
+
+		var html = `<div class="formTable">
+                    <div item='name'></div>
+					<div item='startTime'></div>
+					<div item='completedTime'></div> 
+                    <div item='process'></div>
+                    <div item='enable'></div>
+                </div>`
+		this.formTableArea.set("html", html);
+		var selectValue = [];
+		var selectText = [];
+		this.app.processList.each(function(d) {
+			selectValue.push(d.id);
+			selectText.push(d.name);
+		});
+		this.form = new MForm(this.formTableArea, this.data || {}, {
+			isEdited: true,
+			style : "attendance",
+			hasColon : true,
+			itemTemplate: {
+				name: {text: "名称", notEmpty: true, type: "oo-input", style: {"width": "100%"}},
+				enable: {
+					text: "是否启用",
+					notEmpty: true,
+					type: "oo-radiogroup",
+					selectValue: ["true", "false"],
+					selectText: ["是", "否"]
+				},
+				startTime: {text: "开始时间", style: {"width": "100%"}, notEmpty: true, type: "oo-datetime"},
+				completedTime: {text: "结束时间", style: {"width": "100%"}, notEmpty: true, type: "oo-datetime"},
+				process: {
+					"text": "流程",
+					"type": "oo-select",
+					"selectValue": selectValue,
+					"selectText": selectText,
+					"style": {"min-width": "150px"},
+				}
+			}
+		}, this.app);
+		this.form.load();
+
+	},
+	_createBottomContent: function () {
+
+		if (this.isNew || this.isEdited) {
+
+			this.okActionNode = new Element("button.inputOkButton", {
+				"styles": this.css.inputOkButton,
+				"text": "确定"
+			}).inject(this.formBottomNode);
+
+			this.okActionNode.addEvent("click", function (e) {
+				this.save(e);
+			}.bind(this));
+		}
+
+		this.cancelActionNode = new Element("button.inputCancelButton", {
+			"styles": (this.isEdited || this.isNew || this.getEditPermission() ) ? this.css.inputCancelButton : this.css.inputCancelButton_long,
+			"text": "关闭"
+		}).inject(this.formBottomNode);
+
+		this.cancelActionNode.addEvent("click", function (e) {
+			this.close(e);
+		}.bind(this));
+
+	},
+	save: function(){
+
+		var data = this.form.getResult(true,null,true,false,true);
+		var processName ;
+		this.app.processList.each(function(d) {
+			if(d.id  === data.process){
+				processName = d.name;
+			}
+		});
+
+		if( data ){
+			o2.Actions.load("x_processplatform_assemble_designer").MergeItemPlanAction.edit(data.id,{
+				"application" : this.app.application.id,
+				"applicationName" : this.app.application.name,
+				"process" : data.process,
+				"processName" : processName,
+				"name" : data.name,
+				"enable" : data.enable,
+				"startTime" : data.startTime,
+				"completedTime" : data.completedTime,
+			}).then(function (){
+				this.app.notice("更新成功");
+				this.explorer.refresh();
+				this.close();
+			}.bind(this));
+		}
+	}
+});
+
 MWF.xApplication.process.Application.AddSerSialForm = new Class({
 	Extends: MPopupForm,
 	Implements: [Options, Events],
@@ -2535,6 +2866,89 @@ MWF.xApplication.process.Application.AddSerSialForm = new Class({
 				"serial" : data.serial
 			}).then(function (){
 				this.app.notice("添加成功");
+				this.explorer.refresh();
+				this.close();
+			}.bind(this));
+		}
+	}
+});
+MWF.xApplication.process.Application.AdjustTimeForm = new Class({
+	Extends: MPopupForm,
+	Implements: [Options, Events],
+	options: {
+		"style": "attendanceV2",
+		"width": 500,
+		"height": 300,
+		"hasTop": true,
+		"hasIcon": false,
+		"draggable": true,
+		"title" : "调整流程发起时间",
+		"id" : ""
+	},
+	_createTableContent: function () {
+
+		var html = "<table width='100%' bordr='0' cellpadding='7' cellspacing='0' styles='formTable' style='margin-top: 20px; '>" +
+			"<tr><td styles='formTableTitle' lable='startTime2' width='25%'></td>" +
+			"    <td styles='formTableValue14' item='startTime2' colspan='3'></td></tr>" +
+			"<tr><td styles='formTableTitle' width='25%'>备注：</td>" +
+			"    <td styles='formTableValue14'  colspan='3'>修改后会把跟流程所有相关的时间都会往前或者往后一起调整，包括流程记录等。</td></tr>" +
+			"</table>";
+		this.formTableArea.set("html", html);
+
+		this.form = new MForm(this.formTableArea, this.data || {}, {
+			isEdited: true,
+			style : "minder",
+			hasColon : true,
+			itemTemplate: {
+				startTime2: { text : "发起时间", notEmpty : true ,tType:"datetime"}
+			}
+		}, this.app);
+		this.form.load();
+
+	},
+	_createBottomContent: function () {
+
+		if (this.isNew || this.isEdited) {
+
+			this.okActionNode = new Element("button.inputOkButton", {
+				"styles": this.css.inputOkButton,
+				"text": "确定"
+			}).inject(this.formBottomNode);
+
+			this.okActionNode.addEvent("click", function (e) {
+				this.save(e);
+			}.bind(this));
+		}
+
+		this.cancelActionNode = new Element("button.inputCancelButton", {
+			"styles": (this.isEdited || this.isNew || this.getEditPermission() ) ? this.css.inputCancelButton : this.css.inputCancelButton_long,
+			"text": "关闭"
+		}).inject(this.formBottomNode);
+
+		this.cancelActionNode.addEvent("click", function (e) {
+			this.close(e);
+		}.bind(this));
+
+	},
+	save: function(){
+
+
+		var data = this.form.getResult(true,null,true,false,true);
+		if( data ){
+
+
+			const time1 = new Date(data.startTime);
+			const time2 = new Date(data.startTime2);
+			const timeDiffMs = time2 - time1;
+
+			const minutesDiff = parseInt(timeDiffMs / 1000 /60);
+
+
+			this.app.action.WorkCompletedAction.shiftTime({
+				"id" : data.id,
+				"adjustMinutes" : minutesDiff
+			}).then(function (){
+				this.app.notice("更新成功");
 				this.explorer.refresh();
 				this.close();
 			}.bind(this));
@@ -3966,6 +4380,10 @@ MWF.xApplication.process.Application.ManageWorkForm = new Class({
 
 							if (!fieldName) return false;
 							workData[fieldName] = (fieldType === "object" ? JSON.parse(fieldValue) : fieldValue);
+
+							if(fieldType === "number"){
+								workData[fieldName] = parseInt(fieldValue);
+							}
 
 							_self = this;
 							this.app.confirm("warn", e.node, "提示", "确认是否修改", 350, 120, function () {

@@ -1,5 +1,7 @@
 package com.x.program.center.jaxrs;
 
+import com.x.program.center.jaxrs.config.ConfigOpenAction;
+import com.x.program.center.jaxrs.deploy.DeployAction;
 import java.util.Set;
 
 import javax.ws.rs.ApplicationPath;
@@ -69,6 +71,7 @@ public class ActionApplication extends AbstractActionApplication {
 		classes.add(InvokeAction.class);
 		classes.add(AppStyleAction.class);
 		classes.add(ConfigAction.class);
+		classes.add(ConfigOpenAction.class);
 		classes.add(DingdingAction.class);
 		classes.add(WeLinkAction.class);
 		classes.add(ZhengwuDingdingAction.class);
@@ -91,6 +94,7 @@ public class ActionApplication extends AbstractActionApplication {
 		classes.add(TestAction.class);
 		classes.add(BarAction.class);
 		classes.add(FooAction.class);
+		classes.add(DeployAction.class);
 		return classes;
 	}
 }

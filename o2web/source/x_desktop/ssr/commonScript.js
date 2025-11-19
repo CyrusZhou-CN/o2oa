@@ -153,10 +153,10 @@ const fetch = function(url, options = {}) {
             // 获取响应码
             const responseCode = httpURLConnection.getResponseCode();
 
-            const getResponseBody = function(inputStream){
+            const getResponseBody = function(inputStream, encode){
                 const JavaInputStreamReader = Java.type('java.io.InputStreamReader');
                 const JavaBufferedReader = Java.type('java.io.BufferedReader');
-                const reader = new JavaBufferedReader(new JavaInputStreamReader(inputStream));
+                const reader = new JavaBufferedReader(new JavaInputStreamReader(inputStream, encode));
                 let inputLine;
                 const responseData = [];
                 while ((inputLine = reader.readLine()) !== null) {
@@ -179,8 +179,8 @@ const fetch = function(url, options = {}) {
                 headers: httpURLConnection.getHeaderFields(),
                 error: httpURLConnection.getErrorStream(),
 
-                text: async () => getResponseBody(inputStream),
-                json: async () => JSON.parse(getResponseBody(inputStream)),
+                text: async (encode = 'utf-8') => getResponseBody(inputStream, encode),
+                json: async (encode = 'utf-8') => JSON.parse(getResponseBody(inputStream, encode)),
 
                 blob: async () => {
                     const byteArray = inputStream.readAllBytes();
@@ -323,8 +323,9 @@ const Action = function(root, json){
                 success = pars.shift();
                 failure = pars.shift();
             }
+            const person = pars.shift();
 
-            return _self.invoke({name, data, parameter, success, failure});
+            return _self.invoke({name, data, parameter, success, failure, person});
         };
     };
     var createMethod = function(service, key){
@@ -345,22 +346,24 @@ const Action = function(root, json){
                 });
             }
             let res = null;
+            const person = option.person || null;
+
             try{
                 switch (method.toLowerCase()){
                     case "get":
-                        res = globalThis.applications.getQuery(this.root, uri);
+                        res = globalThis.applications[!!person ? 'authorizedGetQuery' : 'getQuery'](this.root, uri, person);
                         break;
                     case "post":
-                        res = globalThis.applications.postQuery(this.root, uri, JSON.stringify(option.data));
+                        res = globalThis.applications[!!person ? 'authorizedPostQuery' : 'postQuery'](this.root, uri, JSON.stringify(option.data), person);
                         break;
                     case "put":
-                        res = globalThis.applications.putQuery(this.root, uri, JSON.stringify(option.data));
+                        res = globalThis.applications[!!person ? 'authorizedPutQuery' : 'putQuery'](this.root, uri, JSON.stringify(option.data), person);
                         break;
                     case "delete":
-                        res = globalThis.applications.deleteQuery(this.root, uri);
+                        res = globalThis.applications[!!person ? 'authorizedDeleteQuery' : 'deleteQuery'](this.root, uri, person);
                         break;
                     default:
-                        res = globalThis.applications.getQuery(this.root, uri);
+                        res = globalThis.applications[!!person ? 'authorizedGetQuery' : 'getQuery'](this.root, uri, person);
                 }
                 if (res && res.getType().toString()==="success"){
                     const json = JSON.parse(res.toString());
@@ -762,6 +765,23 @@ Object.assign(org,  {
         return this.getObject(this.oGroup, this.oGroup.listWithPerson(_getNameFlag(name)));
     },
 
+    /**
+     * 根据人员身份取所有的群组对象数组。如果群组具有群组（group）成员，且群组成员中包含该人员和身份，那么该群组也被返回。
+     * @method listGroupWithIdentity
+     * @o2membercategory group
+     * @methodOf module:server.org
+     * @static
+     * @param {PersonFlag|PersonFlag[]} name - 身份的distinguishedName、id、unique属性值，人员对象，或上述属性值和对象的数组。
+     * @return {GroupData[]} 返回群组对象数组。
+     * @o2ActionOut x_organization_assemble_express.GroupAction.listWithPersonObject|example=Group
+     * @o2syntax
+     * //返回群组数组。
+     * const groupList = this.org.listGroupWithIdentity( name );
+     */
+    listGroupWithIdentity:function(name){
+        return this.getObject(this.oGroup, this.oGroup.listWithIdentity(_getNameFlag(name)));
+    },
+
     //群组是否拥有角色--返回true, false
     /**
      * 群组是否拥有角色。
@@ -1129,6 +1149,41 @@ Object.assign(org,  {
         return (v_json && v_json.length===1) ? v_json[0] : v_json;
     },
 
+    /**
+     添加身份
+     * @method addIdentity
+     * @o2membercategory identity
+     * @methodOf module:server.org
+     * @static
+     * @param {UnitFlag} unit - 组织的distinguishedName、id、unique属性值，身份对象，或上述属性值和对象的数组。
+     * @param {PersonFlag} person - 人员的distinguishedName、id、unique属性值，身份对象，或上述属性值和对象的数组。
+     * @param {String} name - 是否的中文名称。
+     * @param {Object} data - 其他值。
+     * @return identityId 返回身份id。
+     * @o2syntax
+     * //返回身份id。
+     * const identityId = this.org.addIdentity( unit, person, name );
+     */
+    addIdentity: function(unit, person, name, data){
+        const unitFlag = _getNameFlag(unit);
+        const personFlag = _getNameFlag(person);
+        const identityList = Actions.load('x_organization_assemble_express').IdentityAction.listWithUnitPersonObject({
+            unitList: unitFlag,
+            personList: personFlag
+        }).data;
+        //不存在，创建身份
+        if( !identityList || !identityList.length ) {
+            return Actions.load("x_organization_assemble_control").IdentityAction.create({
+                ...data,
+                "name": name,
+                "person": personFlag[0],
+                "unit": unitFlag[0]
+            }).data.id;
+        }else{
+            return Actions.load("x_organization_assemble_control").IdentityAction( identityList[0].unique ).data.id;
+        }
+    },
+
     //列出人员的身份
     /**
      * 根据人员标识获取对应的身份对象数组。
@@ -1432,6 +1487,57 @@ Object.assign(org,  {
     getDuty: function(duty, id){
         const unit = (typeof id==="object") ? (id.distinguishedName || id.id || id.unique || id.name) : id;
         return this.getObject(this.oIdentity, this.oUnitDuty.listIdentityWithUnitWithName(unit, duty));
+    },
+
+    /**
+     * 把身份添加到职务中。
+     * @method addIdentityToDuty
+     * @o2membercategory duty
+     * @methodOf module:server.org
+     * @static
+     * @param {String} dutyName 组织职务名称。
+     * @param {UnitFlag} unit 组织的distinguishedName、id、unique属性值，组织对象。
+     * @param {IdentityFlag} identity 身份的distinguishedName、id、unique属性值，组织对象。
+     * @return {dutyId} 返回身份数组。
+     * @o2syntax
+     * //返回职务id。
+     * const dutyId = this.org.addIdentityToDuty( dutyName, unit, identity );
+     */
+    addIdentityToDuty: function (dutyName, unit, identity){
+        const unitFlag = _getNameFlag(unit);
+        const identityFlag = _getNameFlag(identity);
+        const dutyActon = Actions.load("x_organization_assemble_control").UnitDutyAction;
+        //获取当前组织下的所有职务
+        const dutyList = dutyActon.listWithUnit(unitFlag[0]);
+        //是否存在同名职务
+        const curDutyList = dutyList.data.filter((duty)=>{
+            return duty.name === dutyName;
+        });
+        //如果没有职务，创建
+        let dutyId;
+        if( !curDutyList.length ){
+            const json = dutyActon.create({
+                "name" : dutyName,
+                "unit" : unitFlag[0],
+                "identityList" : identityFlag
+            });
+            dutyId = json.data.id;
+        }else{
+            const curDuty = curDutyList[0];
+            const person = Actions.load("x_organization_assemble_express").PersonAction.listWithIdentityObject(identityFlag);
+            const personId = person.data.length ? person.data[0].id : '';
+            //当前人员是否在职务的身份列表中
+            const exist = curDuty.woIdentityList.some((identity)=>{
+                return identity.person === personId;
+            });
+            //不存在，把身份添加到职务中
+            if( !exist ){
+                curDuty.identityList.push(identityFlag[0]);
+                dutyActon.edit(curDuty.id, curDuty);
+            }
+            dutyId = curDuty.id;
+        }
+        return dutyId;
     },
 
     //获取身份的所有职务名称
@@ -1991,7 +2097,9 @@ const include = function( optionsOrName , callback ){
 
     const arg1 = (type==='portal') ? application : name;
     const arg2 = (type==='portal') ? name : application;
-    const json = (type==='service') ? actionsMap[type].getScript(name) : actionsMap[type].getScript(arg1, arg2, {"importedList":includedScripts[application]});
+    const json = (type==='service') ?
+        actionsMap[type].getScript(encodeURIComponent(name)) :
+        actionsMap[type].getScript(encodeURIComponent(arg1), encodeURIComponent(arg2), {"importedList":includedScripts[application]});
     includedScripts[application] = includedScripts[application].concat(json.data.importedList);
     includedScripts[application].push(name);
     if (json.data && json.data.text){
@@ -2021,7 +2129,9 @@ const _includeSource = function (optionsOrName, callback, fileType) {
 
     const arg1 = (type==='portal') ? application : name;
     const arg2 = (type==='portal') ? name : application;
-    const json = (type==='service') ? actionsMap[type].getScript(name) : actionsMap[type].getScript(arg1, arg2, {"importedList":includedScripts[application]});
+    const json = (type==='service') ?
+        actionsMap[type].getScript(encodeURIComponent(name)) :
+        actionsMap[type].getScript(encodeURIComponent(arg1), encodeURIComponent(arg2), {"importedList":includedScripts[application]});
 
     let result;
     if (json.data && json.data.text){
@@ -2191,7 +2301,7 @@ const Dict = function(optionsOrName){
         const failureFun = json=>{if (failure) failure(json.data);}
 
         const par = [encodeURIComponent(this.name)];
-        if (type !== "service") par.push(applicationId);
+        if (type !== "service") par.push(encodeURIComponent(applicationId));
         if (path) par.push(encodePath(path));
 
         const json = action[methodName](...par, successFun, failureFun);
@@ -2329,7 +2439,7 @@ const Dict = function(optionsOrName){
         const failureFun = json=>{if (failure) failure(json.data);}
 
         const par = [encodeURIComponent(this.name)];
-        if (type !== "service") par.push(applicationId);
+        if (type !== "service") par.push(encodeURIComponent(applicationId));
 
         const json = action.setDictData(...par, encodePath(path), value, successFun, failureFun);
         return json.data;
@@ -2469,7 +2579,7 @@ const Dict = function(optionsOrName){
         const failureFun = json=>{if (failure) failure(json.data);}
 
         const par = [encodeURIComponent(this.name)];
-        if (type !== "service") par.push(applicationId);
+        if (type !== "service") par.push(encodeURIComponent(applicationId));
 
         const json = action.addDictData(...par, encodePath(path), value, successFun, failureFun);
         return json.data;
@@ -2585,7 +2695,7 @@ const Dict = function(optionsOrName){
         const failureFun = json=>{if (failure) failure(json.data);}
 
         const par = [encodeURIComponent(this.name)];
-        if (type !== "service") par.push(applicationId);
+        if (type !== "service") par.push(encodeURIComponent(applicationId));
 
         const json = action.deleteDictData(...par, encodePath(path), successFun, failureFun);
         return json.data;
@@ -3047,7 +3157,7 @@ const statement = {
         };
 
         return Actions.load("x_query_assemble_surface").StatementAction.executeV2(
-            statement.name, statement.mode || "data", statement.page || 1, statement.pageSize || 20, obj,
+            encodeURIComponent(statement.name), statement.mode || "data", statement.page || 1, statement.pageSize || 20, obj,
             callback
         );
     },
@@ -3223,7 +3333,7 @@ const view = {
     "lookup": function(view, callback){
         const filterList = {"filterList": (view.filter || null)};
 
-        const json = Actions.load("x_query_assemble_surface").ViewAction.executeWithQuery(view.view, view.application, filterList);
+        const json = Actions.load("x_query_assemble_surface").ViewAction.executeWithQuery(encodeURIComponent(view.view), encodeURIComponent(view.application), filterList);
 
         const data = {
             "grid": json.data.grid || json.data.groupGrid,
@@ -4227,7 +4337,7 @@ const headers = {
 /**
  * 调用接口时传入的请求消息体的文本内容。
  * @o2range 服务管理-接口
- * @module server.requestText
+ * @module server.service.requestText
  * @o2cn 传入的服务消息体文本
  * @o2category server.service
  * @o2ordernumber 250
@@ -4264,7 +4374,7 @@ const requestDescriptor = {
             /**
              * 调用接口时传入的请求对象。java的 request（java.net.http.HttpRequest）对象。
              * @o2range 服务管理-接口
-             * @module server.request
+             * @module server.service.request
              * @o2cn 传入的服务消息体文本
              * @o2category server.service
              * @o2ordernumber 250

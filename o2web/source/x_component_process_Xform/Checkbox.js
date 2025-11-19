@@ -30,10 +30,14 @@ MWF.xApplication.process.Xform.Checkbox = MWF.APPCheckbox =  new Class(
          */
         loadDescription: function(){},
         _loadNode: function(){
-            if (this.isReadonly()){
-                this._loadNodeRead();
+            if (!this.isReadable && !!this.isHideUnreadable){
+                this.node?.addClass('hide');
             }else{
-                this._loadNodeEdit();
+                if (this.isReadonly()){
+                    this._loadNodeRead();
+                }else{
+                    this._loadNodeEdit();
+                }
             }
         },
         _loadMergeReadContentNode: function( contentNode, data ){
@@ -510,7 +514,7 @@ MWF.xApplication.process.Xform.Checkbox = MWF.APPCheckbox =  new Class(
 
         getExcelData: function( type ){
             var value = this.getData();
-		    if( type === "value" )return value;
+		    if( type === "value" )return value.join(", ");
 
             var options = this.getOptionsObj();
             return Promise.resolve(options).then(function (opts) {

@@ -35,6 +35,9 @@ MWF.xApplication.process.Work.LP = {
     "flowWork": "继续流转",
     "handwriting": "手写",
     "audioRecord": "录音",
+    "collect": "收藏",
+
+    "noOpinionNote": "您还没有设置常用意见，点击设置。",
 
     "noAppendTaskIdentityConfig" : "没有配置转交人，请联系管理员",
     "selectAppendTaskIdentityNotice" : "请选择转交人",
@@ -113,6 +116,8 @@ MWF.xApplication.process.Work.LP = {
     "submitQuickText": "选择[{route}]，意见：{opinion}{org}。",
     "addTaskQuickText": "选择[{route}{mode}]，意见：{opinion}，加签人：{org}。",
     "resetQuickText": "意见：{opinion}，重置给：{org}。",
+    "deleteQuickItemTitle": "删除快速选择记录",
+    "deleteQuickItemContent": "确定删除这条快速选择记录?",
 
     "users": "处理人",
     "goBackActivity": "退回到活动",

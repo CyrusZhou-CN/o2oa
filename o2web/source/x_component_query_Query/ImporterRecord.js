@@ -30,7 +30,6 @@ MWF.xApplication.query.Query.ImporterRecord = new Class({
         }.bind(this))
     },
     _load: function () {
-        debugger;
         this.container.empty();
 
         this.actionbarAreaNode =  new Element("div.actionbarAreaNode", {"styles": this.css.actionbarAreaNode}).inject(this.container);
@@ -162,7 +161,6 @@ MWF.xApplication.query.Query.ImporterRecord = new Class({
                 "id": this.options.importerId
             }, {
                 "onAfterImport": function () {
-                    debugger;
                     if(this.view)this.view.reload();
                 }.bind(this)
             }, this.app);
@@ -437,7 +435,7 @@ MWF.xApplication.query.Query.ImporterRecord.Detail = new Class({
         htmlArray.push( "<tr>" );
 
         htmlArray.push( "<th style='"+titleStyle+" width:100px;'> "+ this.lp.importerName +"</th>" );
-        htmlArray.push( "<td style='"+contentStyle+"'> "+ this.data.name +"</td>" );
+        htmlArray.push( "<td style='"+contentStyle+"'> "+ o2.txt(this.data.name) +"</td>" );
 
         htmlArray.push( "<th style='"+titleStyle+"'> "+ this.lp.importCount +"</th>" );
         htmlArray.push( "<td style='"+contentStyle+"'> "+ this.data.count +"</td>" );
@@ -446,14 +444,14 @@ MWF.xApplication.query.Query.ImporterRecord.Detail = new Class({
         htmlArray.push( "<td style='"+contentStyle+"'> "+ this.data.createTime +"</td>" );
 
         htmlArray.push( "<th style='"+titleStyle+"'> "+ this.lp.importPerson +"</th>" );
-        htmlArray.push( "<td style='"+contentStyle+"'> "+ (this.data.creatorPerson||"").split('@')[0] +"</td>" );
+        htmlArray.push( "<td style='"+contentStyle+"'> "+ o2.txt((this.data.creatorPerson||"").split('@')[0]) +"</td>" );
 
         htmlArray.push( "</tr>" );
 
         htmlArray.push( "<tr>" );
 
         htmlArray.push( "<th style='"+titleStyle+"'> "+ this.lp.status +"</th>" );
-        htmlArray.push( "<td style='"+contentStyle+"'> "+ this.data.status +"</td>" );
+        htmlArray.push( "<td style='"+contentStyle+"'> "+ o2.txt(this.data.status) +"</td>" );
 
         htmlArray.push( "<th style='"+titleStyle+"'> "+ this.lp.failCount +"</th>" );
         htmlArray.push( "<td style='"+contentStyle+"'> "+ (o2.typeOf(this.data.failCount)==="null"?"":this.data.failCount) +"</td>" );
@@ -585,7 +583,6 @@ MWF.xApplication.query.Query.ImporterRecord.Detail = new Class({
     },
     switchSrcDataCount: function () {
         this.isShowAll = !this.isShowAll;
-        debugger;
         this.view.options.pagingPar.currentPage = this.view.paging.options.currentPage;
         // this.view.gotoPage( this.view.paging.options.currentPage )
         this.view.reload();
@@ -598,7 +595,6 @@ MWF.xApplication.query.Query.ImporterRecord.DetailView = new Class({
         return new MWF.xApplication.query.Query.ImporterRecord.DetailViewLine(this.viewNode, data, this.explorer, this, null,  index);
     },
     _getCurrentPageData: function(callback, count, pageNum){
-        debugger;
         this.clearBody();
         if(!count)count=15;
         if(!pageNum)pageNum = 1;
