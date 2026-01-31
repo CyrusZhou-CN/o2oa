@@ -22,7 +22,6 @@ o2.widget.ImageLazyLoader = o2.ImageLazyLoader = new Class({
         this.fireEvent("init");
     },
     load: function(callback){
-
         if( Browser.name === 'ie' && !this.isIE11 ){
             this.parseOnerror();
             this.node.set("html", this.html_new);
@@ -49,7 +48,7 @@ o2.widget.ImageLazyLoader = o2.ImageLazyLoader = new Class({
     parseOnerror: function(){
         var html = this.replaceOnAttribute(this.html);
         var regexp_all = /(i?)(<img)([^>]+>)/gmi;
-        var images = this.html.match(regexp_all);
+        var images = html.match(regexp_all);
         if(images){
             if (images.length){
                 for (var i=0; i<images.length; i++){
@@ -68,7 +67,7 @@ o2.widget.ImageLazyLoader = o2.ImageLazyLoader = new Class({
     parseHtml: function(){
         var html = this.replaceOnAttribute(this.html);
         var regexp_all = /(i?)(<img)([^>]+>)/gmi;
-        var images = this.html.match(regexp_all);
+        var images = html.match(regexp_all);
         if(images){
             if (images.length){
                 for (var i=0; i<images.length; i++){
@@ -136,7 +135,7 @@ o2.widget.ImageLazyLoader = o2.ImageLazyLoader = new Class({
                 for (var i=0; i<as.length; i++){
                     var a = as[i];
                     var href =  this.getAttributeValue(a, "href");
-                    if( href.indexOf('javascript:') > -1 ){
+                    if( href.toLowerCase().indexOf('javascript:') > -1 ){
                         var a1 = this.removeAttribute(a, "href");
                         html = html.replace(a, a1);
                     }

@@ -35,8 +35,8 @@ MWF.xApplication.process.FormDesigner.LP = {
 	"selectDataPath": "选择数据路径",
 	"selectPermissions": "选择数据权限",
 
-    "noFieldPermissions": "“{process}”还没有数据路径权限配置", 
-	"FieldPermissionsSelectProcess": "请先选择要配置权限的流程", 
+    "noFieldPermissions": "“{process}”还没有数据路径权限配置",
+	"FieldPermissionsSelectProcess": "请先选择要配置权限的流程",
 
     "formPermissionsDefaultDesc": "默认数据权限配置仅应用于表单，它不会控制数据的服务段查询权限，您通过视图或进行数据导出时不应用此设置。如果您想控制数据的服务端权限，请添加对应的流程数据权限。",
     "formPermissionsDefault": "默认数据权限配置",
@@ -44,7 +44,7 @@ MWF.xApplication.process.FormDesigner.LP = {
     "addFormPermissionsProcess": "添加流程数据权限配置",
 
     "formPermissionsProcesstDesc": "为流程“{process}”配置数据权限，",
-    
+
 
     button: {
         ok: '确定',
@@ -583,6 +583,8 @@ MWF.xApplication.process.FormDesigner.LP = {
         activityId: '活动ID',
         splitValue: '拆分值',
 
+        formActionNotice: "注：当作为移动端表单展现时有效。",
+
         enableSectionMerge: '区段合并',
         showSectionKey: '显示区段值',
         editByMerge: '合并编辑(删除区段值)',
@@ -712,10 +714,13 @@ MWF.xApplication.process.FormDesigner.LP = {
         timeOnly: '仅时间',
         weekOnly: '第几周',
         multidate: '多个日期',
-        datetimerange: '日期时间范围',
-        daterange: '日期范围',
-        timerange: '时间范围',
-        monthrange: '月份范围',
+        multimonth: '多个月份',
+        multiyear: '多个年份',
+        datetimeRange: '日期时间范围',
+        dateRange: '日期范围',
+        timeRange: '时间范围',
+        monthRange: '月份范围',
+        yearRange: '年份范围',
         selectSecond: '是否选择秒',
         timeSelectType: '时间选择方式',
         timeSelectType_slider: '滑块',
@@ -852,6 +857,7 @@ MWF.xApplication.process.FormDesigner.LP = {
         allowUpload: '允许上载',
         allowFromPan: '允许从网盘选择',
         allowPreview: '允许预览',
+        allowAI: '允许AI分析',
         allowDownload: '允许下载',
         allowDownloadBatch: '允许批量下载',
         allowEdit: '允许编辑',
@@ -1453,6 +1459,7 @@ MWF.xApplication.process.FormDesigner.LP = {
         min: '最小值',
         step: '步长',
         step_strictly: '只允许输入步长的倍数',
+        stepNote: '包含时间时有效，只允许选择步长的倍数。（允许选择秒，对秒生效，否则对分钟生效）',
         precision: '数值精度',
         precision2: '小数点位数',
         controls: '控制按钮',

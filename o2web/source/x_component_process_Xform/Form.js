@@ -354,8 +354,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
 
             //cssText = cssText.replace(/\/\*[\s\S]*?\*\/|(?<!:)\/\/.*/g, '').replace(/\\n/, '');
 
-            cssText = cssText.replace(/\/\*[\s\S]*?\*\//g, '')  // 移除多行注释
-                .replace(/\/\/.*/g, '')           // 移除单行注释
+            cssText = cssText.replace(/\/\*[\s\S]*?\*\//g, '')  // 移除注释
                 .replace(/\\n/g, '');             // 移除\n
 
             cssText = this.parseCSS(cssText);
@@ -701,8 +700,15 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
         this.loadContent(callback);
     },
     loadExtendStyle: function (callback) {
-        if (!this.json.styleConfig || !this.json.styleConfig.extendFile) {
+        var cb = ()=>{
+            if( layout.mobile && this.json.selectorStyle ){
+                this.json.selectorStyle.style === "v10" && (this.json.selectorStyle.style = "v10_mobile");
+                this.json.selectorStyle.tabStyle === "v10" && (this.json.selectorStyle.tabStyle = "v10_mobile");
+            }
             if (callback) callback();
+        }
+        if (!this.json.styleConfig || !this.json.styleConfig.extendFile) {
+            cb();
             return;
         }
         // if (this.json["$version"] == "5.2") {
@@ -715,13 +721,13 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                     if (responseJSON && responseJSON.form) {
                         this.json = Object.merge(this.json, responseJSON.form);
                     }
-                    if (callback) callback();
+                    cb();
                 }.bind(this),
                 "onRequestFailure": function () {
-                    if (callback) callback();
+                    cb();
                 }.bind(this),
                 "onError": function () {
-                    if (callback) callback();
+                    cb();
                 }.bind(this)
             }
         );
@@ -1170,7 +1176,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
         if (flag) {
             flag = true;
             if (tool.control) {
-                flag = this.form.businessData.control[tool.control]
+                flag = this.businessData.control[tool.control]
             }
             if (tool.condition) {
                 var hideFlag = this.Macro.exec(tool.condition, this);
@@ -1749,8 +1755,14 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
         }
         return true;
     },
+    isReadonly: function (){
+        return this.options.readonly || this.json.isReadonly;
+    },
     isDraftWork: function (){
-      return !this.businessData.work.startTime;
+        return !this.businessData.work.startTime;
+    },
+    isCompletedWork: function (){
+        return !!this.businessData.work.completedTime;
     },
     saveFormData: function (callback, failure, history, data, issubmit, isstart) {
         if (this.businessData.work.startTime) {
@@ -2395,7 +2407,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
             }
         }.bind(this))
     },
-    uploadMedia(formData, file){
+    uploadMedia: function(formData, file){
         return new Promise(function(resolve){
             this.workAction.uploadAttachment(this.businessData.work.id, formData, file, function(json){
                 // mediaIds.push(json.data.id);

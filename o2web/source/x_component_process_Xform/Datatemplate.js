@@ -245,8 +245,8 @@ MWF.xApplication.process.Xform.Datatemplate = MWF.APPDatatemplate = new Class(
 			if(iconNode)iconNode.destroy();
 
 			// this.editModules = [];
-			this.node.setStyle("overflow-x", "auto");
-			this.node.setStyle("overflow-y", "hidden");
+			// this.node.setStyle("overflow-x", "auto");
+			// this.node.setStyle("overflow-y", "hidden");
 
 			this.editable = !(this.readonly || (this.json.isReadonly === true) || (this.form.json.isReadonly === true));
 			if( this.isMergeRead )this.editable = false;
@@ -430,7 +430,8 @@ MWF.xApplication.process.Xform.Datatemplate = MWF.APPDatatemplate = new Class(
 			this.selectAllList.each( function (module) {
 				// module.setData(""); //默认不选中
 				var addEvent = function (){
-					!module._isDtEventAdded && module.node.addEvents({"click": function(e){
+					!module._isDtEventAdded && module.node.addEvents({"change": function(e){
+						debugger;
 						this._checkSelectAll(e);
 					}.bind(this)});
 					module._isDtEventAdded = true;
@@ -1064,7 +1065,7 @@ MWF.xApplication.process.Xform.Datatemplate = MWF.APPDatatemplate = new Class(
 
 			_self.fireEvent("change", [{"lines":lines, "type":"deletelines"}]);
 
-			if(saveFlag)this.form.saveFormData();
+			if(saveFlag)this.saveFormData();
 		},
 		_deleteLine: function(ev, line){
 			if( this.isMin() ){
@@ -1108,7 +1109,7 @@ MWF.xApplication.process.Xform.Datatemplate = MWF.APPDatatemplate = new Class(
 
 			this.fireEvent("change", [{"lines":[line], "type":"deleteline"}]);
 
-			if(saveFlag)this.form.saveFormData();
+			if(saveFlag)this.saveFormData();
 		},
 		_checkSelectAll: function () {
 			var selectData = this.selectAllSelector.getData();
@@ -1889,6 +1890,12 @@ MWF.xApplication.process.Xform.Datatemplate = MWF.APPDatatemplate = new Class(
 					}
 				}, null, false
 			);
+		},
+		saveFormData: function(){
+			var appName = this.form.app.options.name;
+			if( ['process.Work', 'cms.Document'].includes(appName) ){
+				this.form.saveFormData();
+			}
 		}
 	});
 
@@ -2304,14 +2311,16 @@ MWF.xApplication.process.Xform.Datatemplate.Line =  new Class({
 
 					if( json.type==="Attachment" || json.type==="AttachmentDg" ){
 						module.addEvent("change", function(){
-							_self.form.saveFormData();
+							_self.template.saveFormData();
 						}.bind(this))
 					}else if( json.type==="Datatemplate" ){
 						this.subDatatemplateModuleList.push(module);
-					}else if( module.field && json.type!=="Datatable" ){
-						module.addEvent("change", function(){
-							this.saveDataById();
-						});
+					}else if( module.field && !["Datatable", "OOFiles"].contains(json.type) ) {
+						if (module.json.originialId !== this.template.selectorId){
+							module.addEvent("change", function () {
+								this.saveDataById();
+							});
+						}
 					}
 
 					this.form.modules.push(module);
@@ -2491,7 +2500,13 @@ MWF.xApplication.process.Xform.Datatemplate.Line =  new Class({
 	},
 	select: function(){
 		this.selected = true;
-		if(this.selector)this.selector.setData(this.template.json.selectorSelectedValue);
+		if(this.selector){
+			if( ["OOCheckGroup", "Checkbox", "Elcheckbox"].contains(this.selector.json.type)){
+				this.selector.setData([this.template.json.selectorSelectedValue]);
+			}else{
+				this.selector.setData(this.template.json.selectorSelectedValue);
+			}
+		}
 	},
 	unselect: function(){
 		this.selected = false;

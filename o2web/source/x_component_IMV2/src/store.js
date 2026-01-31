@@ -60,10 +60,14 @@ export const imConfig = defineStore('imConfig', {
 export const imGlobalOptions = defineStore('imGlobalOptions', {
     state: () => ({
         hideSide: false,
+        firstOpenConversation: true,
     }),
     actions: {
         setOptions(options)  {
             this.hideSide = options.hideSide ?? false
+        },
+        loadedConversation() {
+            this.firstOpenConversation = false
         }
     }
 })

@@ -141,7 +141,6 @@ MWF.xApplication.process.FormDesigner.Module.Form = MWF.FCForm = new Class({
 				}
 
 				this.loadTemplateStyles(this.stylesList[formStyleType].file, this.stylesList[formStyleType].extendFile, function (templateStyles) {
-					//this.templateStyles = (this.stylesList && this.json.formStyleType) ? this.stylesList[this.json.formStyleType] : null;
 					this._load(templateStyles, oldStyleValue);
 				}.bind(this));
 			}
@@ -175,7 +174,7 @@ MWF.xApplication.process.FormDesigner.Module.Form = MWF.FCForm = new Class({
 		this.loadDomModules();
 
 		if (this.json.formStyleType && this.templateStyles && this.templateStyles["form"]){
-			this.setTemplateStyles(this.templateStyles["form"]);
+			//this.setTemplateStyles(this.templateStyles["form"]);
 		}
 
 		this.setCustomStyles();
@@ -607,6 +606,7 @@ MWF.xApplication.process.FormDesigner.Module.Form = MWF.FCForm = new Class({
 			}.bind(this), false);
 			return module;
 		}else if( MWF["FC"+json.type] ){
+			debugger;
 			var module;
 			var className = json.type.capitalize();
 			this.getTemplateData(className, function(data){
@@ -1021,6 +1021,7 @@ MWF.xApplication.process.FormDesigner.Module.Form = MWF.FCForm = new Class({
 							}
 							break;
 						case "boolean":
+						case "number":
 							data[k] = initial[k];
 							break;
 						default :
@@ -1052,6 +1053,7 @@ MWF.xApplication.process.FormDesigner.Module.Form = MWF.FCForm = new Class({
 	},
 
 	_getFormData: function(callback){
+		debugger;
     	this.fireEvent("queryGetFormData");
 
     	this._preprocessingModuleData();
@@ -1521,8 +1523,7 @@ MWF.xApplication.process.FormDesigner.Module.Form = MWF.FCForm = new Class({
             // cssText = cssText.replace(/\/\*[\s\S]*?\*\/\n|([^:]|^)\/\/.*\n$/g, '').replace(/\\n/, '');
 			//cssText = cssText.replace(/\/\*[\s\S]*?\*\/|(?<!:)\/\/.*/g, '').replace(/\\n/, '');
 
-			cssText = cssText.replace(/\/\*[\s\S]*?\*\//g, '')  // 移除多行注释
-				.replace(/\/\/.*/g, '')           // 移除单行注释
+			cssText = cssText.replace(/\/\*[\s\S]*?\*\//g, '')  // 移除注释
 				.replace(/\\n/g, '');             // 移除\n
 
             cssText = this.parseCSS(cssText);

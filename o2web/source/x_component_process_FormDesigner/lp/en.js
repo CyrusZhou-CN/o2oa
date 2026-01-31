@@ -712,6 +712,7 @@ MWF.xApplication.process.FormDesigner.LP={
 		"allowUpload": "Allow Upload",
 		"allowFromPan": "Allow selection from network disk",
 		"allowPreview": "Allow Preview",
+		"allowAI": "Allow AI",
 		"allowDownload": "Allow Download",
 		"allowDownloadBatch": "Allow Download Batch",
 		"allowEdit": "Allow Edit",
@@ -1604,7 +1605,16 @@ MWF.xApplication.process.FormDesigner.LP={
 		"unreadActivity": "Unreadable activity",
 		"unreadOrg": "Unreadable organization",
 		"uneditActivity": "Non editable activity",
-		"uneditOrg": "Non editable organization"
+		"uneditOrg": "Non editable organization",
+		"formActionNotice": "Note: Valid when presented as a mobile form.",
+		"multimonth": "Multiple months",
+		"multiyear": "Multiple years",
+		"datetimeRange": "Date and Time Range",
+		"dateRange": "date range",
+		"timeRange": "time range",
+		"monthRange": "month range",
+		"yearRange": "year range",
+		"stepNote": "Valid when including time, only allowing selection of multiples of the step size. (Allow selection of seconds, effective for seconds, otherwise effective for minutes)"
 	},
 	"smartbi": {
 		"nosetup": "please install SmartBI APP first",
