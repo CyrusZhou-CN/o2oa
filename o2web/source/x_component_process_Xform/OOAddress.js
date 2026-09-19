@@ -18,6 +18,7 @@ MWF.xApplication.process.Xform.OOAddress = MWF.APPOOAddress = new Class({
     },
     _loadNodeEdit: function () {
         this._resetNodeEdit();
+        this.node.cascading = true;
         this.node.setAttribute('value', undefined);
         this.node.removeAttribute('placeholder');
 
@@ -208,7 +209,7 @@ MWF.xApplication.process.Xform.OOAddress = MWF.APPOOAddress = new Class({
 
     __setValue: function (value) {
         this._setBusinessData(value);
-        this.node.value = value;
+        this.node.value = Array.isArray(value) ? JSON.stringify(value) : value;
         this.fieldModuleLoaded = true;
         this.moduleValueAG = null;
     },
@@ -227,6 +228,9 @@ MWF.xApplication.process.Xform.OOAddress = MWF.APPOOAddress = new Class({
         return this.node.text;
     },
     getInputData: function () {
+        if(this.moduleSelectAG || this.moduleValueAG){
+            return this._getBusinessData();
+        }
         return this.node.value;
     },
     resetData: function () {
@@ -250,6 +254,7 @@ MWF.xApplication.process.Xform.OOAddress = MWF.APPOOAddress = new Class({
     notValidationMode: function (text) {
         if(!this.isNotValidationMode){
             this.isNotValidationMode = true;
+            this.showNotValidationMode(this.node);
             this.validationText = text;
             this.node.checkValidity();
         }

@@ -214,12 +214,25 @@ MWF.xApplication.process.Xform.OOSelect = MWF.APPOOSelect =  new Class({
 			this._setBusinessData(v);
 		}.bind(this));
 
-		this.node.addEvent('blur', function () {
-			this.validation();
-		}.bind(this));
-		this.node.addEvent('keyup', function () {
-			this.validationMode();
-		}.bind(this));
+		if(this.json.allowInput){
+			this.node.addEvent('blur', function () {
+				this.validation();
+			}.bind(this));
+			this.node.addEvent('keyup', function () {
+				this.validationMode();
+			}.bind(this));
+		}
+
+		if (this.json.searchable) {
+			this.node.setAttribute('searchable', 'true');
+		}else{
+			this.node.setAttribute('searchable', 'false');
+		}
+
+		var searchFun = this._getSearchFunction();
+		if(searchFun){
+			this.node.setSearchFunction(searchFun);
+		}
 
 		this.node.addEventListener('validity', (e) => {
 			if (this.validationText) {
@@ -247,6 +260,17 @@ MWF.xApplication.process.Xform.OOSelect = MWF.APPOOSelect =  new Class({
         });
 
 		this.setOptions();
+	},
+
+	_getSearchFunction: function (){
+		if(!this.json.searchScript || !this.json.searchScript.code){
+			return null;
+		}
+		if( this.searchFunction ){
+			return this.searchFunction;
+		}
+		this.searchFunction = this.form.Macro.exec(this.json.searchScript.code, this);
+		return this.searchFunction;
 	},
 
 	_setOptions: function(optionItems){
@@ -344,6 +368,9 @@ MWF.xApplication.process.Xform.OOSelect = MWF.APPOOSelect =  new Class({
 		}
 	},
     getInputData: function(){
+		if(this.moduleSelectAG || this.moduleValueAG){
+			return this._getBusinessData();
+		}
 		return this.node.value || '';
 	},
     resetData: function(){
@@ -367,6 +394,7 @@ MWF.xApplication.process.Xform.OOSelect = MWF.APPOOSelect =  new Class({
 	notValidationMode: function (text) {
         if(!this.isNotValidationMode){
             this.isNotValidationMode = true;
+			this.showNotValidationMode(this.node);
             this.validationText = text;
             this.node.checkValidity();
         }

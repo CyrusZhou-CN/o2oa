@@ -110,6 +110,7 @@ public class Task extends SliceJpaObject implements ProjectionInterface {
 			this.prevTaskIdentity = this.properties.getPrevTaskIdentity();
 			this.prevTaskIdentityList = this.properties.getPrevTaskIdentityList();
 			this.act = this.properties.getAct();
+			this.actPerson = this.properties.getActPerson();
 		}
 	}
 
@@ -128,6 +129,9 @@ public class Task extends SliceJpaObject implements ProjectionInterface {
 
 	public void setTitle(String title) {
 		this.title = title;
+        if (StringTools.utf8Length(title) > length_255B) {
+            this.title = StringTools.utf8SubString(title, length_255B - 3) + "...";
+        }
 		this.getProperties().setTitle(title);
 	}
 
@@ -270,6 +274,23 @@ public class Task extends SliceJpaObject implements ProjectionInterface {
 	public void setAct(String act) {
 		this.getProperties().setAct(act);
 		this.act = act;
+	}
+
+	public static final String ACTPERSON_FIELDNAME = "actPerson";
+	@Transient
+	@FieldDescribe("操作人员,在加签中记录执行加签的人")
+	private String actPerson;
+
+	public String getActPerson() {
+		if ((null != this.properties) && (null == this.actPerson)) {
+			this.actPerson = this.properties.getActPerson();
+		}
+		return this.actPerson;
+	}
+
+	public void setActPerson(String actPerson) {
+		this.getProperties().setActPerson(actPerson);
+		this.actPerson = actPerson;
 	}
 
 	public TaskProperties getProperties() {

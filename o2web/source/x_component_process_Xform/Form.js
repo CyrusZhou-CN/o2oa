@@ -945,7 +945,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                 }
                 if (i == 2) {
                     this.css.html5ActionButtonDingdingMore.width = buttonWidth + "px";
-                    var action = new Element("div", { "styles": this.css.html5ActionButtonDingdingMore, "text": "…"}).inject(node);
+                    var action = new Element("div.o2_form_mobile_action_more", { "styles": this.css.html5ActionButtonDingdingMore, "text": "…"}).inject(node);
                     action.addEvent("click", function (e) {
                         this._loadMoreMobileActionsDingdingStyle(tools, 2, node);
                     }.bind(this));
@@ -1087,8 +1087,8 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
             }
             new Element("div", { "styles": this.css.html5ActionButtonSplit }).inject(node.getLast(), "before");
             new Element("div", { "styles": this.css.html5ActionButtonSplit }).inject(node);
-            this.css.html5ActionButton.width = "23%"
-            var action = new Element("div", { "styles": this.css.html5ActionButton, "class": "mainColor_color", "text": "…" }).inject(node);
+            this.css.html5ActionButton.width = "23%";
+            var action = new Element("div.o2_form_mobile_action_more", { "styles": this.css.html5ActionButton, "class": "mainColor_color", "text": "…" }).inject(node);
             action.addEvent("click", function (e) {
                 this._loadMoreMobileActions(tools, 2, node);
             }.bind(this));
@@ -1617,32 +1617,32 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
         return obj;
     },
     saveWork: function (callback, silent) {
-
         if( this.disallowSaving )return;
-
-        if (this.businessData.control["allowSave"]) {
-
-            if (!this.formSaveValidation()) {
-                if (callback) callback();
-                return false;
-            }
-
-            this.fireEvent("beforeSave");
-            this.fireEvent("beforeSaveWork");
-
-            if (this.app && this.app.fireEvent) this.app.fireEvent("beforeSave");
-            this.saveFormData(function (json) {
-                if (this.app && !silent) this.app.notice(MWF.xApplication.process.Xform.LP.dataSaved, "success");
-                if (callback && typeOf(callback) === "function") callback(json);
-                this.fireEvent("afterSave");
-                this.fireEvent("afterSaveWork");
-                if (this.app && this.app.fireEvent) this.app.fireEvent("afterSave");
-            }.bind(this));
-
-        } else {
+        if (!this.businessData.control["allowSave"]) {
             MWF.xDesktop.notice("error", { x: "right", y: "top" }, "Permission Denied");
-            //if (failure) failure(null, "Permission Denied", "");
+            return;
         }
+        const checkResult = this.formSaveValidation();
+        o2.promiseAll(checkResult).then( result=> {
+            if(result){
+                this._saveWork(callback, silent);
+            }else{
+                if (callback) callback();
+            }
+        })
+    },
+    _saveWork: function (callback, silent) {
+        this.fireEvent("beforeSave");
+        this.fireEvent("beforeSaveWork");
+
+        if (this.app && this.app.fireEvent) this.app.fireEvent("beforeSave");
+        this.saveFormData(function (json) {
+            if (this.app && !silent) this.app.notice(MWF.xApplication.process.Xform.LP.dataSaved, "success");
+            if (callback && typeOf(callback) === "function") callback(json);
+            this.fireEvent("afterSave");
+            this.fireEvent("afterSaveWork");
+            if (this.app && this.app.fireEvent) this.app.fireEvent("afterSave");
+        }.bind(this));
     },
 
     getSectionList: function () {
@@ -2072,11 +2072,25 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
     },
     formSaveValidation: function(){
         var flag = true;
+        const promiseList = [];
         Object.each(this.forms, function (field, key) {
             if( !field.json.id || field.json.id.indexOf("..") > 0 )return;
             field.validationMode();
-            if (!field.saveValidation()) flag = false;
+            const checkResult = field.saveValidation();
+            if(checkResult instanceof Promise){
+                promiseList.push(checkResult);
+            }else if(!checkResult){
+                flag = false;
+            }
         }.bind(this));
+        if( flag === false ){
+            return false;
+        }
+        if(promiseList.length > 0){
+            return Promise.all( promiseList ).then( function( resultArr ){
+                return resultArr.every(res => String(res) === "true");
+            });
+        }
         return flag;
     },
     formValidation: function (routeName, opinion, medias) {
@@ -2088,22 +2102,61 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
 
         var flag = true;
         //flag = this.validation();
+        var promiseList = [];
         Object.each(this.forms, function (field, key) {
             field.validationMode();
-            if (!field.validation(routeName, opinion, medias)) flag = false;
+            const checkResult = field.validation(routeName, opinion, medias);
+            if(checkResult instanceof Promise){
+                promiseList.push(checkResult);
+            }else if(!checkResult){
+                flag = false;
+            }
         }.bind(this));
+        if( flag === false ){
+            return false;
+        }
+        if(promiseList.length > 0){
+            return Promise.all( promiseList ).then( function( resultArr ){
+                return resultArr.every(res => String(res) === "true");
+            })
+        }
         return flag;
     },
+
+    validation: function (routeName, opinion, processor, medias) {
+        this.Macro.environment.form.currentRouteAlias = this.getCurrentRouteAlias();
+        this.Macro.environment.form.currentRouteName = routeName;
+        this.Macro.environment.form.opinion = opinion;
+        this.Macro.environment.form.medias = medias;
+        var routeFlag = this.validationRoute(processor);
+        if( !routeFlag ){
+            return false;
+        }
+
+        var opinionFlag = this.validationOpinion(processor);
+        if( !opinionFlag ){
+            return false;
+        }
+
+        var promiseList = [routeFlag, opinionFlag].filter(result=>{
+            return result instanceof Promise;
+        })
+
+        if(promiseList.length === 0)return true;
+
+        return Promise.all(promiseList).then(resultArr => {
+            return resultArr.every(res => String(res) === "true");
+        });
+    },
     validationOtherFlow: function (routeName, opinion, processor, flowData) {
+        if (!this.json.validationOtherFlow) return true;
+
         this.Macro.environment.form.currentRouteAlias = null;
         this.Macro.environment.form.currentRouteName = routeName;
         this.Macro.environment.form.opinion = opinion;
         this.Macro.environment.form.flowData = flowData;
-        if (!this.json.validationOtherFlow) return true;
-        if (!this.json.validationOtherFlow.code) return true;
-        var flag = this.Macro.exec(this.json.validationOtherFlow.code, this);
-        if (!flag) flag = MWF.xApplication.process.Xform.LP.notValidation;
-        if (flag.toString() !== "true") {
+
+        return this._checkCodeValidation(this.json.validationOtherFlow.code, (flag)=>{
             MWF.xDesktop.notice(
                 "error",
                 (processor) ? { "x": "center", "y": "top" } : { "x": "right", "y": "top" },
@@ -2112,51 +2165,51 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                 null,  //{"x": 0, "y": 30}
                 { "closeOnBoxClick": true, "closeOnBodyClick": true, "fixed": true, "delayClose": 6000 }
             );
+        })
+    },
+    _checkCodeValidation: function(code, notValidationCallback){
+        if( !code )return true;
+        var checkResult = this.Macro.exec(code, this);
+
+        var defaultMessage = MWF.xApplication.process.Xform.LP.notValidation;
+
+        if( checkResult instanceof Promise ){
+            return checkResult.then(result=>{
+                if ( String(result) !== "true") {
+                    notValidationCallback(result || defaultMessage);
+                    return false;
+                }
+                return true;
+            })
+        }
+
+        if ( String(checkResult) !== "true") {
+            notValidationCallback(checkResult || defaultMessage);
             return false;
         }
+
         return true;
-    },
-    validation: function (routeName, opinion, processor, medias) {
-        this.Macro.environment.form.currentRouteAlias = this.getCurrentRouteAlias();
-        this.Macro.environment.form.currentRouteName = routeName;
-        this.Macro.environment.form.opinion = opinion;
-        this.Macro.environment.form.medias = medias;
-        var routeFlag = this.validationRoute(processor);
-        var opinionFlag = this.validationOpinion(processor);
-        return routeFlag && opinionFlag;
     },
     validationRoute: function (processor) {
         if (!this.json.validationRoute) return true;
-        if (!this.json.validationRoute.code) return true;
-        var flag = this.Macro.exec(this.json.validationRoute.code, this);
-        if (!flag) flag = MWF.xApplication.process.Xform.LP.notValidation;
-        if (flag.toString() != "true") {
-            this.notValidationRouteMode(flag, processor);
-            return false;
-        }
-        return true;
+
+        return this._checkCodeValidation(this.json.validationRoute.code, (message)=>{
+            this.notValidationRouteMode(message, processor);
+        });
     },
     validationOpinion: function (processor) {
         if (!this.json.validationOpinion) return true;
-        if (!this.json.validationOpinion.code) return true;
-        var flag = this.Macro.exec(this.json.validationOpinion.code, this);
-        if (!flag) flag = MWF.xApplication.process.Xform.LP.notValidation;
-        if (flag.toString() != "true") {
-            this.notValidationOpinionMode(flag, processor);
-            return false;
-        }
-        return true;
+
+        return this._checkCodeValidation(this.json.validationOpinion.code, (message)=>{
+            this.notValidationOpinionMode(message, processor);
+        });
     },
     formCustomValidation: function () {
         if (!this.json.validationFormCustom) return true;
-        if (!this.json.validationFormCustom.code) return true;
-        var flag = this.Macro.exec(this.json.validationFormCustom.code, this);
-        if (!flag) flag = MWF.xApplication.process.Xform.LP.notValidation;
-        if (flag.toString() != "true") {
-            this.notValidationOpinionMode(flag);
-            return false;
-        }
-        return true;
+
+        return this._checkCodeValidation(this.json.validationFormCustom.code, (message)=>{
+            this.notValidationOpinionMode(message);
+        });
     },
     notValidationRouteMode: function (flag, processor) {
         if (processor) {
@@ -2262,16 +2315,44 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
             return false;
         }
 
-        if (!this.formValidation(routeName, opinion, medias)) {
-            this.app.content.unmask();
-            if (callback) callback();
-            return false;
+        const formValidated = this.formValidation(routeName, opinion, medias);
+        if(!formValidated)return;
+
+        const scriptValidated = this.validation(routeName, opinion, processor, medias);
+        if(!scriptValidated)return;
+
+        var promiseList = [formValidated, scriptValidated].filter(result=>{
+            return result instanceof Promise;
+        })
+
+        if(promiseList.length === 0){
+            this._submitWork(routeName, opinion, medias, callback, processor, data, appendTaskIdentityList, processorOrgList, callbackBeforeSave)
+        }else{
+            Promise.all(promiseList).then(resultArr => {
+                return resultArr.every(res => String(res) === "true");
+            }).then(result => {
+                if(result){
+                    this._submitWork(routeName, opinion, medias, callback, processor, data, appendTaskIdentityList, processorOrgList, callbackBeforeSave)
+                }else{
+                    this.app.content.unmask();
+                    if (processor && processor.node) processor.node.unmask();
+                    if (callback) callback();
+                }
+            });
         }
-        if (!this.validation(routeName, opinion, processor, medias)) {
-            if (processor && processor.node) processor.node.unmask();
-            if (callback) callback();
-            return false;
-        }
+    },
+    _submitWork: function (routeName, opinion, medias, callback, processor, data, appendTaskIdentityList, processorOrgList, callbackBeforeSave) {
+
+        // if( !this.formValidation(routeName, opinion, medias) ) {
+        //     this.app.content.unmask();
+        //     if (callback) callback();
+        //     return false;
+        // }
+        // if (!this.validation(routeName, opinion, processor, medias)) {
+        //     if (processor && processor.node) processor.node.unmask();
+        //     if (callback) callback();
+        //     return false;
+        // }
         if (!opinion) {
             var idx = this.businessData.task.routeNameList.indexOf(routeName);
             if (this.businessData.task.routeOpinionList[idx]) {
@@ -2623,17 +2704,43 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
         var dlg = o2.DL.open(options);
 
     },
+    flowValidation: function(callback) {
+        const customValidated = this.formCustomValidation("", "");
+        if( !customValidated )return false;
+
+        const formValidated = this.formValidation("", "");
+        if( !formValidated )return false;
+
+        var promiseList = [customValidated, formValidated].filter(result=>{
+            return result instanceof Promise;
+        })
+
+        if( promiseList.length === 0 ){
+            if(callback)callback();
+            return true;
+        }
+
+        Promise.all(promiseList).then(resultArr => {
+            return resultArr.every(res => String(res) === "true");
+        }).then( (result)=>{
+            if(result){
+                if(callback)callback();
+            }else{
+                this.app.content.unmask();
+            }
+        });
+    },
     startDraftProcess: function ( action ) {
-        if (!this.formCustomValidation("", "")) {
-            this.app.content.unmask();
-            //    if (callback) callback();
-            return false;
-        }
-        if (!this.formValidation("", "")) {
-            this.app.content.unmask();
-            //    if (callback) callback();
-            return false;
-        }
+        // if (!this.formCustomValidation("", "")) {
+        //     this.app.content.unmask();
+        //     //    if (callback) callback();
+        //     return false;
+        // }
+        // if (!this.formValidation("", "")) {
+        //     this.app.content.unmask();
+        //     //    if (callback) callback();
+        //     return false;
+        // }
         this.saveFormData(function () {
             this.workAction.startDraft(this.businessData.work.id, function (json) {
                 this.app.options.workId = json.data[0].work;
@@ -2726,35 +2833,40 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
     _flowWork: function( defaultRoute ){
         if (!this.checkUploadAttachment()) return false;
 
-        if (!this.businessData.work.startTime) {
-            this.startDraftProcess();
-        } else {
-            if (this.json.mode == "Mobile") {
-                setTimeout(function () {
-                    this.flowWork_mobile( defaultRoute );
-                }.bind(this), 100);
+        this.fireEvent("beforeProcessWork");
+        if (this.app && this.app.fireEvent) this.app.fireEvent("beforeProcessWork");
+
+        this.flowValidation(()=>{
+            if (!this.businessData.work.startTime) {
+                this.startDraftProcess();
             } else {
-                this.flowWork_pc( defaultRoute );
+                if (this.json.mode == "Mobile") {
+                    setTimeout(function () {
+                        this.flowWork_mobile( defaultRoute );
+                    }.bind(this), 100);
+                } else {
+                    this.flowWork_pc( defaultRoute );
+                }
             }
-        }
+        })
     },
     flowWork_pc: function ( defaultRoute ) {
         var _self = this;
         //? 添加事件
-        this.fireEvent("beforeProcessWork");
-        if (this.app && this.app.fireEvent) this.app.fireEvent("beforeProcessWork");
-
-        if (!this.formCustomValidation("", "")) {
-            this.app.content.unmask();
-            //    if (callback) callback();
-            return false;
-        }
-
-        if (!this.formValidation("", "")) {
-            this.app.content.unmask();
-            //    if (callback) callback();
-            return false;
-        }
+        // this.fireEvent("beforeProcessWork");
+        // if (this.app && this.app.fireEvent) this.app.fireEvent("beforeProcessWork");
+        //
+        // if (!this.formCustomValidation("", "")) {
+        //     this.app.content.unmask();
+        //     //    if (callback) callback();
+        //     return false;
+        // }
+        //
+        // if (!this.formValidation("", "")) {
+        //     this.app.content.unmask();
+        //     //    if (callback) callback();
+        //     return false;
+        // }
 
         var flowNode = new Element("div", { "styles": this.app.css.flowNode_Area }).inject(this.node);
         flowNode.setStyle("opacity", 0);
@@ -2847,8 +2959,8 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
         //     this.app.content.setStyle("height", document.body.getSize().y);
         // }
 
-        this.fireEvent("beforeProcessWork");
-        if (this.app && this.app.fireEvent) this.app.fireEvent("beforeProcessWork");
+        // this.fireEvent("beforeProcessWork");
+        // if (this.app && this.app.fireEvent) this.app.fireEvent("beforeProcessWork");
 
         // if (this.json.mode != "Mobile") {
         //     this.app.content.mask({
@@ -2866,16 +2978,16 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
         //     });
         // }
 
-        if (!this.formCustomValidation("", "")) {
-            this.app.content.unmask();
-            //    if (callback) callback();
-            return false;
-        }
-
-        if (!this.formValidation("", "")) {
-            this.app.content.unmask();
-            return false;
-        }
+        // if (!this.formCustomValidation("", "")) {
+        //     this.app.content.unmask();
+        //     //    if (callback) callback();
+        //     return false;
+        // }
+        //
+        // if (!this.formValidation("", "")) {
+        //     this.app.content.unmask();
+        //     return false;
+        // }
 
         var processNode = new Element("div.flowNode_mobile", { "styles": this.app.css.flowNode_mobile }).inject(document.body);
         // processNode.position({
@@ -2970,35 +3082,38 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                             _self.mask.loadNode(_self.app.content);
                         }
 
-                        if( !_self.validationOtherFlow('addTask', userOpinion, this, data) ){
-                            if (_self.mask) { _self.mask.hide(); _self.mask = null; }
-                            return;
-                        }
+                        var validated = _self.validationOtherFlow('addTask', userOpinion, this, data);
 
-                        _self.fireEvent("beforeSave");
-                        if (_self.app && _self.app.fireEvent) _self.app.fireEvent("beforeSave");
-                        _self.saveFormData(function (json) {
-
-                            _self.fireEvent("afterSave");
-                            if (_self.app && _self.app.fireEvent) _self.app.fireEvent("afterSave");
-
-                            _self.AddTaskToPeson(names, opinion, mode, before, routeName, function (workJson) {
-                                _self.fireEvent("afterAddTask", data);
-                                if (_self.app && _self.app.fireEvent) _self.app.fireEvent("afterAddTask");
-                                // _self.addResetMessage(workJson.data);
-                                this.destroy();
-                                hanlderNode.destroy();
-                                if (_self.flowDlg) _self.flowDlg.close();
-
-                                _self.finishOnFlow("addTask", workJson.data);
-
-                            }.bind(this), function (xhr, text, error) {
-                                var errorText = error + ":" + text;
-                                if (xhr) errorText = xhr.responseText;
-                                _self.app.notice("request json error: " + errorText, "error", _self.flowDlg.node);
+                        o2.promiseAll(validated).then((flag) => {
+                            if (!flag) {
                                 if (_self.mask) { _self.mask.hide(); _self.mask = null; }
-                            }.bind(this));
-                        }.bind(this))
+                                return;
+                            }
+                            _self.fireEvent("beforeSave");
+                            if (_self.app && _self.app.fireEvent) _self.app.fireEvent("beforeSave");
+                            _self.saveFormData(function (json) {
+
+                                _self.fireEvent("afterSave");
+                                if (_self.app && _self.app.fireEvent) _self.app.fireEvent("afterSave");
+
+                                _self.AddTaskToPeson(names, opinion, mode, before, routeName, function (workJson) {
+                                    _self.fireEvent("afterAddTask", data);
+                                    if (_self.app && _self.app.fireEvent) _self.app.fireEvent("afterAddTask");
+                                    // _self.addResetMessage(workJson.data);
+                                    this.destroy();
+                                    hanlderNode.destroy();
+                                    if (_self.flowDlg) _self.flowDlg.close();
+
+                                    _self.finishOnFlow("addTask", workJson.data);
+
+                                }.bind(this), function (xhr, text, error) {
+                                    var errorText = error + ":" + text;
+                                    if (xhr) errorText = xhr.responseText;
+                                    _self.app.notice("request json error: " + errorText, "error", _self.flowDlg.node);
+                                    if (_self.mask) { _self.mask.hide(); _self.mask = null; }
+                                }.bind(this));
+                            }.bind(this))
+                        })
                     }.bind(this));
                 }
             },
@@ -3017,37 +3132,45 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                             _self.mask.loadNode(_self.app.content);
                         }
 
-                        if( !_self.validationOtherFlow('reset', userOpinion, this, data) ){
-                            if (_self.mask) { _self.mask.hide(); _self.mask = null; }
-                            return;
-                        }
+                        // if( !_self.validationOtherFlow('reset', userOpinion, this, data) ){
+                        //     if (_self.mask) { _self.mask.hide(); _self.mask = null; }
+                        //     return;
+                        // }
 
-                        _self.fireEvent("beforeSave");
-                        if (_self.app && _self.app.fireEvent) _self.app.fireEvent("beforeSave");
-                        _self.saveFormData(function (json) {
+                        var validated = _self.validationOtherFlow('reset', userOpinion, this, data);
 
-                            _self.fireEvent("afterSave");
-                            if (_self.app && _self.app.fireEvent) _self.app.fireEvent("afterSave");
-
-                            _self.resetToPeson(names, opinion, routeName, function (workJson) {
-                                _self.fireEvent("afterReset", data);
-                                if (_self.app && _self.app.fireEvent) _self.app.fireEvent("afterReset");
-                                // _self.addResetMessage(workJson.data);
-                                this.destroy();
-                                hanlderNode.destroy();
-                                // if (!_self.app.inBrowser) _self.app.close();
-                                if (_self.flowDlg) _self.flowDlg.close();
-                                // if (_self.mask) { _self.mask.hide(); _self.mask = null; }
-
-                                _self.finishOnFlow("reset", workJson.data);
-
-                            }.bind(this), function (xhr, text, error) {
-                                var errorText = error + ":" + text;
-                                if (xhr) errorText = xhr.responseText;
-                                _self.app.notice("request json error: " + errorText, "error", _self.flowDlg.node);
+                        o2.promiseAll(validated).then((flag) => {
+                            if (!flag) {
                                 if (_self.mask) { _self.mask.hide(); _self.mask = null; }
-                            }.bind(this));
-                        }.bind(this))
+                                return;
+                            }
+                            _self.fireEvent("beforeSave");
+                            if (_self.app && _self.app.fireEvent) _self.app.fireEvent("beforeSave");
+                            _self.saveFormData(function (json) {
+
+                                _self.fireEvent("afterSave");
+                                if (_self.app && _self.app.fireEvent) _self.app.fireEvent("afterSave");
+
+                                _self.resetToPeson(names, opinion, routeName, function (workJson) {
+                                    _self.fireEvent("afterReset", data);
+                                    if (_self.app && _self.app.fireEvent) _self.app.fireEvent("afterReset");
+                                    // _self.addResetMessage(workJson.data);
+                                    this.destroy();
+                                    hanlderNode.destroy();
+                                    // if (!_self.app.inBrowser) _self.app.close();
+                                    if (_self.flowDlg) _self.flowDlg.close();
+                                    // if (_self.mask) { _self.mask.hide(); _self.mask = null; }
+
+                                    _self.finishOnFlow("reset", workJson.data);
+
+                                }.bind(this), function (xhr, text, error) {
+                                    var errorText = error + ":" + text;
+                                    if (xhr) errorText = xhr.responseText;
+                                    _self.app.notice("request json error: " + errorText, "error", _self.flowDlg.node);
+                                    if (_self.mask) { _self.mask.hide(); _self.mask = null; }
+                                }.bind(this));
+                            }.bind(this))
+                        })
                     }.bind(this));
                 }
             },
@@ -3066,29 +3189,36 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                             _self.mask.loadNode(_self.app.content);
                         }
 
-                        if( !_self.validationOtherFlow('goBack', userOpinion, this, data) ){
-                            if (_self.mask) { _self.mask.hide(); _self.mask = null; }
-                            return;
-                        }
+                        // if( !_self.validationOtherFlow('goBack', userOpinion, this, data) ){
+                        //     if (_self.mask) { _self.mask.hide(); _self.mask = null; }
+                        //     return;
+                        // }
 
-                        _self.fireEvent("beforeSave");
-                        if (_self.app && _self.app.fireEvent) _self.app.fireEvent("beforeSave");
-                        _self.saveFormData(function (json) {
+                        var validated = _self.validationOtherFlow('goBack', userOpinion, this, data);
+                        o2.promiseAll(validated).then((flag) => {
+                            if (!flag) {
+                                if (_self.mask) { _self.mask.hide(); _self.mask = null; }
+                                return;
+                            }
+                            _self.fireEvent("beforeSave");
+                            if (_self.app && _self.app.fireEvent) _self.app.fireEvent("beforeSave");
+                            _self.saveFormData(function (json) {
 
-                            _self.fireEvent("afterSave");
-                            if (_self.app && _self.app.fireEvent) _self.app.fireEvent("afterSave");
+                                _self.fireEvent("afterSave");
+                                if (_self.app && _self.app.fireEvent) _self.app.fireEvent("afterSave");
 
-                            _self.goBackToPerson(routeName, opinion, activity, way, function (workJson) {
-                                _self.fireEvent("afterGoBack", data);
-                                if (_self.app && _self.app.fireEvent) _self.app.fireEvent("afterGoBack");
-                                this.destroy();
-                                hanlderNode.destroy();
-                                if (_self.flowDlg) _self.flowDlg.close();
-                                _self.addMessage(workJson.data, true);
-                                if (_self.app.taskObject) _self.app.taskObject.destroy();
-                                _self.finishOnFlow("goBack", workJson.data);
-                            }.bind(this));
-                        }.bind(this))
+                                _self.goBackToPerson(routeName, opinion, activity, way, function (workJson) {
+                                    _self.fireEvent("afterGoBack", data);
+                                    if (_self.app && _self.app.fireEvent) _self.app.fireEvent("afterGoBack");
+                                    this.destroy();
+                                    hanlderNode.destroy();
+                                    if (_self.flowDlg) _self.flowDlg.close();
+                                    _self.addMessage(workJson.data, true);
+                                    if (_self.app.taskObject) _self.app.taskObject.destroy();
+                                    _self.finishOnFlow("goBack", workJson.data);
+                                }.bind(this));
+                            }.bind(this))
+                        })
                     }.bind(this));
                 }
             }
@@ -3196,39 +3326,42 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
     _processWork: function( defaultRoute ) {
         if (!this.checkUploadAttachment()) return false;
 
-        var _self = this;
-
-        if (!this.businessData.work.startTime) {
-            this.startDraftProcess();
-        } else if (this.json.submitFormType === "select") {
-            this.processWork_custom( defaultRoute );
-        } else if (this.json.submitFormType === "script") {
-            this.processWork_custom( defaultRoute );
-        } else {
-            if (this.json.mode == "Mobile") {
-                setTimeout(function () {
-                    this.processWork_mobile( defaultRoute );
-                }.bind(this), 100);
-            } else {
-                this.processWork_pc( defaultRoute );
-            }
-        }
-    },
-    processWork_custom: function ( defaultRoute ) {
         this.fireEvent("beforeProcessWork");
         if (this.app && this.app.fireEvent) this.app.fireEvent("beforeProcessWork");
 
-        if (!this.formCustomValidation("", "")) {
-            this.app.content.unmask();
-            //    if (callback) callback();
-            return false;
-        }
-
-        if (!this.formValidation("", "")) {
-            this.app.content.unmask();
-            //    if (callback) callback();
-            return false;
-        }
+        this.flowValidation(()=>{
+            if (!this.businessData.work.startTime) {
+                this.startDraftProcess();
+            } else if (this.json.submitFormType === "select") {
+                this.processWork_custom( defaultRoute );
+            } else if (this.json.submitFormType === "script") {
+                this.processWork_custom( defaultRoute );
+            } else {
+                if (this.json.mode == "Mobile") {
+                    setTimeout(function () {
+                        this.processWork_mobile( defaultRoute );
+                    }.bind(this), 100);
+                } else {
+                    this.processWork_pc( defaultRoute );
+                }
+            }
+        })
+    },
+    processWork_custom: function ( defaultRoute ) {
+        // this.fireEvent("beforeProcessWork");
+        // if (this.app && this.app.fireEvent) this.app.fireEvent("beforeProcessWork");
+        //
+        // if (!this.formCustomValidation("", "")) {
+        //     this.app.content.unmask();
+        //     //    if (callback) callback();
+        //     return false;
+        // }
+        //
+        // if (!this.formValidation("", "")) {
+        //     this.app.content.unmask();
+        //     //    if (callback) callback();
+        //     return false;
+        // }
 
         if (!this.submitFormModule) {
             if (!MWF["APPSubmitform"]) {
@@ -3255,23 +3388,23 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
     },
     processWork_pc: function ( defaultRoute ) {
         var _self = this;
-        this.fireEvent("beforeProcessWork");
-        if (this.app && this.app.fireEvent) this.app.fireEvent("beforeProcessWork");
-
-        if (!this.formCustomValidation("", "")) {
-            this.app.content.unmask();
-            //    if (callback) callback();
-            return false;
-        }
+        // this.fireEvent("beforeProcessWork");
+        // if (this.app && this.app.fireEvent) this.app.fireEvent("beforeProcessWork");
+        //
+        // if (!this.formCustomValidation("", "")) {
+        //     this.app.content.unmask();
+        //     //    if (callback) callback();
+        //     return false;
+        // }
         // MWF.require("MWF.widget.Mask", function() {
         //     this.mask = new MWF.widget.Mask({"style": "desktop", "zIndex": 50000});
         //     this.mask.loadNode(this.app.content);
 
-        if (!this.formValidation("", "")) {
-            this.app.content.unmask();
-            //    if (callback) callback();
-            return false;
-        }
+        // if (!this.formValidation("", "")) {
+        //     this.app.content.unmask();
+        //     //    if (callback) callback();
+        //     return false;
+        // }
 
         var setSize = function (notRecenter) {
 
@@ -3355,8 +3488,9 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
             this.app.content.setStyle("height", document.body.getSize().y);
         }
 
-        this.fireEvent("beforeProcessWork");
-        if (this.app && this.app.fireEvent) this.app.fireEvent("beforeProcessWork");
+        // this.fireEvent("beforeProcessWork");
+        // if (this.app && this.app.fireEvent) this.app.fireEvent("beforeProcessWork");
+
         var position = this.app.content.getPosition(this.app.content.getOffsetParent());
 
         if (this.json.mode != "Mobile") {
@@ -3375,20 +3509,20 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
             });
         }
 
-        if (!this.formCustomValidation("", "")) {
-            this.app.content.unmask();
-            //    if (callback) callback();
-            return false;
-        }
+        // if (!this.formCustomValidation("", "")) {
+        //     this.app.content.unmask();
+        //     //    if (callback) callback();
+        //     return false;
+        // }
         // MWF.require("MWF.widget.Mask", function() {
         //     this.mask = new MWF.widget.Mask({"style": "desktop", "zIndex": 50000});
         //     this.mask.loadNode(this.app.content);
 
-        if (!this.formValidation("", "")) {
-            this.app.content.unmask();
-            //    if (callback) callback();
-            return false;
-        }
+        // if (!this.formValidation("", "")) {
+        //     this.app.content.unmask();
+        //     //    if (callback) callback();
+        //     return false;
+        // }
 
         var processNode = this.createProcessNode();
 
@@ -4393,6 +4527,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
      * }
      */
     pressWork: function (e) {
+        debugger;
         if (e && e.setDisable) e.setDisable(true);
         o2.Actions.get("x_processplatform_assemble_surface").press(this.businessData.work.id, function (json) {
             var users = o2.name.cns(json.data.valueList).join(", ");
@@ -4411,6 +4546,7 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
                     }
                 }
                 MWF.xDesktop.notice("error", { x: "right", y: "top" }, errorText);
+                if (e && e.setDisable) e.setDisable(false);
             }
         });
     },
@@ -4429,70 +4565,73 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
             MWF.xDesktop.notice("error", { x: "right", y: "top" }, MWF.xApplication.process.Xform.LP.form.noTaskToReset);
             return false;
         }
-        if (!this.formValidation('','')) {
-            return false;
-        }
 
-        if (!this.checkUploadAttachment()) return false;
+        o2.promiseAll(this.formValidation('','')).then(result=>{
+            if(result){
+                if (!this.checkUploadAttachment()) return false;
 
-        o2.Actions.load('x_processplatform_assemble_surface').WorkAction.V2ListActivityGoBack(this.businessData.task.work, function(json){
-            var activitys = json.data;
-        // var activitys = [{
-        //     name: "拟稿",
-        //     activity: "123",
-        //     way: "custom",
-        //     lastModifyTime: "2023-01-23 12:34:12",
-        //     lastIdentityList: ["张三", "李四"],
-        //     activityTokenList: ["", ""]
-        // },{
-        //     name: "拟稿",
-        //     activity: "345",
-        //     way: "jump",
-        //     lastModifyTime: "2023-01-23 12:34:12",
-        //     lastIdentityList: ["王五六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六"],
-        //     activityTokenList: ["", ""]
-        // }];
-            if (activitys.length){
-                var h = this.app.content.getSize().y*0.7-271;
-                var size = activitys.length*61;
-                h = (size<h) ? size+271 : "70%";
-                var _self = this;
-                o2.DL.open({
-                    "title": this.app.lp.goBack,
-                    "style": this.json.dialogStyle || "user", //|| "work",
-                    "width":   (layout.mobile) ? "100%" : 680,
-                    "height":  (layout.mobile) ? "100%" : h,
-                    "url": this.app.path + ( (layout.mobile) ? "goBackMobile" : "goBack") +".html",
-                    "lp": o2.xApplication.process.Xform.LP.form,
-                    "container": (layout.mobile) ? document.body : this.app.content,
-                    "maskNode": this.app.content,
-                    "offset": (layout.mobile) ? null : {y: -50},
-                    "buttonList": [
-                        {
-                            "type": "ok",
-                            "text": o2.LP.process.button.ok,
-                            "action": function (d, e) {
-                                _self.doGoBack(this, activitys);
+                o2.Actions.load('x_processplatform_assemble_surface').WorkAction.V2ListActivityGoBack(this.businessData.task.work, function(json){
+                    var activitys = json.data;
+                    // var activitys = [{
+                    //     name: "拟稿",
+                    //     activity: "123",
+                    //     way: "custom",
+                    //     lastModifyTime: "2023-01-23 12:34:12",
+                    //     lastIdentityList: ["张三", "李四"],
+                    //     activityTokenList: ["", ""]
+                    // },{
+                    //     name: "拟稿",
+                    //     activity: "345",
+                    //     way: "jump",
+                    //     lastModifyTime: "2023-01-23 12:34:12",
+                    //     lastIdentityList: ["王五六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六", "赵六六"],
+                    //     activityTokenList: ["", ""]
+                    // }];
+                    if (activitys.length){
+                        var h = this.app.content.getSize().y*0.7-271;
+                        var size = activitys.length*61;
+                        h = (size<h) ? size+271 : "70%";
+                        var _self = this;
+                        o2.DL.open({
+                            "title": this.app.lp.goBack,
+                            "style": this.json.dialogStyle || "user", //|| "work",
+                            "width":   (layout.mobile) ? "100%" : 680,
+                            "height":  (layout.mobile) ? "100%" : h,
+                            "url": this.app.path + ( (layout.mobile) ? "goBackMobile" : "goBack") +".html",
+                            "lp": o2.xApplication.process.Xform.LP.form,
+                            "container": (layout.mobile) ? document.body : this.app.content,
+                            "maskNode": this.app.content,
+                            "offset": (layout.mobile) ? null : {y: -50},
+                            "buttonList": [
+                                {
+                                    "type": "ok",
+                                    "text": o2.LP.process.button.ok,
+                                    "action": function (d, e) {
+                                        _self.doGoBack(this, activitys);
+                                    }
+                                },
+                                {
+                                    "type": "cancel",
+                                    "text": MWF.LP.process.button.cancel,
+                                    "action": function () {
+                                        this.close();
+                                    }
+                                }
+                            ],
+                            "onPostShow": function () {
+                                var node = this.node.getElement('.activesArea');
+                                activitys.forEach(function(a, i){
+                                    _self.createGoBackActivity(node, a, i);
+                                });
                             }
-                        },
-                        {
-                            "type": "cancel",
-                            "text": MWF.LP.process.button.cancel,
-                            "action": function () {
-                                this.close();
-                            }
-                        }
-                    ],
-                    "onPostShow": function () {
-                        var node = this.node.getElement('.activesArea');
-                        activitys.forEach(function(a, i){
-                            _self.createGoBackActivity(node, a, i);
+
                         });
                     }
+                }.bind(this));
 
-                });
             }
-        }.bind(this));
+        })
+
     },
 
     createGoBackActivity: function(area, activity, i){
@@ -4570,14 +4709,22 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
         }
 
         var flowData = {routeName: "", opinion: opinion, activity:activity, way:way, userOpinion:opinionNode.value};
-        if( !this.validationOtherFlow('goBack', opinionNode.value, null, flowData) ){
-            if (this.mask) { this.mask.hide(); this.mask = null; }
-            return;
-        }
+        // if( !this.validationOtherFlow('goBack', opinionNode.value, null, flowData) ){
+        //     if (this.mask) { this.mask.hide(); this.mask = null; }
+        //     return;
+        // }
 
-        this.submitWork(decision, opinion, null, function () {
-            dlg.close();
-        }.bind(this));
+        var validated = this.validationOtherFlow('goBack', opinionNode.value, null, flowData);
+        o2.promiseAll(validated).then((flag)=>{
+            if(!flag){
+                if (this.mask) { this.mask.hide(); this.mask = null; }
+                return;
+            }
+
+            this.submitWork(decision, opinion, null, function () {
+                dlg.close();
+            }.bind(this));
+        })
     },
 
 
@@ -4656,7 +4803,12 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
         //     this._downloadAllEditMode();
         // }
     //},
-    downloadAll: function (){
+    downloadAll: function (e, form){
+        if (!form || form === "none") {
+            if (this.json.printForm && this.json.printForm!=="none" ){
+                form = this.json.printForm;
+            }
+        }
         var iframe, iframeDoc;
         var _loadCss = (urls, callback) => {
             const ps = urls.map(async (url) => {
@@ -4676,8 +4828,11 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
             //匹配@font-face{}内的所有url(./xxx)
             const fontReg = /url\(['"]?\.\/([^'")]+)['"]?\)(?=[\s\S]*?\})/g;
 
-            var port = layout.port === "" ? "" : ":" + layout.port;
-            const FONT_BASE_URL = "http://127.0.0.1" + port + "/x_desktop/css/v10/";
+            //var port = layout.port === "" ? "" : ":" + layout.port;
+
+            var backgroundPort = this._getBackgroundPort('x_processplatform_assemble_surface');
+
+            const FONT_BASE_URL = "http://127.0.0.1" + backgroundPort + "/x_desktop/css/v10/";
             allStyleList.forEach(styleEl => {
                styleEl.textContent = styleEl.textContent.replace(fontReg, `url("${FONT_BASE_URL}$1")`);
             });
@@ -4745,9 +4900,16 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
             this.mask = new MWF.widget.Mask({ "style": "desktop", "zIndex": 50000 });
             this.mask.loadNode(this.app.content);
 
+            let formPar = '';
+            if(form){
+                formPar = this.app.options.name === 'cms.Document' ?
+                    `&forceFormId=${form}` :
+                    `&formid=${form}`
+            }
+
             let src = this.app.options.name === 'cms.Document' ?
-                `../x_desktop/cmsdoc.html?documentId=${this.businessData.document.id}&readonly=true&downloading=true` :
-                `../x_desktop/work.html?workid=${this.businessData.work.id}&readonly=true&downloading=true`;
+                `../x_desktop/cmsdoc.html?documentId=${this.businessData.document.id}&readonly=true&downloading=true${formPar}` :
+                `../x_desktop/work.html?workid=${this.businessData.work.id}&readonly=true&downloading=true${formPar}`;
 
             iframe = new Element('iframe', {
                 src: src,
@@ -4810,12 +4972,25 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
             }, null, null, this.json.confirmStyle);
         }
     },
+    _getBackgroundPort: function (root){
+        var port;
+        var host = o2.Actions.getHost( root );
+        var defaultPort = host.startsWith('https://') ? '443' : '80';
+        if( layout.serviceAddressListWithPort ){
+            var config = layout.serviceAddressListWithPort[root];
+            port = config.port ? config.port.toString() : config.port;
+        }else{
+            port = new URL(host).port;
+        }
+        return (!port || port === defaultPort) ? '' : `:${port}`;
+    },
     _downloadAll: function (htmlString, callback) {
 
         var htmlFormId = "";
         var html = htmlString || document.documentElement.outerHTML; //this.app.content.get("html");
-        var port = layout.port === "" ? "" : ":" + layout.port;
-        var orginUrl = "http://127.0.0.1" + port;
+        //var port = layout.port === "" ? "" : ":" + layout.port;
+
+        var orginUrl = "http://127.0.0.1" + this._getBackgroundPort('x_processplatform_assemble_surface');
         html = html.replace(/\.\.\/(x_|o2_)/g, orginUrl + "/$1");
         html = html.replaceAll(window.location.origin, orginUrl);
         
@@ -5113,30 +5288,37 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
 
             var data = {routeName: "", opinion: opinion, names:names, userOpinion:opinion};
 
-            if( !this.validationOtherFlow('reset', opinion, null, data) ){
-                if (this.mask) { this.mask.hide(); this.mask = null; }
-                return;
-            }
+            // if( !this.validationOtherFlow('reset', opinion, null, data) ){
+            //     if (this.mask) { this.mask.hide(); this.mask = null; }
+            //     return;
+            // }
 
-            this.fireEvent("beforeReset", data);
-            if (this.app && this.app.fireEvent) this.app.fireEvent("beforeReset");
+            var validated = this.validationOtherFlow('reset', opinion, null, data);
+            o2.promiseAll(validated).then(flag=>{
+                if(!flag){
+                    if (this.mask) { this.mask.hide(); this.mask = null; }
+                    return;
+                }
+                this.fireEvent("beforeReset", data);
+                if (this.app && this.app.fireEvent) this.app.fireEvent("beforeReset");
 
-            this.resetWorkToPeson(names, opinion, "", function (workJson) {
-                //this.workAction.loadWork(function (workJson) {
-                this.fireEvent("afterReset", data);
-                if (this.app && this.app.fireEvent) this.app.fireEvent("afterReset");
-                this.addResetMessage(workJson.data);
-                //this.app.notice(MWF.xApplication.process.Xform.LP.resetOk + ": " + MWF.name.cns(names).join(", "), "success");
-                if (!this.app.inBrowser) this.app.close();
-                //}.bind(this), null, this.businessData.work.id);
-                dlg.close();
-                if (this.mask) { this.mask.hide(); this.mask = null; }
-            }.bind(this), function (xhr, text, error) {
-                var errorText = error + ":" + text;
-                if (xhr) errorText = xhr.responseText;
-                this.app.notice("request json error: " + errorText, "error", dlg.node);
-                if (this.mask) { this.mask.hide(); this.mask = null; }
-            }.bind(this));
+                this.resetWorkToPeson(names, opinion, "", function (workJson) {
+                    //this.workAction.loadWork(function (workJson) {
+                    this.fireEvent("afterReset", data);
+                    if (this.app && this.app.fireEvent) this.app.fireEvent("afterReset");
+                    this.addResetMessage(workJson.data);
+                    //this.app.notice(MWF.xApplication.process.Xform.LP.resetOk + ": " + MWF.name.cns(names).join(", "), "success");
+                    if (!this.app.inBrowser) this.app.close();
+                    //}.bind(this), null, this.businessData.work.id);
+                    dlg.close();
+                    if (this.mask) { this.mask.hide(); this.mask = null; }
+                }.bind(this), function (xhr, text, error) {
+                    var errorText = error + ":" + text;
+                    if (xhr) errorText = xhr.responseText;
+                    this.app.notice("request json error: " + errorText, "error", dlg.node);
+                    if (this.mask) { this.mask.hide(); this.mask = null; }
+                }.bind(this));
+            })
         }.bind(this));
 
         //var data = {
@@ -6395,21 +6577,6 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
             var url = this.Macro.exec(this.json.afterProcessRedirectScript.code, this);
             (new URI(url)).go();
         } else {
-            // var len = window.history.length;
-            // if (len > 1) {
-            //     history.back();
-            // } else {
-            //     var uri = new URI(window.location.href);
-            //     var redirectlink = uri.getData("redirectlink");
-            //     if (redirectlink) {
-            //         history.replaceState(null, "work", redirectlink);
-            //         redirectlink.toURI().go();
-            //     } else {
-            //         // window.location = o2.filterUrl("../x_desktop/appMobile.html?app=process.TaskCenter");
-            //         history.replaceState(null, "work", o2.filterUrl("../x_desktop/appMobile.html?app=process.TaskCenter"));
-            //         o2.filterUrl("../x_desktop/appMobile.html?app=process.TaskCenter").toURI().go();
-            //     }
-            // }
             var uri = new URI(window.location.href);
             var redirectlink = uri.getData("redirectlink");
             if (redirectlink) {
@@ -6896,36 +7063,43 @@ MWF.xApplication.process.Xform.Form = MWF.APPForm = new Class(
 
                 var data = {mode: mode, opinion: opinion, before: position === "before", names: dlg.identityList, userOpinion: opinion};
 
-                if( !this.validationOtherFlow('addTask', opinion, null, data) ){
-                    if (this.mask) { this.mask.hide(); this.mask = null; }
-                    return;
-                }
+                // if( !this.validationOtherFlow('addTask', opinion, null, data) ){
+                //     if (this.mask) { this.mask.hide(); this.mask = null; }
+                //     return;
+                // }
 
-                this.fireEvent("beforeAddTask", {mode: mode, opinion: opinion, before: position === "before", names: dlg.identityList});
-                if (this.app && this.app.fireEvent) this.app.fireEvent("beforeAddTask");
+                var validated = this.validationOtherFlow('addTask', opinion, null, data);
+                o2.promiseAll(validated).then(flag=>{
+                    if(!flag){
+                        if (this.mask) { this.mask.hide(); this.mask = null; }
+                        return;
+                    }
+                    this.fireEvent("beforeAddTask", {mode: mode, opinion: opinion, before: position === "before", names: dlg.identityList});
+                    if (this.app && this.app.fireEvent) this.app.fireEvent("beforeAddTask");
 
-                this.doAddTaskToPeople(dlg.identityList, opinion, mode, position === "before", "", function (json) {
-                        this.fireEvent("afterAddTask", data);
-                        if (this.app && this.app.fireEvent) this.app.fireEvent("afterAddTask");
-                        this.app.notice(MWF.xApplication.process.Xform.LP.addTaskOk + ": " + nameArr, "success");
+                    this.doAddTaskToPeople(dlg.identityList, opinion, mode, position === "before", "", function (json) {
+                            this.fireEvent("afterAddTask", data);
+                            if (this.app && this.app.fireEvent) this.app.fireEvent("afterAddTask");
+                            this.app.notice(MWF.xApplication.process.Xform.LP.addTaskOk + ": " + nameArr, "success");
 
-                        dlg.close();
-                        if (this.mask) this.mask.hide();
+                            dlg.close();
+                            if (this.mask) this.mask.hide();
 
-                        var notCloseWindow = false; //position!=="before";
-                        this.addAddTaskMessage(json.data, notCloseWindow);
-                        if (!this.app.inBrowser){
-                            this.app[(notCloseWindow ? "refresh" : "close")]();
-                        }
+                            var notCloseWindow = false; //position!=="before";
+                            this.addAddTaskMessage(json.data, notCloseWindow);
+                            if (!this.app.inBrowser){
+                                this.app[(notCloseWindow ? "refresh" : "close")]();
+                            }
 
-                    }.bind(this), function (xhr, text, error) {
-                        var errorText = error + ":" + text;
-                        if (xhr) errorText = xhr.responseText;
-                        this.app.notice("request json error: " + errorText, "error", dlg ? dlg.node : null);
+                        }.bind(this), function (xhr, text, error) {
+                            var errorText = error + ":" + text;
+                            if (xhr) errorText = xhr.responseText;
+                            this.app.notice("request json error: " + errorText, "error", dlg ? dlg.node : null);
 
-                        if (this.mask) this.mask.hide();
-                    }.bind(this))
-
+                            if (this.mask) this.mask.hide();
+                        }.bind(this)
+                    )
+                })
             }else{
                 if (this.mask)  this.mask.hide();
             }

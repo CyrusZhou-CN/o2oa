@@ -1,12 +1,14 @@
 package com.x.server.console.action;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
+import com.x.base.core.project.config.Config;
+import com.x.base.core.project.logger.Logger;
+import com.x.base.core.project.logger.LoggerFactory;
+import com.x.base.core.project.tools.Host;
+import com.x.server.console.ResourceFactory;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -16,18 +18,13 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
-import com.x.base.core.project.config.Config;
-import com.x.base.core.project.logger.Logger;
-import com.x.base.core.project.logger.LoggerFactory;
-import com.x.server.console.ResourceFactory;
-
 /*
 @author zhourui
 
 */
 public class ActionControl extends ActionBase {
 
-	private static Logger logger = LoggerFactory.getLogger(ActionControl.class);
+	private static final Logger logger = LoggerFactory.getLogger(ActionControl.class);
 
 	private static final String CMD_OS = "os";
 	private static final String CMD_HS = "hs";
@@ -35,6 +32,7 @@ public class ActionControl extends ActionBase {
 	private static final String CMD_TD = "td";
 	private static final String CMD_EC = "ec";
 	private static final String CMD_DD = "dd";
+	private static final String CMD_CDF = "cdf";
 	private static final String CMD_RD = "rd";
 	private static final String CMD_CLH2 = "clh2";
 	private static final String CMD_UF = "uf";
@@ -44,6 +42,7 @@ public class ActionControl extends ActionBase {
 	private static final String CMD_EN = "en";
 	private static final String CMD_DE = "de";
 	private static final String CMD_GC = "gc";
+	private static final String CMD_HOST = "host";
 	private static final String CMD_INITRESOURCEFACTORY = "initResourceFactory";
 	private static final String CMD_FLUSHCONFIG = "flushConfig";
 	private static final String CMD_REGENERATECONFIG = "regenerateConfig";
@@ -67,6 +66,8 @@ public class ActionControl extends ActionBase {
 				ec(cmd);
 			} else if (cmd.hasOption(CMD_DD)) {
 				dd(cmd);
+			} else if (cmd.hasOption(CMD_CDF)) {
+				cdf(cmd);
 			} else if (cmd.hasOption(CMD_RD)) {
 				rd(cmd);
 			} else if (cmd.hasOption(CMD_CLH2)) {
@@ -85,6 +86,8 @@ public class ActionControl extends ActionBase {
 				de(cmd);
 			} else if (cmd.hasOption(CMD_GC)) {
 				gc();
+			}else if (cmd.hasOption(CMD_HOST)) {
+				host();
 			} else if (cmd.hasOption(CMD_INITRESOURCEFACTORY)) {
 				initResourceFactory();
 			} else if (cmd.hasOption(CMD_FLUSHCONFIG)) {
@@ -117,9 +120,11 @@ public class ActionControl extends ActionBase {
 		options.addOption(enOption());
 		options.addOption(deOption());
 		options.addOption(gcOption());
+		options.addOption(hostOption());
 		options.addOption(initResourceFactoryOption());
 		options.addOption(flushConfigOption());
 		options.addOption(regenerateConfigOption());
+		options.addOption(cdfOption());
 		return options;
 	}
 
@@ -139,6 +144,8 @@ public class ActionControl extends ActionBase {
 		displayOptions.addOption(scOption());
 		displayOptions.addOption(enOption());
 		displayOptions.addOption(gcOption());
+		displayOptions.addOption(cdfOption());
+		displayOptions.addOption(hostOption());
 		return displayOptions;
 	}
 
@@ -154,6 +161,10 @@ public class ActionControl extends ActionBase {
 
 	private static Option hdOption() {
 		return Option.builder(CMD_HD).longOpt("heapDump").hasArg(false).desc("生成堆转储文件.").build();
+	}
+
+	private static Option cdfOption() {
+		return Option.builder(CMD_CDF).longOpt("cleanDiscardFile").hasArg(false).desc("清楚废弃的附件数据.").build();
 	}
 
 	private static Option tdOption() {
@@ -181,6 +192,10 @@ public class ActionControl extends ActionBase {
 
 	private static Option ufOption() {
 		return Option.builder(CMD_UF).longOpt("updateFile").argName("path").hasArg().desc("升级服务器,升级前请注意备份.").build();
+	}
+
+	private static Option hostOption() {
+		return Option.builder(CMD_HOST).longOpt("host").hasArg(false).desc("生成机器码.").build();
 	}
 
 	private static Option ddlOption() {
@@ -229,36 +244,36 @@ public class ActionControl extends ActionBase {
 	private void ec(CommandLine cmd) throws Exception {
 		String type = Objects.toString(cmd.getOptionValue("ec"));
 		switch (type) {
-		case "processPlatform":
-			new EraseContentProcessPlatform().execute();
-			break;
-		case "bbs":
-			new EraseContentBbs().execute();
-			break;
-		case "cms":
-			new EraseContentCms().execute();
-			break;
-		case "log":
-			new EraseContentLog().execute();
-			break;
-		case "message":
-			new EraseContentMessage().execute();
-			break;
-		case "org":
-			new EraseContentOrg().execute();
-			break;
-		default:
-			@SuppressWarnings("unchecked")
-			List<String> names = Stream.of(StringUtils.split(type, ","))
-					.filter(((List<String>) Config.resource(Config.RESOURCE_CONTAINERENTITYNAMES))::contains)
-					.collect(Collectors.toList());
-			if (names.isEmpty()) {
-				logger.print("unkown parameter:{}.", type);
-			} else {
-				EraseContentEntity eraseContentEntity = new EraseContentEntity();
-				eraseContentEntity.execute(names);
-			}
-			break;
+			case "processPlatform":
+				new EraseContentProcessPlatform().execute();
+				break;
+			case "bbs":
+				new EraseContentBbs().execute();
+				break;
+			case "cms":
+				new EraseContentCms().execute();
+				break;
+			case "log":
+				new EraseContentLog().execute();
+				break;
+			case "message":
+				new EraseContentMessage().execute();
+				break;
+			case "org":
+				new EraseContentOrg().execute();
+				break;
+			default:
+				@SuppressWarnings("unchecked")
+				List<String> names = Stream.of(StringUtils.split(type, ","))
+						.filter(((List<String>) Config.resource(Config.RESOURCE_CONTAINERENTITYNAMES))::contains)
+						.collect(Collectors.toList());
+				if (names.isEmpty()) {
+					logger.print("unkown parameter:{}.", type);
+				} else {
+					EraseContentEntity eraseContentEntity = new EraseContentEntity();
+					eraseContentEntity.execute(names);
+				}
+				break;
 		}
 	}
 
@@ -276,6 +291,11 @@ public class ActionControl extends ActionBase {
 		String path = Objects.toString(cmd.getOptionValue(CMD_DD), "");
 		DumpData dumpData = new DumpData();
 		dumpData.execute(path);
+	}
+
+	private void cdf(CommandLine cmd) {
+		CleanDiscardFile cleanDiscardFile = new CleanDiscardFile();
+		cleanDiscardFile.execute();
 	}
 
 	private void rd(CommandLine cmd) throws Exception {
@@ -311,6 +331,10 @@ public class ActionControl extends ActionBase {
 		String type = Objects.toString(cmd.getOptionValue(CMD_DDL), "");
 		Ddl ddl = new Ddl();
 		ddl.execute(type);
+	}
+
+	private void host() {
+		logger.print("机器码:{}", Host.generateMachineCode());
 	}
 
 	private void rst(CommandLine cmd) throws Exception {
